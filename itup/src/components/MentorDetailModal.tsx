@@ -9,7 +9,7 @@ export interface MentorData {
   company: string;
   previousCompanies?: string[];
   experience: string;
-  specialty: string;
+  skills: string[];
   rating: number;
   sessions: number;
   bio: string;
@@ -131,15 +131,26 @@ export default function MentorDetailModal({
             <p className="text-foreground/90 text-sm leading-relaxed">{mentor.bio}</p>
           </div>
 
-          {/* Experience & Specialty */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Experience */}
+          <div className="mb-6">
             <div className="p-3 bg-secondary/50 rounded-xl">
               <h3 className="text-xs font-semibold text-muted mb-1">경력</h3>
               <p className="text-sm font-medium">{mentor.experience}</p>
             </div>
-            <div className="p-3 bg-secondary/50 rounded-xl">
-              <h3 className="text-xs font-semibold text-muted mb-1">전문 분야</h3>
-              <p className="text-sm font-medium">{mentor.specialty}</p>
+          </div>
+
+          {/* Skills */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-muted mb-2">기술 스택</h3>
+            <div className="flex flex-wrap gap-2">
+              {mentor.skills.map((skill) => (
+                <span
+                  key={skill}
+                  className="px-3 py-1.5 bg-secondary text-foreground/80 text-xs font-medium rounded-full"
+                >
+                  {skill}
+                </span>
+              ))}
             </div>
           </div>
 

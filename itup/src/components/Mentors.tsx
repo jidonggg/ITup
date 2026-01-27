@@ -106,9 +106,16 @@ function MentorCard({ mentor, index, onClick }: MentorCardProps) {
             <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-md">
               {mentor.experience} 경력
             </span>
-            <span className="px-2 py-1 bg-secondary text-muted text-xs rounded-md">
-              {mentor.specialty}
-            </span>
+            {mentor.skills.slice(0, 2).map((skill) => (
+              <span key={skill} className="px-2 py-1 bg-secondary text-muted text-xs rounded-md">
+                {skill}
+              </span>
+            ))}
+            {mentor.skills.length > 2 && (
+              <span className="px-2 py-1 bg-secondary text-muted text-xs rounded-md">
+                +{mentor.skills.length - 2}
+              </span>
+            )}
           </div>
 
           {/* Stats */}
