@@ -11,25 +11,43 @@ import Pricing from "@/components/Pricing";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 import ConsultModal from "@/components/ConsultModal";
+import MentorDetailModal, { MentorData } from "@/components/MentorDetailModal";
 
 export default function HomeClient() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
+  const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
+  const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const openConsultModal = () => setIsConsultModalOpen(true);
+  const closeConsultModal = () => setIsConsultModalOpen(false);
+
+  const openMentorModal = (mentor: MentorData) => {
+    setSelectedMentor(mentor);
+    setIsMentorModalOpen(true);
+  };
+  const closeMentorModal = () => {
+    setIsMentorModalOpen(false);
+    setSelectedMentor(null);
+  };
 
   return (
     <>
       <Header />
-      <Hero onConsultClick={openModal} />
+      <Hero onConsultClick={openConsultModal} />
       <Stats />
       <Features />
-      <Mentors />
+      <Mentors onMentorClick={openMentorModal} />
       <Testimonials />
       <Pricing />
-      <CTA onConsultClick={openModal} />
+      <CTA onConsultClick={openConsultModal} />
       <Footer />
-      <ConsultModal isOpen={isModalOpen} onClose={closeModal} />
+      <ConsultModal isOpen={isConsultModalOpen} onClose={closeConsultModal} />
+      <MentorDetailModal
+        isOpen={isMentorModalOpen}
+        onClose={closeMentorModal}
+        mentor={selectedMentor}
+        onConsultClick={openConsultModal}
+      />
     </>
   );
 }

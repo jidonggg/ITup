@@ -1,47 +1,14 @@
 "use client";
 
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { MentorData } from "@/components/MentorDetailModal";
+import { mentorsData } from "@/data/mentors";
 
-const mentors = [
-  {
-    name: "김민수",
-    role: "시니어 게임 프로그래머",
-    company: "넥슨",
-    experience: "8년",
-    specialty: "언리얼 엔진, 서버 개발",
-    rating: 4.9,
-    sessions: 120,
-  },
-  {
-    name: "이지현",
-    role: "게임 기획자",
-    company: "넷마블",
-    experience: "6년",
-    specialty: "밸런싱, 시스템 기획",
-    rating: 4.8,
-    sessions: 95,
-  },
-  {
-    name: "박준혁",
-    role: "테크니컬 아티스트",
-    company: "크래프톤",
-    experience: "7년",
-    specialty: "셰이더, 최적화",
-    rating: 5.0,
-    sessions: 78,
-  },
-  {
-    name: "최유나",
-    role: "UI/UX 디자이너",
-    company: "스마일게이트",
-    experience: "5년",
-    specialty: "게임 UI, 모션 그래픽",
-    rating: 4.9,
-    sessions: 86,
-  },
-];
+interface MentorsProps {
+  onMentorClick: (mentor: MentorData) => void;
+}
 
-export default function Mentors() {
+export default function Mentors({ onMentorClick }: MentorsProps) {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
@@ -68,14 +35,19 @@ export default function Mentors() {
 
         {/* Mentors Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {mentors.map((mentor, index) => (
-            <MentorCard key={mentor.name} mentor={mentor} index={index} />
+          {mentorsData.map((mentor, index) => (
+            <MentorCard
+              key={mentor.name}
+              mentor={mentor}
+              index={index}
+              onClick={() => onMentorClick(mentor)}
+            />
           ))}
         </div>
 
         {/* View All Button */}
         <div className="text-center mt-12">
-          <button className="group inline-flex items-center gap-2 px-8 py-4 border border-card-border rounded-full text-foreground hover:border-primary hover:text-primary transition-all duration-300">
+          <button className="group inline-flex items-center gap-2 px-8 py-4 border border-card-border rounded-full text-foreground hover:border-primary hover:text-primary transition-all duration-300 cursor-pointer">
             모든 멘토 보기
             <svg
               className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
@@ -93,19 +65,12 @@ export default function Mentors() {
 }
 
 interface MentorCardProps {
-  mentor: {
-    name: string;
-    role: string;
-    company: string;
-    experience: string;
-    specialty: string;
-    rating: number;
-    sessions: number;
-  };
+  mentor: MentorData;
   index: number;
+  onClick: () => void;
 }
 
-function MentorCard({ mentor, index }: MentorCardProps) {
+function MentorCard({ mentor, index, onClick }: MentorCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
@@ -114,7 +79,10 @@ function MentorCard({ mentor, index }: MentorCardProps) {
       className={`scroll-animate ${isVisible ? "visible" : ""}`}
       style={{ transitionDelay: `${index * 100}ms` }}
     >
-      <div className="group relative bg-card-bg border border-card-border rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300">
+      <div
+        onClick={onClick}
+        className="group relative bg-card-bg border border-card-border rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer"
+      >
         {/* Avatar Section */}
         <div className="relative h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-3xl font-bold transform group-hover:scale-110 transition-transform duration-300">
