@@ -48,10 +48,10 @@ export default function Header() {
           {/* Logo */}
           <a href="#" className="flex items-center gap-2 group">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
-              <span className="text-white font-bold text-xl">IT</span>
+              <span className="text-white font-bold text-lg">ca</span>
             </div>
             <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-              ITup
+              camo
             </span>
           </a>
 

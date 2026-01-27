@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function Hero() {
+interface HeroProps {
+  onConsultClick: () => void;
+}
+
+export default function Hero({ onConsultClick }: HeroProps) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const rafRef = useRef<number | null>(null);
 
@@ -66,7 +70,7 @@ export default function Hero() {
           <span className="text-foreground">게임 업계 커리어,</span>
           <br />
           <span className="bg-gradient-to-r from-primary via-accent to-primary-light bg-clip-text text-transparent animate-gradient">
-            ITup과 함께 레벨업
+            camo와 함께 레벨업
           </span>
         </h1>
 
@@ -79,7 +83,10 @@ export default function Hero() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up [animation-delay:300ms]">
-          <button className="group relative px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-semibold text-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300 animate-pulse-glow">
+          <button
+            onClick={onConsultClick}
+            className="group relative px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-semibold text-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300 animate-pulse-glow cursor-pointer"
+          >
             <span className="relative z-10">무료 상담 신청</span>
             <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </button>
