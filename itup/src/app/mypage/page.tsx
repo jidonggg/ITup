@@ -13,7 +13,7 @@ interface ConsultationWithMentor extends Consultation {
 
 export default function MyPage() {
   const router = useRouter();
-  const { user, profile, isLoading, signOut, refreshProfile } = useAuth();
+  const { user, profile, isLoading, isInitialized, signOut, refreshProfile } = useAuth();
   const [consultations, setConsultations] = useState<ConsultationWithMentor[]>([]);
   const [isLoadingConsultations, setIsLoadingConsultations] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -21,21 +21,13 @@ export default function MyPage() {
   const [editPhone, setEditPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Redirect if not logged in (with timeout fallback)
+  // Redirect if not logged in
   useEffect(() => {
-    // 3초 후에도 로딩 중이면 홈으로 이동
-    const timeout = setTimeout(() => {
-      if (!user) {
-        router.push("/");
-      }
-    }, 3000);
-
-    if (!isLoading && !user) {
+    // 초기화 완료 후 user가 없으면 홈으로 이동
+    if (isInitialized && !user) {
       router.push("/");
     }
-
-    return () => clearTimeout(timeout);
-  }, [isLoading, user, router]);
+  }, [isInitialized, user, router]);
 
   // Fetch consultations
   useEffect(() => {
@@ -157,7 +149,7 @@ export default function MyPage() {
     );
   };
 
-  if (isLoading) {
+  if (!isInitialized || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
