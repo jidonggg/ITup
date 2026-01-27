@@ -1,6 +1,7 @@
 "use client";
 
 import { ConsultType, consultTypeLabels } from "@/data/mentors";
+import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
 
 export interface MentorData {
   name: string;
@@ -30,6 +31,9 @@ export default function MentorDetailModal({
   mentor,
   onConsultClick,
 }: MentorDetailModalProps) {
+  useModalClose(isOpen, onClose);
+  useBodyScrollLock(isOpen);
+
   if (!isOpen || !mentor) return null;
 
   const handleConsultClick = () => {

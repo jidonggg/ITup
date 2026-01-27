@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useModalClose, useBodyScrollLock, formatPhoneNumber } from "@/hooks/useModal";
 
 interface ConsultModalProps {
   isOpen: boolean;
@@ -28,6 +29,9 @@ export default function ConsultModal({ isOpen, onClose }: ConsultModalProps) {
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  useModalClose(isOpen, onClose);
+  useBodyScrollLock(isOpen);
 
   const interests = [
     { value: "programming", label: "프로그래밍" },
@@ -94,7 +98,8 @@ export default function ConsultModal({ isOpen, onClose }: ConsultModalProps) {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const newValue = name === "phone" ? formatPhoneNumber(value) : value;
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
     if (errors[name as keyof FormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
