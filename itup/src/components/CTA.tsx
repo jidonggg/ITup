@@ -2,7 +2,11 @@
 
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
-export default function CTA() {
+interface CTAProps {
+  onConsultClick: () => void;
+}
+
+export default function CTA({ onConsultClick }: CTAProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
@@ -53,7 +57,10 @@ export default function CTA() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="group relative px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-semibold text-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300 animate-pulse-glow">
+            <button
+              onClick={onConsultClick}
+              className="group relative px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-semibold text-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300 animate-pulse-glow cursor-pointer"
+            >
               <span className="relative z-10 flex items-center justify-center gap-2">
                 무료 상담 신청하기
                 <svg

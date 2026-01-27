@@ -6,7 +6,8 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(cmd //c \"taskkill /PID 2200 /F\")",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(git add:*)"
     ]
   }
 }

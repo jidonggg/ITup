@@ -1,19 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Hero() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: (e.clientX / window.innerWidth - 0.5) * 20,
-        y: (e.clientY / window.innerHeight - 0.5) * 20,
+      if (rafRef.current) return;
+
+      rafRef.current = requestAnimationFrame(() => {
+        setMousePosition({
+          x: (e.clientX / window.innerWidth - 0.5) * 20,
+          y: (e.clientY / window.innerHeight - 0.5) * 20,
+        });
+        rafRef.current = null;
       });
     };
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   return (
