@@ -59,27 +59,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // 즉시 isLoading을 false로 설정하고 비동기로 세션 확인
     const initializeAuth = async () => {
-      console.log("AuthContext: initializeAuth started");
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log("AuthContext: getSession result", { session: !!session, error });
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          console.log("AuthContext: fetching profile for", session.user.email);
           await fetchProfile(session.user.id);
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
-      } finally {
-        console.log("AuthContext: setting isLoading to false");
-        setIsLoading(false);
       }
     };
 
-    initializeAuth();
+    initializeAuth().finally(() => setIsLoading(false));
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
