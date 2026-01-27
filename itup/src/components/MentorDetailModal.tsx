@@ -1,9 +1,12 @@
 "use client";
 
+import { ConsultType, consultTypeLabels } from "@/data/mentors";
+
 export interface MentorData {
   name: string;
   role: string;
   company: string;
+  previousCompanies?: string[];
   experience: string;
   specialty: string;
   rating: number;
@@ -11,6 +14,7 @@ export interface MentorData {
   bio: string;
   availableTimes: string[];
   reviews: number;
+  consultTypes: ConsultType[];
 }
 
 interface MentorDetailModalProps {
@@ -66,13 +70,19 @@ export default function MentorDetailModal({
         <div className="pt-16 px-6 pb-6">
           {/* Name & Role */}
           <div className="mb-4">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h2 className="text-2xl font-bold">{mentor.name}</h2>
               <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-medium rounded-full">
                 {mentor.company}
               </span>
             </div>
             <p className="text-muted">{mentor.role}</p>
+            {/* Previous Companies */}
+            {mentor.previousCompanies && mentor.previousCompanies.length > 0 && (
+              <p className="text-xs text-muted mt-1">
+                이전: {mentor.previousCompanies.join(", ")}
+              </p>
+            )}
           </div>
 
           {/* Stats */}
@@ -93,6 +103,21 @@ export default function MentorDetailModal({
             <div className="text-center">
               <div className="text-lg font-bold text-primary">{mentor.reviews}개</div>
               <p className="text-xs text-muted">리뷰</p>
+            </div>
+          </div>
+
+          {/* Consult Types */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-muted mb-2">상담 가능 유형</h3>
+            <div className="flex flex-wrap gap-2">
+              {mentor.consultTypes.map((type) => (
+                <span
+                  key={type}
+                  className="px-3 py-1.5 bg-accent/20 text-accent text-xs font-medium rounded-full"
+                >
+                  {consultTypeLabels[type]}
+                </span>
+              ))}
             </div>
           </div>
 
