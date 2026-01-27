@@ -21,13 +21,20 @@ export default function MyPage() {
   const [editPhone, setEditPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Redirect if not logged in
+  // Redirect if not logged in (with timeout fallback)
   useEffect(() => {
-    console.log("MyPage auth state:", { isLoading, user: !!user, email: user?.email });
+    // 3초 후에도 로딩 중이면 홈으로 이동
+    const timeout = setTimeout(() => {
+      if (!user) {
+        router.push("/");
+      }
+    }, 3000);
+
     if (!isLoading && !user) {
-      console.log("Redirecting to home - no user");
       router.push("/");
     }
+
+    return () => clearTimeout(timeout);
   }, [isLoading, user, router]);
 
   // Fetch consultations

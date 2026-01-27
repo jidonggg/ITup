@@ -9,7 +9,7 @@ interface HeroProps {
 
 const headlines = [
   { line1: "혼자 고민하지 마세요", line2: "커피챗하세요" },
-  { line1: "준비가 막막할 땐", line2: "커피챗 한 잔" },
+  { line1: "준비가 막막할 땐", line2: "커피챗하세요" },
   { line1: "게임 업계 선배와", line2: "커피챗하세요" },
 ];
 
