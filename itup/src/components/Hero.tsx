@@ -79,10 +79,10 @@ export default function Hero({ onConsultClick }: HeroProps) {
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 animate-fade-in-up [animation-delay:100ms]">
-            <span className="text-foreground">게임 업계 커리어,</span>
+            <span className="text-foreground">이직? 취업?</span>
             <br />
             <span className="bg-gradient-to-r from-primary via-accent to-primary-light bg-clip-text text-transparent animate-gradient">
-              커피챗과 함께 레벨업
+              커피챗하세요
             </span>
           </h1>
 
