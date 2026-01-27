@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
+import { useAnalytics } from "@/contexts/AnalyticsContext";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface SignupModalProps {
 
 export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) {
   const { signUp } = useAuth();
+  const { trackEvent } = useAnalytics();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,6 +24,13 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
+
+  // 모달 오픈 추적
+  useEffect(() => {
+    if (isOpen) {
+      trackEvent("modal", "회원가입모달_오픈");
+    }
+  }, [isOpen, trackEvent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +51,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
     const { error } = await signUp(email, password, name);
 
     if (error) {
+      trackEvent("auth", "회원가입_실패", { reason: error.message });
       if (error.message.includes("already registered")) {
         setError("이미 등록된 이메일입니다.");
       } else {
@@ -51,6 +61,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
       return;
     }
 
+    trackEvent("auth", "회원가입_성공");
     setIsLoading(false);
     setIsSuccess(true);
   };

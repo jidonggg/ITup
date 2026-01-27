@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLayout } from "@/contexts/LayoutContext";
+import { useAnalytics } from "@/contexts/AnalyticsContext";
 
 interface HeroProps {
   onConsultClick: () => void;
@@ -18,6 +19,12 @@ export default function Hero({ onConsultClick }: HeroProps) {
   const [headlineIndex, setHeadlineIndex] = useState(0);
   const rafRef = useRef<number | null>(null);
   const { currentLayout } = useLayout();
+  const { trackClick } = useAnalytics();
+
+  const handleConsultClick = () => {
+    trackClick("히어로_상담신청_버튼");
+    onConsultClick();
+  };
 
   // 헤드라인 로테이션
   useEffect(() => {
@@ -122,7 +129,7 @@ export default function Hero({ onConsultClick }: HeroProps) {
             currentLayout.heroStyle === "center" ? "justify-center items-center" : "justify-start items-start"
           }`}>
             <button
-              onClick={onConsultClick}
+              onClick={handleConsultClick}
               className={`group relative px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold text-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300 animate-pulse-glow cursor-pointer ${
                 currentLayout.cardStyle === "rounded" ? "rounded-full" :
                 currentLayout.cardStyle === "sharp" ? "rounded-lg" :

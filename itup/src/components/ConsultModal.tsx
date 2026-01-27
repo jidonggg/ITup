@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useModalClose, useBodyScrollLock, formatPhoneNumber } from "@/hooks/useModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAnalytics } from "@/contexts/AnalyticsContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 interface ConsultModalProps {
@@ -29,6 +30,7 @@ const initialFormData: FormData = {
 
 export default function ConsultModal({ isOpen, onClose, mentorId }: ConsultModalProps) {
   const { user, profile } = useAuth();
+  const { trackEvent } = useAnalytics();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -36,6 +38,13 @@ export default function ConsultModal({ isOpen, onClose, mentorId }: ConsultModal
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
+
+  // 모달 오픈 추적
+  useEffect(() => {
+    if (isOpen) {
+      trackEvent("modal", "상담모달_오픈", { mentorId: mentorId || "general" });
+    }
+  }, [isOpen, mentorId, trackEvent]);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -98,6 +107,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId }: ConsultModal
 
     if (!isSupabaseConfigured()) {
       saveToLocalStorage();
+      trackEvent("submit", "상담신청_완료", { interest: formData.interest, mentorId: mentorId || "general" });
       setIsLoading(false);
       setIsSubmitted(true);
       return;
@@ -120,6 +130,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId }: ConsultModal
         saveToLocalStorage();
       }
 
+      trackEvent("submit", "상담신청_완료", { interest: formData.interest, mentorId: mentorId || "general" });
       setIsLoading(false);
       setIsSubmitted(true);
     } catch (error) {

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
+import { useAnalytics } from "@/contexts/AnalyticsContext";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface LoginModalProps {
 
 export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginModalProps) {
   const { signIn } = useAuth();
+  const { trackEvent } = useAnalytics();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,6 +21,13 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginM
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
+
+  // 모달 오픈 추적
+  useEffect(() => {
+    if (isOpen) {
+      trackEvent("modal", "로그인모달_오픈");
+    }
+  }, [isOpen, trackEvent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,11 +37,13 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginM
     const { error } = await signIn(email, password);
 
     if (error) {
+      trackEvent("auth", "로그인_실패");
       setError("이메일 또는 비밀번호가 올바르지 않습니다.");
       setIsLoading(false);
       return;
     }
 
+    trackEvent("auth", "로그인_성공");
     setIsLoading(false);
     onClose();
   };
