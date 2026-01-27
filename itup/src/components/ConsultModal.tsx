@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useModalClose, useBodyScrollLock, formatPhoneNumber } from "@/hooks/useModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 interface ConsultModalProps {
   isOpen: boolean;
   onClose: () => void;
+  mentorId?: string;
 }
 
 interface FormData {
@@ -24,7 +27,8 @@ const initialFormData: FormData = {
   message: "",
 };
 
-export default function ConsultModal({ isOpen, onClose }: ConsultModalProps) {
+export default function ConsultModal({ isOpen, onClose, mentorId }: ConsultModalProps) {
+  const { user, profile } = useAuth();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -32,6 +36,17 @@ export default function ConsultModal({ isOpen, onClose }: ConsultModalProps) {
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
+
+  useEffect(() => {
+    if (isOpen && user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: profile?.name || prev.name,
+        email: user.email || prev.email,
+        phone: profile?.phone || prev.phone,
+      }));
+    }
+  }, [isOpen, user, profile]);
 
   const interests = [
     { value: "programming", label: "프로그래밍" },
@@ -63,14 +78,7 @@ export default function ConsultModal({ isOpen, onClose }: ConsultModalProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-
-    // 로컬 스토리지에 저장
+  const saveToLocalStorage = () => {
     const consultations = JSON.parse(localStorage.getItem("consultations") || "[]");
     const newConsultation = {
       ...formData,
@@ -79,12 +87,47 @@ export default function ConsultModal({ isOpen, onClose }: ConsultModalProps) {
     };
     consultations.push(newConsultation);
     localStorage.setItem("consultations", JSON.stringify(consultations));
+  };
 
-    // 성공 처리
-    setTimeout(() => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+
+    if (!isSupabaseConfigured()) {
+      saveToLocalStorage();
       setIsLoading(false);
       setIsSubmitted(true);
-    }, 500);
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+
+      const { error } = await supabase.from("consultations").insert({
+        mentor_id: mentorId || null,
+        user_name: formData.name,
+        user_phone: formData.phone,
+        user_email: formData.email,
+        interest: formData.interest || null,
+        message: formData.message || null,
+      });
+
+      if (error) {
+        console.error("Error saving consultation:", error);
+        saveToLocalStorage();
+      }
+
+      setIsLoading(false);
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error("Error saving consultation:", error);
+      saveToLocalStorage();
+      setIsLoading(false);
+      setIsSubmitted(true);
+    }
   };
 
   const handleClose = () => {

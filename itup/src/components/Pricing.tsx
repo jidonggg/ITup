@@ -1,7 +1,12 @@
 "use client";
 
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useLayout } from "@/contexts/LayoutContext";
 import { useState } from "react";
+
+interface PricingProps {
+  onConsultClick: () => void;
+}
 
 const plans = [
   {
@@ -53,19 +58,32 @@ const plans = [
   },
 ];
 
-export default function Pricing() {
+export default function Pricing({ onConsultClick }: PricingProps) {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
+  const { currentLayout } = useLayout();
   const [hoveredPlan, setHoveredPlan] = useState<number | null>(1);
 
+  const cardRadius = currentLayout.cardStyle === "rounded" ? "rounded-2xl" :
+                     currentLayout.cardStyle === "sharp" ? "rounded-lg" : "rounded-3xl";
+
+  const sectionSpacing = currentLayout.spacing === "compact" ? "py-16" :
+                         currentLayout.spacing === "spacious" ? "py-32" : "py-24";
+
+  const cardEffect = currentLayout.cardEffect === "glass" ? "card-glass" :
+                     currentLayout.cardEffect === "glow" ? "card-glow" :
+                     currentLayout.cardEffect === "float" ? "card-float" : "";
+
   return (
-    <section id="pricing" className="py-24 relative">
+    <section id="pricing" className={`${sectionSpacing} relative`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title */}
         <div
           ref={titleRef}
           className={`text-center mb-16 scroll-animate ${titleVisible ? "visible" : ""}`}
         >
-          <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full mb-4">
+          <span className={`inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium mb-4 ${
+            currentLayout.cardStyle === "sharp" ? "rounded" : "rounded-full"
+          }`}>
             Pricing
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
@@ -85,6 +103,9 @@ export default function Pricing() {
               index={index}
               isHovered={hoveredPlan === index}
               onHover={() => setHoveredPlan(index)}
+              onConsultClick={onConsultClick}
+              cardRadius={cardRadius}
+              cardEffect={cardEffect}
             />
           ))}
         </div>
@@ -117,9 +138,12 @@ interface PricingCardProps {
   index: number;
   isHovered: boolean;
   onHover: () => void;
+  onConsultClick: () => void;
+  cardRadius: string;
+  cardEffect: string;
 }
 
-function PricingCard({ plan, index, isHovered, onHover }: PricingCardProps) {
+function PricingCard({ plan, index, isHovered, onHover, onConsultClick, cardRadius, cardEffect }: PricingCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
@@ -130,7 +154,7 @@ function PricingCard({ plan, index, isHovered, onHover }: PricingCardProps) {
       onMouseEnter={onHover}
     >
       <div
-        className={`relative h-full p-6 md:p-8 rounded-2xl border transition-all duration-300 ${
+        className={`relative h-full p-6 md:p-8 ${cardRadius} ${cardEffect} border transition-all duration-300 ${
           plan.highlighted
             ? "bg-gradient-to-b from-primary/10 to-card-bg border-primary shadow-lg shadow-primary/20"
             : "bg-card-bg border-card-border hover:border-primary/50"
@@ -179,7 +203,10 @@ function PricingCard({ plan, index, isHovered, onHover }: PricingCardProps) {
 
         {/* CTA Button */}
         <button
-          className={`w-full py-3 rounded-full font-medium transition-all duration-300 cursor-pointer ${
+          onClick={onConsultClick}
+          className={`w-full py-3 font-medium transition-all duration-300 cursor-pointer ${
+            cardRadius === "rounded-lg" ? "rounded-lg" : "rounded-full"
+          } ${
             plan.highlighted
               ? "bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-lg hover:shadow-primary/30"
               : "border border-card-border text-foreground hover:border-primary hover:text-primary"

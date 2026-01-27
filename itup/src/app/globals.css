@@ -1,16 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0f;
-  --foreground: #f0f0f5;
-  --primary: #8b5cf6;
-  --primary-light: #a78bfa;
-  --primary-dark: #7c3aed;
-  --secondary: #1a1a2e;
-  --accent: #c084fc;
-  --muted: #6b7280;
-  --card-bg: #16162a;
-  --card-border: #2d2d4a;
+  --background: #faf8f5;
+  --foreground: #2d2a26;
+  --primary: #8b6f4e;
+  --primary-light: #a68968;
+  --primary-dark: #6b5438;
+  --secondary: #f0ebe4;
+  --accent: #c49a6c;
+  --muted: #8a8279;
+  --card-bg: #ffffff;
+  --card-border: #e5ddd3;
+
+  /* Layout variables */
+  --card-radius: 1rem;
+  --section-spacing: 1.5rem;
+  --anim-duration: 0.6s;
 }
 
 @theme inline {
@@ -209,3 +214,97 @@ body {
 .delay-300 { transition-delay: 300ms; }
 .delay-400 { transition-delay: 400ms; }
 .delay-500 { transition-delay: 500ms; }
+
+/* === Card Effect Styles === */
+
+/* Glass Effect (Glassmorphism) */
+.card-glass {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+[data-card-effect="glass"] .card-glass:hover {
+  background: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* Glow Effect (Neon) */
+.card-glow {
+  position: relative;
+  box-shadow: 0 0 20px rgba(var(--primary-rgb, 217, 119, 6), 0.2);
+  transition: box-shadow 0.3s ease;
+}
+
+.card-glow:hover {
+  box-shadow:
+    0 0 30px rgba(var(--primary-rgb, 217, 119, 6), 0.4),
+    0 0 60px rgba(var(--primary-rgb, 217, 119, 6), 0.2);
+}
+
+.card-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, var(--primary), var(--accent), var(--primary));
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-glow:hover::before {
+  opacity: 0.5;
+}
+
+/* Float Effect (3D Hover) */
+.card-float {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-float:hover {
+  transform: translateY(-8px) rotateX(2deg) rotateY(-2deg);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Bento Grid Layout */
+[data-grid-style="bento"] .bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: auto;
+  gap: 1rem;
+}
+
+[data-grid-style="bento"] .bento-grid > *:nth-child(1) {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+[data-grid-style="bento"] .bento-grid > *:nth-child(5) {
+  grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+  [data-grid-style="bento"] .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  [data-grid-style="bento"] .bento-grid > * {
+    grid-column: span 1 !important;
+    grid-row: span 1 !important;
+  }
+}
+
+/* Neon text glow for gaming style */
+[data-card-effect="glow"] .text-primary {
+  text-shadow: 0 0 10px currentColor;
+}
+
+[data-card-effect="glow"] .gradient-text {
+  text-shadow: 0 0 20px rgba(var(--primary-rgb, 217, 119, 6), 0.5);
+}

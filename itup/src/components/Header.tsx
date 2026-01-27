@@ -1,11 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import AuthButton from "@/components/auth/AuthButton";
+import { useTheme } from "@/contexts/ThemeContext";
 
-export default function Header() {
+interface HeaderProps {
+  onLoginClick: () => void;
+  onSignupClick: () => void;
+}
+
+export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
+  const { isDarkMode, toggleDarkMode } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -69,14 +77,28 @@ export default function Header() {
             ))}
           </div>
 
-          {/* CTA Buttons */}
+          {/* Dark Mode Toggle & CTA Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            <button className="px-4 py-2 text-foreground/80 hover:text-primary transition-colors duration-300 cursor-pointer">
-              로그인
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors cursor-pointer"
+              aria-label={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
+            >
+              {isDarkMode ? (
+                <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
             </button>
-            <button className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium hover:shadow-lg hover:shadow-primary/30 transform hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
-              시작하기
-            </button>
+            <AuthButton
+              onLoginClick={onLoginClick}
+              onSignupClick={onSignupClick}
+              variant="desktop"
+            />
           </div>
 
           {/* Mobile Menu Button */}
@@ -114,7 +136,7 @@ export default function Header() {
         {/* Mobile Menu */}
         <div
           className={`md:hidden overflow-hidden transition-all duration-300 ${
-            isMobileMenuOpen ? "max-h-64 pb-4" : "max-h-0"
+            isMobileMenuOpen ? "max-h-80 pb-4" : "max-h-0"
           }`}
         >
           <div className="flex flex-col gap-4 pt-4 border-t border-card-border">
@@ -128,14 +150,37 @@ export default function Header() {
                 {link.label}
               </a>
             ))}
-            <div className="flex gap-4 pt-4">
-              <button className="flex-1 px-4 py-2 border border-card-border rounded-full text-foreground/80 hover:border-primary hover:text-primary transition-all">
-                로그인
-              </button>
-              <button className="flex-1 px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium">
-                시작하기
-              </button>
-            </div>
+            <button
+              onClick={toggleDarkMode}
+              className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors cursor-pointer"
+            >
+              {isDarkMode ? (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  라이트 모드
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                  다크 모드
+                </>
+              )}
+            </button>
+            <AuthButton
+              onLoginClick={() => {
+                setIsMobileMenuOpen(false);
+                onLoginClick();
+              }}
+              onSignupClick={() => {
+                setIsMobileMenuOpen(false);
+                onSignupClick();
+              }}
+              variant="mobile"
+            />
           </div>
         </div>
       </nav>

@@ -2,22 +2,18 @@
 
 const footerLinks = {
   서비스: [
-    { label: "멘토 찾기", href: "#" },
-    { label: "멘토링 소개", href: "#" },
+    { label: "멘토 찾기", href: "/mentors" },
+    { label: "멘토링 소개", href: "#features" },
     { label: "요금제", href: "#pricing" },
-    { label: "기업 서비스", href: "#" },
   ],
   회사: [
     { label: "회사 소개", href: "#" },
-    { label: "채용", href: "#" },
-    { label: "블로그", href: "#" },
-    { label: "언론 보도", href: "#" },
   ],
   지원: [
     { label: "자주 묻는 질문", href: "#" },
-    { label: "문의하기", href: "#" },
-    { label: "이용약관", href: "#" },
-    { label: "개인정보처리방침", href: "#" },
+    { label: "문의하기", href: "mailto:support@coffeechat.kr" },
+    { label: "이용약관", href: "/terms" },
+    { label: "개인정보처리방침", href: "/privacy" },
   ],
 };
 
@@ -144,14 +140,11 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-muted text-sm">
             <p>&copy; 2025 커피챗. All rights reserved.</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-primary transition-colors">
+              <a href="/terms" className="hover:text-primary transition-colors">
                 이용약관
               </a>
-              <a href="#" className="hover:text-primary transition-colors">
+              <a href="/privacy" className="hover:text-primary transition-colors">
                 개인정보처리방침
-              </a>
-              <a href="#" className="hover:text-primary transition-colors">
-                쿠키 정책
               </a>
             </div>
           </div>

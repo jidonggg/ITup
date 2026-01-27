@@ -1,6 +1,7 @@
 "use client";
 
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useLayout } from "@/contexts/LayoutContext";
 
 const features = [
   {
@@ -61,16 +62,33 @@ const features = [
 
 export default function Features() {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
+  const { currentLayout } = useLayout();
+
+  const cardRadius = currentLayout.cardStyle === "rounded" ? "rounded-2xl" :
+                     currentLayout.cardStyle === "sharp" ? "rounded-lg" : "rounded-3xl";
+
+  const sectionSpacing = currentLayout.spacing === "compact" ? "py-16" :
+                         currentLayout.spacing === "spacious" ? "py-32" : "py-24";
+
+  const cardEffect = currentLayout.cardEffect === "glass" ? "card-glass" :
+                     currentLayout.cardEffect === "glow" ? "card-glow" :
+                     currentLayout.cardEffect === "float" ? "card-float" : "";
+
+  const gridClass = currentLayout.gridStyle === "bento"
+    ? "bento-grid"
+    : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
 
   return (
-    <section id="features" className="py-24 relative">
+    <section id="features" className={`${sectionSpacing} relative`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title */}
         <div
           ref={titleRef}
           className={`text-center mb-16 scroll-animate ${titleVisible ? "visible" : ""}`}
         >
-          <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full mb-4">
+          <span className={`inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium mb-4 ${
+            currentLayout.cardStyle === "sharp" ? "rounded" : "rounded-full"
+          }`}>
             Features
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
@@ -82,9 +100,9 @@ export default function Features() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className={gridClass}>
           {features.map((feature, index) => (
-            <FeatureCard key={feature.title} feature={feature} index={index} />
+            <FeatureCard key={feature.title} feature={feature} index={index} cardRadius={cardRadius} cardEffect={cardEffect} />
           ))}
         </div>
       </div>
@@ -99,9 +117,11 @@ interface FeatureCardProps {
     description: string;
   };
   index: number;
+  cardRadius: string;
+  cardEffect: string;
 }
 
-function FeatureCard({ feature, index }: FeatureCardProps) {
+function FeatureCard({ feature, index, cardRadius, cardEffect }: FeatureCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>({
     threshold: 0.1,
   });
@@ -112,9 +132,9 @@ function FeatureCard({ feature, index }: FeatureCardProps) {
       className={`scroll-animate ${isVisible ? "visible" : ""}`}
       style={{ transitionDelay: `${index * 100}ms` }}
     >
-      <div className="group h-full p-6 bg-card-bg/50 border border-card-border rounded-2xl hover:border-primary/50 hover:bg-card-bg transition-all duration-300 cursor-pointer">
+      <div className={`group h-full p-6 bg-card-bg/50 border border-card-border ${cardRadius} ${cardEffect} hover:border-primary/50 hover:bg-card-bg transition-all duration-300 cursor-pointer`}>
         {/* Icon */}
-        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary mb-4 group-hover:scale-110 group-hover:from-primary/30 group-hover:to-accent/30 transition-all duration-300">
+        <div className={`w-14 h-14 ${cardRadius === "rounded-lg" ? "rounded-lg" : "rounded-xl"} bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary mb-4 group-hover:scale-110 group-hover:from-primary/30 group-hover:to-accent/30 transition-all duration-300`}>
           {feature.icon}
         </div>
 

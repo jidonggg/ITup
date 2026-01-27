@@ -4,6 +4,7 @@ import { ConsultType, consultTypeLabels } from "@/data/mentors";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
 
 export interface MentorData {
+  id?: string;
   name: string;
   role: string;
   company: string;

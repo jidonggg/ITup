@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import Stats from "@/components/Stats";
@@ -12,14 +13,32 @@ import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 import ConsultModal from "@/components/ConsultModal";
 import MentorDetailModal, { MentorData } from "@/components/MentorDetailModal";
+import LoginModal from "@/components/auth/LoginModal";
+import SignupModal from "@/components/auth/SignupModal";
 
 export default function HomeClient() {
+  const router = useRouter();
   const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
+  const [consultMentorId, setConsultMentorId] = useState<string | undefined>();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+
+  // Handle auth callback code
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (code) {
+      router.replace(`/auth/callback?code=${code}`);
+    }
+  }, [router]);
 
   const openConsultModal = () => setIsConsultModalOpen(true);
-  const closeConsultModal = () => setIsConsultModalOpen(false);
+  const closeConsultModal = () => {
+    setIsConsultModalOpen(false);
+    setConsultMentorId(undefined);
+  };
 
   const openMentorModal = (mentor: MentorData) => {
     setSelectedMentor(mentor);
@@ -30,23 +49,55 @@ export default function HomeClient() {
     setSelectedMentor(null);
   };
 
+  const openLoginModal = () => setIsLoginModalOpen(true);
+  const closeLoginModal = () => setIsLoginModalOpen(false);
+
+  const openSignupModal = () => setIsSignupModalOpen(true);
+  const closeSignupModal = () => setIsSignupModalOpen(false);
+
+  const switchToSignup = () => {
+    closeLoginModal();
+    openSignupModal();
+  };
+
+  const switchToLogin = () => {
+    closeSignupModal();
+    openLoginModal();
+  };
+
   return (
     <>
-      <Header />
+      <Header onLoginClick={openLoginModal} onSignupClick={openSignupModal} />
       <Hero onConsultClick={openConsultModal} />
       <Stats />
       <Features />
       <Mentors onMentorClick={openMentorModal} />
       <Testimonials />
-      <Pricing />
+      <Pricing onConsultClick={openConsultModal} />
       <CTA onConsultClick={openConsultModal} />
       <Footer />
-      <ConsultModal isOpen={isConsultModalOpen} onClose={closeConsultModal} />
+      <ConsultModal isOpen={isConsultModalOpen} onClose={closeConsultModal} mentorId={consultMentorId} />
       <MentorDetailModal
         isOpen={isMentorModalOpen}
         onClose={closeMentorModal}
         mentor={selectedMentor}
-        onConsultClick={openConsultModal}
+        onConsultClick={() => {
+          if (selectedMentor?.id) {
+            setConsultMentorId(selectedMentor.id);
+          }
+          closeMentorModal();
+          openConsultModal();
+        }}
+      />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={closeLoginModal}
+        onSwitchToSignup={switchToSignup}
+      />
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={closeSignupModal}
+        onSwitchToLogin={switchToLogin}
       />
     </>
   );

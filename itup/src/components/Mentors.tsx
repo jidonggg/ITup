@@ -1,15 +1,80 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useLayout } from "@/contexts/LayoutContext";
 import { MentorData } from "@/components/MentorDetailModal";
-import { mentorsData } from "@/data/mentors";
+import { mentorsData as fallbackMentors } from "@/data/mentors";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { Mentor, ConsultType } from "@/lib/supabase/types";
 
 interface MentorsProps {
   onMentorClick: (mentor: MentorData) => void;
 }
 
+function convertToMentorData(mentor: Mentor): MentorData {
+  return {
+    id: mentor.id,
+    name: mentor.name,
+    role: mentor.role,
+    company: mentor.company,
+    previousCompanies: mentor.previous_companies || [],
+    experience: mentor.experience,
+    skills: mentor.skills,
+    rating: mentor.rating,
+    sessions: mentor.sessions,
+    reviews: mentor.reviews,
+    bio: mentor.bio || "",
+    availableTimes: mentor.available_times || [],
+    consultTypes: mentor.consult_types as ConsultType[],
+  };
+}
+
 export default function Mentors({ onMentorClick }: MentorsProps) {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
+  const { currentLayout } = useLayout();
+  const [mentors, setMentors] = useState<MentorData[]>(fallbackMentors);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const cardRadius = currentLayout.cardStyle === "rounded" ? "rounded-2xl" :
+                     currentLayout.cardStyle === "sharp" ? "rounded-lg" : "rounded-3xl";
+
+  const cardEffect = currentLayout.cardEffect === "glass" ? "card-glass" :
+                     currentLayout.cardEffect === "glow" ? "card-glow" :
+                     currentLayout.cardEffect === "float" ? "card-float" : "";
+
+  useEffect(() => {
+    const fetchMentors = async () => {
+      if (!isSupabaseConfigured()) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("mentors")
+          .select("*")
+          .eq("is_approved", true)
+          .order("rating", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching mentors:", error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          setMentors(data.map(convertToMentorData));
+        }
+      } catch (error) {
+        console.error("Error fetching mentors:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMentors();
+  }, []);
 
   return (
     <section id="mentors" className="py-24 relative overflow-hidden">
@@ -35,19 +100,33 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
 
         {/* Mentors Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {mentorsData.map((mentor, index) => (
-            <MentorCard
-              key={mentor.name}
-              mentor={mentor}
-              index={index}
-              onClick={() => onMentorClick(mentor)}
-            />
-          ))}
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <MentorCardSkeleton key={index} cardRadius={cardRadius} />
+            ))
+          ) : (
+            mentors.map((mentor, index) => (
+              <MentorCard
+                key={mentor.name}
+                mentor={mentor}
+                index={index}
+                onClick={() => onMentorClick(mentor)}
+                cardRadius={cardRadius}
+                cardEffect={cardEffect}
+              />
+            ))
+          )}
         </div>
 
         {/* View All Button */}
         <div className="text-center mt-12">
-          <button className="group inline-flex items-center gap-2 px-8 py-4 border border-card-border rounded-full text-foreground hover:border-primary hover:text-primary transition-all duration-300 cursor-pointer">
+          <a
+            href="/mentors"
+            className={`group inline-flex items-center gap-2 px-8 py-4 border border-card-border text-foreground hover:border-primary hover:text-primary transition-all duration-300 cursor-pointer ${
+              currentLayout.cardStyle === "rounded" ? "rounded-full" :
+              currentLayout.cardStyle === "sharp" ? "rounded-lg" : "rounded-full"
+            }`}
+          >
             모든 멘토 보기
             <svg
               className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
@@ -57,7 +136,7 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
-          </button>
+          </a>
         </div>
       </div>
     </section>
@@ -68,9 +147,31 @@ interface MentorCardProps {
   mentor: MentorData;
   index: number;
   onClick: () => void;
+  cardRadius: string;
+  cardEffect: string;
 }
 
-function MentorCard({ mentor, index, onClick }: MentorCardProps) {
+function MentorCardSkeleton({ cardRadius }: { cardRadius: string }) {
+  return (
+    <div className={`bg-card-bg border border-card-border ${cardRadius} overflow-hidden animate-pulse`}>
+      <div className="h-48 bg-secondary" />
+      <div className="p-6">
+        <div className="h-6 bg-secondary rounded w-2/3 mb-2" />
+        <div className="h-4 bg-secondary rounded w-1/2 mb-4" />
+        <div className="flex gap-2 mb-4">
+          <div className="h-6 bg-secondary rounded w-16" />
+          <div className="h-6 bg-secondary rounded w-12" />
+        </div>
+        <div className="pt-4 border-t border-card-border flex justify-between">
+          <div className="h-4 bg-secondary rounded w-12" />
+          <div className="h-4 bg-secondary rounded w-16" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MentorCard({ mentor, index, onClick, cardRadius, cardEffect }: MentorCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
@@ -81,7 +182,7 @@ function MentorCard({ mentor, index, onClick }: MentorCardProps) {
     >
       <div
         onClick={onClick}
-        className="group relative bg-card-bg border border-card-border rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer"
+        className={`group relative bg-card-bg border border-card-border ${cardRadius} ${cardEffect} overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer`}
       >
         {/* Avatar Section */}
         <div className="relative h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">

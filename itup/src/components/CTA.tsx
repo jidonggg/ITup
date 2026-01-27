@@ -80,9 +80,12 @@ export default function CTA({ onConsultClick }: CTAProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </button>
 
-            <button className="px-8 py-4 border border-card-border text-foreground rounded-full font-medium hover:border-primary hover:text-primary transition-all duration-300">
+            <a
+              href="#mentors"
+              className="px-8 py-4 border border-card-border text-foreground rounded-full font-medium hover:border-primary hover:text-primary transition-all duration-300"
+            >
               멘토 둘러보기
-            </button>
+            </a>
           </div>
 
           {/* Trust Badge */}

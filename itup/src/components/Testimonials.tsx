@@ -1,6 +1,7 @@
 "use client";
 
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useLayout } from "@/contexts/LayoutContext";
 import { useState } from "react";
 
 const testimonials = [
@@ -44,10 +45,21 @@ const testimonials = [
 
 export default function Testimonials() {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
+  const { currentLayout } = useLayout();
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const cardRadius = currentLayout.cardStyle === "rounded" ? "rounded-2xl" :
+                     currentLayout.cardStyle === "sharp" ? "rounded-lg" : "rounded-3xl";
+
+  const sectionSpacing = currentLayout.spacing === "compact" ? "py-16" :
+                         currentLayout.spacing === "spacious" ? "py-32" : "py-24";
+
+  const cardEffect = currentLayout.cardEffect === "glass" ? "card-glass" :
+                     currentLayout.cardEffect === "glow" ? "card-glow" :
+                     currentLayout.cardEffect === "float" ? "card-float" : "";
+
   return (
-    <section id="testimonials" className="py-24 relative overflow-hidden">
+    <section id="testimonials" className={`${sectionSpacing} relative overflow-hidden`}>
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
 
@@ -57,7 +69,9 @@ export default function Testimonials() {
           ref={titleRef}
           className={`text-center mb-16 scroll-animate ${titleVisible ? "visible" : ""}`}
         >
-          <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full mb-4">
+          <span className={`inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium mb-4 ${
+            currentLayout.cardStyle === "sharp" ? "rounded" : "rounded-full"
+          }`}>
             Testimonials
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
@@ -77,6 +91,8 @@ export default function Testimonials() {
               index={index}
               isActive={activeIndex === index}
               onHover={() => setActiveIndex(index)}
+              cardRadius={cardRadius}
+              cardEffect={cardEffect}
             />
           ))}
         </div>
@@ -97,9 +113,11 @@ interface TestimonialCardProps {
   index: number;
   isActive: boolean;
   onHover: () => void;
+  cardRadius: string;
+  cardEffect: string;
 }
 
-function TestimonialCard({ testimonial, index, isActive, onHover }: TestimonialCardProps) {
+function TestimonialCard({ testimonial, index, isActive, onHover, cardRadius, cardEffect }: TestimonialCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
@@ -110,7 +128,7 @@ function TestimonialCard({ testimonial, index, isActive, onHover }: TestimonialC
       onMouseEnter={onHover}
     >
       <div
-        className={`relative h-full p-6 md:p-8 bg-card-bg border rounded-2xl transition-all duration-300 ${
+        className={`relative h-full p-6 md:p-8 bg-card-bg border ${cardRadius} ${cardEffect} transition-all duration-300 ${
           isActive ? "border-primary shadow-lg shadow-primary/10" : "border-card-border"
         }`}
       >
