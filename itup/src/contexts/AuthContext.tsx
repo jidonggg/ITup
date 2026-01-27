@@ -60,17 +60,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const initializeAuth = async () => {
+      console.log("AuthContext: initializeAuth started");
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log("AuthContext: getSession result", { session: !!session, error });
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          console.log("AuthContext: fetching profile for", session.user.email);
           await fetchProfile(session.user.id);
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
       } finally {
+        console.log("AuthContext: setting isLoading to false");
         setIsLoading(false);
       }
     };

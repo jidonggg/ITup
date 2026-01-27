@@ -60,6 +60,7 @@ export default function AuthButton({ onLoginClick, onSignupClick, variant = "des
       <div className="flex items-center gap-3">
         <a
           href="/mypage"
+          onClick={() => console.log("마이페이지 클릭")}
           className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary hover:bg-secondary/80 transition-colors"
         >
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xs font-bold">

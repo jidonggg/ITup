@@ -23,7 +23,9 @@ export default function MyPage() {
 
   // Redirect if not logged in
   useEffect(() => {
+    console.log("MyPage auth state:", { isLoading, user: !!user, email: user?.email });
     if (!isLoading && !user) {
+      console.log("Redirecting to home - no user");
       router.push("/");
     }
   }, [isLoading, user, router]);
