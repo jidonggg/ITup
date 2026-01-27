@@ -74,7 +74,7 @@ export default function Features() {
             Features
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            왜 <span className="text-primary">camo</span>인가요?
+            왜 <span className="text-primary">커피챗</span>인가요?
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
             게임 업계 취업과 성장을 위한 최적의 멘토링 플랫폼

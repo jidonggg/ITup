@@ -9,7 +9,7 @@ const testimonials = [
     role: "신입 게임 기획자",
     company: "넷마블 입사",
     content:
-      "비전공자로서 게임 업계 진입이 막막했는데, camo 멘토링을 통해 체계적으로 준비할 수 있었어요. 포트폴리오 피드백이 정말 큰 도움이 됐습니다!",
+      "비전공자로서 게임 업계 진입이 막막했는데, 커피챗 멘토링을 통해 체계적으로 준비할 수 있었어요. 포트폴리오 피드백이 정말 큰 도움이 됐습니다!",
     image: "D",
     rating: 5,
   },
@@ -64,7 +64,7 @@ export default function Testimonials() {
             멘티들의 <span className="text-primary">성공 스토리</span>
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
-            camo와 함께 게임 업계에 성공적으로 진입한 분들의 이야기
+            커피챗과 함께 게임 업계에 성공적으로 진입한 분들의 이야기
           </p>
         </div>
 

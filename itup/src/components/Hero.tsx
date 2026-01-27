@@ -70,7 +70,7 @@ export default function Hero({ onConsultClick }: HeroProps) {
           <span className="text-foreground">게임 업계 커리어,</span>
           <br />
           <span className="bg-gradient-to-r from-primary via-accent to-primary-light bg-clip-text text-transparent animate-gradient">
-            camo와 함께 레벨업
+            커피챗과 함께 레벨업
           </span>
         </h1>
 
