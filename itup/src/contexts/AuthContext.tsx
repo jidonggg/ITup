@@ -56,48 +56,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    let mounted = true;
+    // 2초 타임아웃 - 강제로 로딩 완료
+    const timeout = setTimeout(() => {
+      setIsLoading(false);
+      setIsInitialized(true);
+    }, 2000);
+
+    if (!supabase) {
+      setIsLoading(false);
+      setIsInitialized(true);
+      clearTimeout(timeout);
+      return;
+    }
 
     const initialize = async () => {
-      if (!supabase) {
-        if (mounted) setIsLoading(false);
-        return;
-      }
-
       try {
         const { data: { session } } = await supabase.auth.getSession();
-
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-
-          if (session?.user) {
-            try {
-              await fetchProfile(session.user.id);
-            } catch (e) {
-              console.error("Profile fetch error:", e);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Auth initialization error:", error);
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-          setIsInitialized(true);
-        }
-      }
-    };
-
-    initialize();
-
-    // Auth state change listener
-    let subscription: { unsubscribe: () => void } | null = null;
-
-    if (supabase) {
-      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (!mounted) return;
-
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -107,16 +81,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch (e) {
             console.error("Profile fetch error:", e);
           }
-        } else {
-          setProfile(null);
         }
-      });
-      subscription = data.subscription;
-    }
+      } catch (error) {
+        console.error("Auth initialization error:", error);
+      } finally {
+        setIsLoading(false);
+        setIsInitialized(true);
+        clearTimeout(timeout);
+      }
+    };
+
+    initialize();
+
+    // Auth state change listener
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        try {
+          await fetchProfile(session.user.id);
+        } catch (e) {
+          console.error("Profile fetch error:", e);
+        }
+      } else {
+        setProfile(null);
+      }
+    });
 
     return () => {
-      mounted = false;
-      subscription?.unsubscribe();
+      clearTimeout(timeout);
+      data.subscription.unsubscribe();
     };
   }, [supabase]);
 
