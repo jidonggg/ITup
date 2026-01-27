@@ -54,42 +54,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (!supabase) {
-      setIsLoading(false);
-      return;
-    }
+    let mounted = true;
 
-    // 즉시 isLoading을 false로 설정하고 비동기로 세션 확인
-    const initializeAuth = async () => {
+    const initialize = async () => {
+      if (!supabase) {
+        if (mounted) setIsLoading(false);
+        return;
+      }
+
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
 
-        if (session?.user) {
-          await fetchProfile(session.user.id);
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+
+          if (session?.user) {
+            try {
+              await fetchProfile(session.user.id);
+            } catch (e) {
+              console.error("Profile fetch error:", e);
+            }
+          }
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
+      } finally {
+        if (mounted) setIsLoading(false);
       }
     };
 
-    initializeAuth().finally(() => setIsLoading(false));
+    initialize();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    // Auth state change listener
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    if (supabase) {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!mounted) return;
+
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          try {
+            await fetchProfile(session.user.id);
+          } catch (e) {
+            console.error("Profile fetch error:", e);
+          }
         } else {
           setProfile(null);
         }
-      }
-    );
+      });
+      subscription = data.subscription;
+    }
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, [supabase]);
 
   const signUp = async (email: string, password: string, name?: string) => {
