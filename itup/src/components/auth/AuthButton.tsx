@@ -11,9 +11,6 @@ interface AuthButtonProps {
 export default function AuthButton({ onLoginClick, onSignupClick, variant = "desktop" }: AuthButtonProps) {
   const { user, profile, signOut, isLoading } = useAuth();
 
-  // 디버깅용 - 나중에 제거
-  console.log("AuthButton state:", { user: !!user, profile: !!profile, isLoading, email: user?.email });
-
   if (isLoading) {
     return variant === "desktop" ? (
       <div className="flex items-center gap-4">
@@ -60,7 +57,6 @@ export default function AuthButton({ onLoginClick, onSignupClick, variant = "des
       <div className="flex items-center gap-3">
         <a
           href="/mypage"
-          onClick={() => console.log("마이페이지 클릭")}
           className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary hover:bg-secondary/80 transition-colors"
         >
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xs font-bold">
@@ -69,10 +65,7 @@ export default function AuthButton({ onLoginClick, onSignupClick, variant = "des
           <span className="text-sm font-medium">{displayName}</span>
         </a>
         <button
-          onClick={() => {
-            console.log("로그아웃 클릭");
-            signOut();
-          }}
+          onClick={signOut}
           className="px-4 py-2 text-sm border border-card-border rounded-full hover:border-primary hover:text-primary transition-colors cursor-pointer"
         >
           로그아웃

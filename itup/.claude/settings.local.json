@@ -7,7 +7,22 @@
       "Bash(findstr:*)",
       "Bash(cmd //c \"taskkill /PID 2200 /F\")",
       "Bash(start:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: 상담 신청 모달 추가 및 인터랙션 개선\n\n- ConsultModal 컴포넌트 추가 \\(폼 유효성 검사, 로컬 스토리지 저장\\)\n- HomeClient로 클라이언트 상태 관리 분리\n- Hero, CTA 버튼에 모달 연결\n- 모달 뎁스 강화 \\(그림자, 스케일 애니메이션\\)\n- useCountUp 무한 루프 버그 수정\n- Hero 마우스 추적 성능 최적화\n- Header 모바일 메뉴 외부 클릭 닫기, 접근성 개선\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)",
+      "Bash(git config:*)",
+      "Bash(git credential-manager:*)",
+      "Bash(cmd //c \"cmdkey /delete:git:https://github.com\")",
+      "Bash(git commit:*)",
+      "Bash(where:*)",
+      "Bash(npm install:*)",
+      "Bash(vercel --version:*)",
+      "Bash(vercel whoami:*)",
+      "Bash(vercel login:*)",
+      "Bash(vercel:*)",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill //F //PID 28164)"
     ]
   }
 }

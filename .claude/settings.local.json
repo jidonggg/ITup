@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(npm run dev)",
+      "Bash(npx supabase:*)",
+      "Bash(taskkill:*)",
+      "Bash(clip:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Supabase 인증 시스템 및 주요 기능 추가\n\n- 테마 시스템: 라떼 라이트 기본, 다크 모드 토글\n- 레이아웃 시스템: Bento Grid, Glassmorphism 등 트렌디 레이아웃\n- Supabase 인증: 회원가입, 로그인, 로그아웃\n- 마이페이지: 프로필 수정, 상담 내역 조회\n- 멘토 페이지: /mentors 목록, 멘토 등록\n- 법적 페이지: 이용약관, 개인정보처리방침\n- auth callback: 이메일 인증 code 처리\n- AuthButton 버그 수정: hidden md:flex 중첩 제거\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(npx vercel:*)"
+    ]
+  }
+}
