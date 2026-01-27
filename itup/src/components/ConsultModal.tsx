@@ -116,7 +116,7 @@ export default function ConsultModal({ isOpen, onClose }: ConsultModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(139,92,246,0.4)] animate-[modalIn_0.3s_ease-out]">
+      <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(139,92,246,0.4)] animate-[modalIn_0.3s_ease-out]">
         {/* Close Button */}
         <button
           onClick={handleClose}

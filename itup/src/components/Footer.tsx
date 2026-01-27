@@ -123,17 +123,17 @@ export default function Footer() {
 
         {/* Newsletter */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-8 border-t border-card-border">
-          <div>
+          <div className="text-center md:text-left">
             <h4 className="font-semibold mb-1">뉴스레터 구독</h4>
             <p className="text-muted text-sm">게임 업계 취업 팁과 멘토링 소식을 받아보세요.</p>
           </div>
-          <div className="flex w-full md:w-auto gap-3">
+          <div className="flex w-full md:w-auto gap-2 sm:gap-3">
             <input
               type="email"
               placeholder="이메일 주소"
               className="flex-1 md:w-64 px-4 py-3 bg-card-bg border border-card-border rounded-full text-sm focus:outline-none focus:border-primary transition-colors"
             />
-            <button className="px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium hover:shadow-lg hover:shadow-primary/30 transition-all duration-300">
+            <button className="px-4 sm:px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 cursor-pointer whitespace-nowrap">
               구독
             </button>
           </div>

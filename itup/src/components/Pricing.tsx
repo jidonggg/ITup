@@ -179,7 +179,7 @@ function PricingCard({ plan, index, isHovered, onHover }: PricingCardProps) {
 
         {/* CTA Button */}
         <button
-          className={`w-full py-3 rounded-full font-medium transition-all duration-300 ${
+          className={`w-full py-3 rounded-full font-medium transition-all duration-300 cursor-pointer ${
             plan.highlighted
               ? "bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-lg hover:shadow-primary/30"
               : "border border-card-border text-foreground hover:border-primary hover:text-primary"
