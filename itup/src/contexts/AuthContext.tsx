@@ -56,11 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // 2초 타임아웃 - 강제로 로딩 완료
+    // 0.5초 타임아웃 - 강제로 로딩 완료
     const timeout = setTimeout(() => {
       setIsLoading(false);
       setIsInitialized(true);
-    }, 2000);
+    }, 500);
 
     if (!supabase) {
       setIsLoading(false);
