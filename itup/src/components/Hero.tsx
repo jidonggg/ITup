@@ -7,10 +7,25 @@ interface HeroProps {
   onConsultClick: () => void;
 }
 
+const headlines = [
+  { line1: "혼자 고민하지 마세요", line2: "커피챗하세요" },
+  { line1: "준비가 막막할 땐", line2: "커피챗 한 잔" },
+  { line1: "게임 업계 선배와", line2: "커피챗하세요" },
+];
+
 export default function Hero({ onConsultClick }: HeroProps) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [headlineIndex, setHeadlineIndex] = useState(0);
   const rafRef = useRef<number | null>(null);
   const { currentLayout } = useLayout();
+
+  // 헤드라인 로테이션
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeadlineIndex((prev) => (prev + 1) % headlines.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -79,10 +94,17 @@ export default function Hero({ onConsultClick }: HeroProps) {
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 animate-fade-in-up [animation-delay:100ms]">
-            <span className="text-foreground">이직? 취업?</span>
-            <br />
-            <span className="bg-gradient-to-r from-primary via-accent to-primary-light bg-clip-text text-transparent animate-gradient">
-              커피챗하세요
+            <span
+              key={headlineIndex}
+              className="block text-foreground animate-fade-in-up"
+            >
+              {headlines[headlineIndex].line1}
+            </span>
+            <span
+              key={`gradient-${headlineIndex}`}
+              className="block bg-gradient-to-r from-primary via-accent to-primary-light bg-clip-text text-transparent animate-gradient animate-fade-in-up [animation-delay:100ms]"
+            >
+              {headlines[headlineIndex].line2}
             </span>
           </h1>
 
