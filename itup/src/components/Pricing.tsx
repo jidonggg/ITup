@@ -6,10 +6,12 @@ import { useState } from "react";
 
 interface PricingProps {
   onConsultClick: () => void;
+  onPaymentClick?: (planId: string) => void;
 }
 
 const plans = [
   {
+    id: "basic",
     name: "Basic",
     price: "99,000",
     period: "월",
@@ -25,6 +27,7 @@ const plans = [
     cta: "시작하기",
   },
   {
+    id: "pro",
     name: "Pro",
     price: "199,000",
     period: "월",
@@ -41,6 +44,7 @@ const plans = [
     cta: "가장 인기 있는 플랜",
   },
   {
+    id: "premium",
     name: "Premium",
     price: "399,000",
     period: "월",
@@ -58,7 +62,7 @@ const plans = [
   },
 ];
 
-export default function Pricing({ onConsultClick }: PricingProps) {
+export default function Pricing({ onConsultClick, onPaymentClick }: PricingProps) {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
   const { currentLayout } = useLayout();
   const [hoveredPlan, setHoveredPlan] = useState<number | null>(1);
@@ -104,6 +108,7 @@ export default function Pricing({ onConsultClick }: PricingProps) {
               isHovered={hoveredPlan === index}
               onHover={() => setHoveredPlan(index)}
               onConsultClick={onConsultClick}
+              onPaymentClick={onPaymentClick}
               cardRadius={cardRadius}
               cardEffect={cardEffect}
             />
@@ -127,6 +132,7 @@ export default function Pricing({ onConsultClick }: PricingProps) {
 
 interface PricingCardProps {
   plan: {
+    id: string;
     name: string;
     price: string;
     period: string;
@@ -139,11 +145,12 @@ interface PricingCardProps {
   isHovered: boolean;
   onHover: () => void;
   onConsultClick: () => void;
+  onPaymentClick?: (planId: string) => void;
   cardRadius: string;
   cardEffect: string;
 }
 
-function PricingCard({ plan, index, isHovered, onHover, onConsultClick, cardRadius, cardEffect }: PricingCardProps) {
+function PricingCard({ plan, index, isHovered, onHover, onConsultClick, onPaymentClick, cardRadius, cardEffect }: PricingCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
@@ -203,7 +210,7 @@ function PricingCard({ plan, index, isHovered, onHover, onConsultClick, cardRadi
 
         {/* CTA Button */}
         <button
-          onClick={onConsultClick}
+          onClick={() => onPaymentClick ? onPaymentClick(plan.id) : onConsultClick()}
           className={`w-full py-3 font-medium transition-all duration-300 cursor-pointer ${
             cardRadius === "rounded-lg" ? "rounded-lg" : "rounded-full"
           } ${

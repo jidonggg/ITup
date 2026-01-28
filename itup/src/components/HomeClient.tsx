@@ -16,6 +16,8 @@ import MentorDetailModal, { MentorData } from "@/components/MentorDetailModal";
 import LoginModal from "@/components/auth/LoginModal";
 import SignupModal from "@/components/auth/SignupModal";
 import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
+import PaymentModal from "@/components/PaymentModal";
+import { PlanInfo, plans } from "@/lib/payment/types";
 
 export default function HomeClient() {
   const router = useRouter();
@@ -26,6 +28,8 @@ export default function HomeClient() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanInfo | null>(null);
 
   // Handle auth callback code
   useEffect(() => {
@@ -76,6 +80,18 @@ export default function HomeClient() {
     openForgotPasswordModal();
   };
 
+  const openPaymentModal = (planId: string) => {
+    const plan = plans.find((p) => p.id === planId);
+    if (plan) {
+      setSelectedPlan(plan);
+      setIsPaymentModalOpen(true);
+    }
+  };
+  const closePaymentModal = () => {
+    setIsPaymentModalOpen(false);
+    setSelectedPlan(null);
+  };
+
   return (
     <>
       <Header onLoginClick={openLoginModal} onSignupClick={openSignupModal} />
@@ -84,7 +100,7 @@ export default function HomeClient() {
       <Features />
       <Mentors onMentorClick={openMentorModal} />
       <Testimonials />
-      <Pricing onConsultClick={openConsultModal} />
+      <Pricing onConsultClick={openConsultModal} onPaymentClick={openPaymentModal} />
       <CTA onConsultClick={openConsultModal} />
       <Footer />
       <ConsultModal isOpen={isConsultModalOpen} onClose={closeConsultModal} mentorId={consultMentorId} />
@@ -115,6 +131,11 @@ export default function HomeClient() {
         isOpen={isForgotPasswordModalOpen}
         onClose={closeForgotPasswordModal}
         onSwitchToLogin={switchToLogin}
+      />
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={closePaymentModal}
+        plan={selectedPlan}
       />
     </>
   );
