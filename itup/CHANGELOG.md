@@ -1,5 +1,15 @@
 # CHANGELOG - 커피챗 (CoffeeChat) 멘토링 플랫폼
 
+## [v1.4.0] - 2026-01-28
+
+### 배포
+- **Vercel 프로덕션 배포 완료**
+  - URL: https://itup.vercel.app
+  - 16개 페이지 정상 빌드
+  - SSL 자동 적용
+
+---
+
 ## [v1.3.3] - 2026-01-28
 
 ### 새 기능 (New Features)
