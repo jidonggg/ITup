@@ -20,9 +20,51 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ITup | 게임 업계 멘토링 플랫폼",
-  description: "현직 게임 개발자와 1:1 멘토링으로 게임 업계 취업과 커리어 성장을 도와드립니다.",
-  keywords: ["게임 개발", "멘토링", "게임 업계 취업", "게임 프로그래머", "게임 기획자", "게임 아티스트", "ITup"],
+  title: {
+    default: "ITup | 게임 업계 멘토링 플랫폼",
+    template: "%s | ITup",
+  },
+  description: "현직 게임 개발자와 1:1 멘토링으로 게임 업계 취업과 커리어 성장을 도와드립니다. 넥슨, 넷마블, 크래프톤 등 현직자 멘토와 상담하세요.",
+  keywords: ["게임 개발", "멘토링", "게임 업계 취업", "게임 프로그래머", "게임 기획자", "게임 아티스트", "ITup", "게임 회사", "커리어 상담"],
+  authors: [{ name: "ITup" }],
+  creator: "ITup",
+  metadataBase: new URL("https://itup.vercel.app"),
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: "https://itup.vercel.app",
+    siteName: "ITup",
+    title: "ITup | 게임 업계 멘토링 플랫폼",
+    description: "현직 게임 개발자와 1:1 멘토링으로 게임 업계 취업과 커리어 성장을 도와드립니다.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "ITup - 게임 업계 멘토링 플랫폼",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ITup | 게임 업계 멘토링 플랫폼",
+    description: "현직 게임 개발자와 1:1 멘토링으로 게임 업계 취업과 커리어 성장을 도와드립니다.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
 };
 
 export default function RootLayout({
