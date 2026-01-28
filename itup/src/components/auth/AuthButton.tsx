@@ -3,12 +3,27 @@
 import { useAuth } from "@/contexts/AuthContext";
 
 interface AuthButtonProps {
-  onLoginClick: () => void;
-  onSignupClick: () => void;
+  onLoginClick?: () => void;
+  onSignupClick?: () => void;
   variant?: "desktop" | "mobile";
 }
 
 export default function AuthButton({ onLoginClick, onSignupClick, variant = "desktop" }: AuthButtonProps) {
+  const handleLogin = () => {
+    if (onLoginClick) {
+      onLoginClick();
+    } else {
+      window.location.href = "/login";
+    }
+  };
+
+  const handleSignup = () => {
+    if (onSignupClick) {
+      onSignupClick();
+    } else {
+      window.location.href = "/signup";
+    }
+  };
   const { user, profile, signOut, isLoading } = useAuth();
 
   if (isLoading) {
@@ -78,13 +93,13 @@ export default function AuthButton({ onLoginClick, onSignupClick, variant = "des
     return (
       <div className="flex gap-4 pt-4">
         <button
-          onClick={onLoginClick}
+          onClick={handleLogin}
           className="flex-1 px-4 py-2 border border-card-border rounded-full text-foreground/80 hover:border-primary hover:text-primary transition-all cursor-pointer"
         >
           로그인
         </button>
         <button
-          onClick={onSignupClick}
+          onClick={handleSignup}
           className="flex-1 px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium cursor-pointer"
         >
           시작하기
@@ -96,13 +111,13 @@ export default function AuthButton({ onLoginClick, onSignupClick, variant = "des
   return (
     <div className="flex items-center gap-4">
       <button
-        onClick={onLoginClick}
+        onClick={handleLogin}
         className="px-4 py-2 text-foreground/80 hover:text-primary transition-colors duration-300 cursor-pointer"
       >
         로그인
       </button>
       <button
-        onClick={onSignupClick}
+        onClick={handleSignup}
         className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium hover:shadow-lg hover:shadow-primary/30 transform hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
       >
         시작하기

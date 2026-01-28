@@ -5,11 +5,11 @@ import AuthButton from "@/components/auth/AuthButton";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface HeaderProps {
-  onLoginClick: () => void;
-  onSignupClick: () => void;
+  onLoginClick?: () => void;
+  onSignupClick?: () => void;
 }
 
-export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
+export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
@@ -171,14 +171,14 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
               )}
             </button>
             <AuthButton
-              onLoginClick={() => {
+              onLoginClick={onLoginClick ? () => {
                 setIsMobileMenuOpen(false);
                 onLoginClick();
-              }}
-              onSignupClick={() => {
+              } : undefined}
+              onSignupClick={onSignupClick ? () => {
                 setIsMobileMenuOpen(false);
                 onSignupClick();
-              }}
+              } : undefined}
               variant="mobile"
             />
           </div>
