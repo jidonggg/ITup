@@ -15,6 +15,7 @@ import ConsultModal from "@/components/ConsultModal";
 import MentorDetailModal, { MentorData } from "@/components/MentorDetailModal";
 import LoginModal from "@/components/auth/LoginModal";
 import SignupModal from "@/components/auth/SignupModal";
+import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 
 export default function HomeClient() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function HomeClient() {
   const [consultMentorId, setConsultMentorId] = useState<string | undefined>();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
 
   // Handle auth callback code
   useEffect(() => {
@@ -62,7 +64,16 @@ export default function HomeClient() {
 
   const switchToLogin = () => {
     closeSignupModal();
+    closeForgotPasswordModal();
     openLoginModal();
+  };
+
+  const openForgotPasswordModal = () => setIsForgotPasswordModalOpen(true);
+  const closeForgotPasswordModal = () => setIsForgotPasswordModalOpen(false);
+
+  const switchToForgotPassword = () => {
+    closeLoginModal();
+    openForgotPasswordModal();
   };
 
   return (
@@ -93,10 +104,16 @@ export default function HomeClient() {
         isOpen={isLoginModalOpen}
         onClose={closeLoginModal}
         onSwitchToSignup={switchToSignup}
+        onSwitchToForgotPassword={switchToForgotPassword}
       />
       <SignupModal
         isOpen={isSignupModalOpen}
         onClose={closeSignupModal}
+        onSwitchToLogin={switchToLogin}
+      />
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordModalOpen}
+        onClose={closeForgotPasswordModal}
         onSwitchToLogin={switchToLogin}
       />
     </>

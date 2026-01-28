@@ -7,6 +7,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { skillCategories, allSkills } from "@/data/mentors";
 import LoginModal from "@/components/auth/LoginModal";
 import SignupModal from "@/components/auth/SignupModal";
+import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 
 type ConsultType = "coffee" | "resume" | "interview";
 
@@ -58,6 +59,7 @@ export default function MentorRegisterPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -191,7 +193,13 @@ export default function MentorRegisterPage() {
 
   const switchToLogin = () => {
     setIsSignupModalOpen(false);
+    setIsForgotPasswordModalOpen(false);
     setIsLoginModalOpen(true);
+  };
+
+  const switchToForgotPassword = () => {
+    setIsLoginModalOpen(false);
+    setIsForgotPasswordModalOpen(true);
   };
 
   if (authLoading) {
@@ -462,10 +470,16 @@ export default function MentorRegisterPage() {
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onSwitchToSignup={switchToSignup}
+        onSwitchToForgotPassword={switchToForgotPassword}
       />
       <SignupModal
         isOpen={isSignupModalOpen}
         onClose={() => setIsSignupModalOpen(false)}
+        onSwitchToLogin={switchToLogin}
+      />
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordModalOpen}
+        onClose={() => setIsForgotPasswordModalOpen(false)}
         onSwitchToLogin={switchToLogin}
       />
     </>

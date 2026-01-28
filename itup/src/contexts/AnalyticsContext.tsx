@@ -112,9 +112,11 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         });
 
         // 세션 페이지 카운트 증가
-        await supabase.rpc("increment_page_count", { session_id_param: sessionId }).catch(() => {
+        try {
+          await supabase.rpc("increment_page_count", { session_id_param: sessionId });
+        } catch {
           // RPC가 없으면 무시
-        });
+        }
       } catch (error) {
         console.error("Page view tracking error:", error);
       }

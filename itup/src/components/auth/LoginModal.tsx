@@ -9,9 +9,10 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToSignup: () => void;
+  onSwitchToForgotPassword: () => void;
 }
 
-export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPassword }: LoginModalProps) {
   const { signIn } = useAuth();
   const { trackEvent } = useAnalytics();
   const [email, setEmail] = useState("");
@@ -106,7 +107,16 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginM
 
             {/* 비밀번호 */}
             <div>
-              <label className="block text-sm font-medium mb-1.5">비밀번호</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium">비밀번호</label>
+                <button
+                  type="button"
+                  onClick={onSwitchToForgotPassword}
+                  className="text-xs text-primary hover:underline cursor-pointer"
+                >
+                  비밀번호를 잊으셨나요?
+                </button>
+              </div>
               <input
                 type="password"
                 value={password}

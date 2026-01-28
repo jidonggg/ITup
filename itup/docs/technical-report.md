@@ -1,5 +1,7 @@
 # 커피챗 기술 보고서
 
+> 최종 업데이트: 2026-01-28
+
 ## 1. 프로젝트 개요
 
 | 항목 | 내용 |
@@ -7,7 +9,9 @@
 | **프로젝트명** | 커피챗 (CoffeeChat) |
 | **목적** | 게임 업계 현직자와 취준생/이직자 간 1:1 멘토링 매칭 플랫폼 |
 | **배포 URL** | https://itup.vercel.app |
-| **개발 기간** | 2026-01-28 |
+| **GitHub** | https://github.com/jidonggg/ITup |
+| **개발 기간** | 2026-01-28 ~ |
+| **현재 버전** | 0.1.0 (MVP) |
 
 ---
 
@@ -17,7 +21,7 @@
 | 기술 | 버전 | 용도 |
 |------|------|------|
 | **Next.js** | 16.1.5 | React 기반 풀스택 프레임워크 |
-| **React** | 19.0.0 | UI 컴포넌트 라이브러리 |
+| **React** | 19.2.3 | UI 컴포넌트 라이브러리 |
 | **TypeScript** | 5.x | 타입 안전성 |
 | **Tailwind CSS** | 4.x | 유틸리티 기반 CSS |
 
@@ -25,7 +29,7 @@
 | 기술 | 용도 |
 |------|------|
 | **Supabase** | PostgreSQL 데이터베이스 + 인증 |
-| **Supabase Auth** | 이메일/비밀번호 인증 |
+| **Supabase Auth** | 이메일/비밀번호 인증 + 비밀번호 재설정 |
 | **Supabase SSR** | 서버사이드 세션 관리 |
 
 ### 배포 & 인프라
@@ -76,32 +80,39 @@ itup/
 │   │   ├── layout.tsx          # 루트 레이아웃
 │   │   ├── globals.css         # 전역 스타일
 │   │   ├── auth/
-│   │   │   └── callback/       # OAuth 콜백
-│   │   ├── mentors/            # 멘토 목록
+│   │   │   ├── callback/       # OAuth 콜백
+│   │   │   └── reset-password/ # 비밀번호 재설정
+│   │   ├── mentors/            # 멘토 목록 (필터링)
 │   │   ├── mentor/
 │   │   │   └── register/       # 멘토 등록
 │   │   ├── mypage/             # 마이페이지
+│   │   ├── admin/
+│   │   │   └── dashboard/      # 운영자 대시보드
 │   │   ├── terms/              # 이용약관
 │   │   └── privacy/            # 개인정보처리방침
 │   │
 │   ├── components/             # React 컴포넌트
 │   │   ├── Header.tsx
-│   │   ├── Hero.tsx
+│   │   ├── Hero.tsx            # 헤드라인 로테이션
 │   │   ├── Features.tsx
-│   │   ├── Mentors.tsx
-│   │   ├── Pricing.tsx
+│   │   ├── Mentors.tsx         # Supabase 동적 로딩
+│   │   ├── Pricing.tsx         # 상담 모달 연결
+│   │   ├── CTA.tsx             # 멘토 둘러보기 스크롤
 │   │   ├── Footer.tsx
-│   │   ├── ConsultModal.tsx
+│   │   ├── HomeClient.tsx      # 홈 클라이언트 컴포넌트
+│   │   ├── ConsultModal.tsx    # 상담 신청 (DB 저장)
 │   │   ├── MentorDetailModal.tsx
 │   │   └── auth/
 │   │       ├── AuthButton.tsx
 │   │       ├── LoginModal.tsx
-│   │       └── SignupModal.tsx
+│   │       ├── SignupModal.tsx
+│   │       └── ForgotPasswordModal.tsx  # 비밀번호 찾기
 │   │
 │   ├── contexts/               # React Context
 │   │   ├── AuthContext.tsx     # 인증 상태 관리
 │   │   ├── ThemeContext.tsx    # 테마 상태 관리
-│   │   └── LayoutContext.tsx   # 레이아웃 상태 관리
+│   │   ├── LayoutContext.tsx   # 레이아웃 상태 관리
+│   │   └── AnalyticsContext.tsx # 사용자 행동 분석
 │   │
 │   ├── lib/
 │   │   └── supabase/
@@ -111,9 +122,25 @@ itup/
 │   │       └── types.ts        # 타입 정의
 │   │
 │   ├── hooks/
-│   │   └── useModal.ts         # 모달 관련 훅
+│   │   ├── useModal.ts         # 모달 관련 훅
+│   │   └── useScrollAnimation.ts # 스크롤 애니메이션
+│   │
+│   ├── data/
+│   │   └── mentors.ts          # 멘토 폴백 데이터
 │   │
 │   └── middleware.ts           # Next.js 미들웨어
+│
+├── docs/                       # 문서
+│   ├── requirements.md         # 요구사항
+│   ├── qa-report.md            # QA 리포트
+│   ├── pending-features.md     # 미완성 기능
+│   └── technical-report.md     # 기술 보고서
+│
+├── tasks/                      # 작업 명세
+│   ├── 001-mentor-list-dynamic.md
+│   ├── 002-consult-submit-db.md
+│   ├── 003-mypage.md
+│   └── 004-password-reset.md
 │
 ├── supabase/
 │   └── schema.sql              # DB 스키마
@@ -142,17 +169,19 @@ CREATE TABLE profiles (
 ```sql
 CREATE TABLE mentors (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users,
   name TEXT NOT NULL,
   company TEXT NOT NULL,
   role TEXT NOT NULL,
   previous_companies TEXT[],
   experience TEXT NOT NULL,
-  tech_stack TEXT[],
-  consultation_types TEXT[],
-  available_time TEXT,
+  skills TEXT[],
+  consult_types TEXT[],
+  available_times TEXT[],
   bio TEXT,
   rating DECIMAL(2,1) DEFAULT 0,
-  review_count INTEGER DEFAULT 0,
+  sessions INTEGER DEFAULT 0,
+  reviews INTEGER DEFAULT 0,
   is_approved BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -177,6 +206,7 @@ CREATE TABLE consultations (
 
 ## 6. 인증 플로우
 
+### 회원가입/로그인
 ```
 ┌─────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
 │  User   │────▶│ SignUp   │────▶│  Email   │────▶│  Login   │
@@ -194,6 +224,20 @@ CREATE TABLE consultations (
               │ profiles │                       │ Session  │
               │  INSERT  │                       │ Created  │
               └──────────┘                       └──────────┘
+```
+
+### 비밀번호 재설정
+```
+┌─────────┐     ┌──────────────┐     ┌──────────┐     ┌──────────────┐
+│  User   │────▶│ ForgotPassword│────▶│  Email   │────▶│ reset-password│
+│         │     │    Modal      │     │  Link    │     │    Page       │
+└─────────┘     └──────────────┘     └──────────┘     └──────────────┘
+                      │                                       │
+                      ▼                                       ▼
+              ┌────────────────┐                     ┌────────────────┐
+              │ resetPassword  │                     │  updateUser    │
+              │   ForEmail()   │                     │  (password)    │
+              └────────────────┘                     └────────────────┘
 ```
 
 ---
@@ -215,6 +259,11 @@ CREATE TABLE consultations (
 - **상태**: currentLayout
 - **메서드**: setLayout
 
+### AnalyticsContext
+- **역할**: 사용자 행동 추적
+- **상태**: events
+- **메서드**: trackClick, trackEvent, getEvents
+
 ---
 
 ## 8. 주요 컴포넌트 설명
@@ -229,14 +278,26 @@ CREATE TABLE consultations (
 - 마우스 이동에 반응하는 배경 효과
 - CTA 버튼 (상담 신청)
 
+### Mentors
+- Supabase에서 동적 로딩
+- 스켈레톤 로딩 UI
+- 승인된 멘토만 표시 (is_approved = true)
+
 ### ConsultModal
 - 상담 신청 폼
 - 유효성 검사 (전화번호 포맷팅 포함)
 - Supabase 저장 + localStorage 폴백
+- mentor_id 연결
 
-### AuthButton
-- 로그인/비로그인 상태 분기
-- 데스크톱/모바일 variant 지원
+### ForgotPasswordModal
+- 이메일 입력 폼
+- Supabase resetPasswordForEmail 호출
+- 성공/실패 피드백
+
+### /mentors 페이지
+- 전체 멘토 목록
+- 필터링: 회사, 상담유형, 기술스택
+- 필터 초기화
 
 ---
 
@@ -249,10 +310,15 @@ CREATE POLICY "Users can view own profile"
   ON profiles FOR SELECT
   USING (auth.uid() = id);
 
+-- mentors: 승인된 멘토만 공개 조회
+CREATE POLICY "Anyone can view approved mentors"
+  ON mentors FOR SELECT
+  USING (is_approved = true);
+
 -- consultations: 본인 상담만 조회 가능
 CREATE POLICY "Users can view own consultations"
   ON consultations FOR SELECT
-  USING (auth.uid()::text = user_email OR auth.role() = 'authenticated');
+  USING (auth.uid()::text = user_email);
 ```
 
 ### 환경 변수
@@ -271,26 +337,44 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
 | **이미지 최적화** | next/image 사용 (향후) |
 | **CSS 최적화** | Tailwind CSS purge |
 | **캐싱** | Vercel Edge 캐싱 |
+| **로딩 타임아웃** | 0.5초 (AuthContext) |
 
 ---
 
-## 11. 향후 계획
+## 11. 완료된 기능
 
-### Phase 1 (1주)
-- [ ] 사용자 분석 시스템 (analytics)
-- [ ] 운영자 대시보드 (/admin)
+### Phase 1 (완료)
+- [x] 랜딩 페이지 (Hero, Features, Stats, Testimonials, Footer)
+- [x] 인증 시스템 (회원가입, 로그인, 로그아웃)
+- [x] Supabase 데이터베이스 연동
 
-### Phase 2 (2-4주)
+### Phase 2 (완료)
+- [x] 멘토 목록 동적 로딩 (Supabase)
+- [x] 멘토 목록 페이지 (/mentors) + 필터링
+- [x] 상담 신청 DB 저장
+- [x] 마이페이지 (/mypage)
+- [x] 비밀번호 찾기/재설정
+- [x] 사용자 행동 분석 시스템
+- [x] 운영자 대시보드
+
+---
+
+## 12. 향후 계획
+
+### Phase 3 (예정)
 - [ ] 결제 시스템 (Toss Payments)
-- [ ] 실시간 채팅 (Socket.io)
+- [ ] 실시간 알림 시스템
+- [ ] 리뷰/평점 시스템
+- [ ] 이용약관/개인정보처리방침 작성
 
-### Phase 3 (1-2개월)
+### Phase 4 (향후)
+- [ ] 실시간 채팅 (Socket.io)
 - [ ] 모바일 앱 (React Native)
 - [ ] AI 멘토 매칭
 
 ---
 
-## 12. 참고 자료
+## 13. 참고 자료
 
 - [Next.js 문서](https://nextjs.org/docs)
 - [Supabase 문서](https://supabase.com/docs)
