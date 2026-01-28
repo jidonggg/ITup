@@ -151,6 +151,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setSession(null);
+
+    // 로그아웃 후 홈으로 리다이렉트
+    window.location.href = "/";
   };
 
   return (
