@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mentor, Consultation } from "@/lib/supabase/types";
+import VerificationModal from "@/components/VerificationModal";
 
 type ConsultationStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
@@ -39,6 +40,7 @@ export default function MentorDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<ConsultationStatus | "all">("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -264,6 +266,51 @@ export default function MentorDashboardPage() {
           </div>
         )}
 
+        {/* Verification Status */}
+        {mentor && (
+          <div className={`mb-6 p-4 rounded-xl flex items-center justify-between ${
+            mentor.is_verified
+              ? "bg-green-500/10 border border-green-500/30"
+              : "bg-blue-500/10 border border-blue-500/30"
+          }`}>
+            <div className="flex items-center gap-3">
+              {mentor.is_verified ? (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-green-500">인증 완료</p>
+                    <p className="text-sm text-green-400/70">회사 이메일로 인증되었습니다</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-blue-500">멘토 인증</p>
+                    <p className="text-sm text-blue-400/70">회사 이메일로 인증하면 신뢰도가 올라갑니다</p>
+                  </div>
+                </>
+              )}
+            </div>
+            {!mentor.is_verified && (
+              <button
+                onClick={() => setIsVerificationModalOpen(true)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors cursor-pointer"
+              >
+                인증하기
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Filter Tabs */}
         <div className="flex gap-2 mb-6 border-b border-card-border">
           {(["all", "pending", "confirmed", "completed", "cancelled"] as const).map((status) => (
@@ -312,6 +359,18 @@ export default function MentorDashboardPage() {
           </div>
         )}
       </main>
+
+      {/* Verification Modal */}
+      {mentor && (
+        <VerificationModal
+          isOpen={isVerificationModalOpen}
+          onClose={() => setIsVerificationModalOpen(false)}
+          mentorId={mentor.id}
+          onVerified={() => {
+            setMentor({ ...mentor, is_verified: true });
+          }}
+        />
+      )}
     </div>
   );
 }

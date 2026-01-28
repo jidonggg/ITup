@@ -27,6 +27,10 @@ export interface Mentor {
   sessions: number;
   reviews: number;
   is_approved: boolean;
+  is_verified: boolean;
+  verified_at: string | null;
+  verification_method: "email" | "document" | null;
+  verified_company: string | null;
   created_at: string;
 }
 
