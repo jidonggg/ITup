@@ -213,7 +213,7 @@ export default function MentorDashboardPage() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <span className="text-white text-sm">☕</span>
               </div>
-              <span className="font-bold">ITup</span>
+              <span className="font-bold">커피챗</span>
             </Link>
             <span className="text-muted">/</span>
             <span className="font-medium">멘토 대시보드</span>

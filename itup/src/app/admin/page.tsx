@@ -434,7 +434,7 @@ export default function AdminPage() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
                 <span className="text-white text-sm font-bold">A</span>
               </div>
-              <span className="font-bold">ITup Admin</span>
+              <span className="font-bold">커피챗 Admin</span>
             </Link>
           </div>
           <div className="flex items-center gap-4">

@@ -267,7 +267,7 @@ export default function MentorRegisterPage() {
             </button>
             <h1 className="text-3xl font-bold mb-2">멘토 등록</h1>
             <p className="text-muted">
-              ITup 멘토가 되어 후배 개발자들의 성장을 도와주세요
+              커피챗 멘토가 되어 후배 개발자들의 성장을 도와주세요
             </p>
           </div>
 

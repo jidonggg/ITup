@@ -78,7 +78,7 @@ const faqData: FAQItem[] = [
   {
     category: "기타",
     question: "문의사항이 있으면 어디로 연락하나요?",
-    answer: "이메일 support@coffeechat.kr 또는 카카오톡 채널 '커피챗'으로 문의해 주시면 빠르게 답변드리겠습니다.",
+    answer: "이메일 support@itup.kr 또는 카카오톡 채널 '커피챗'으로 문의해 주시면 빠르게 답변드리겠습니다.",
   },
   {
     category: "기타",
@@ -124,7 +124,7 @@ export default function FAQPage() {
             궁금한 점이 있으시면 아래에서 찾아보세요.
             <br />
             원하는 답변이 없다면{" "}
-            <a href="mailto:support@coffeechat.kr" className="text-primary hover:underline">
+            <a href="mailto:support@itup.kr" className="text-primary hover:underline">
               문의하기
             </a>
             를 이용해 주세요.
@@ -200,7 +200,7 @@ export default function FAQPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="mailto:support@coffeechat.kr"
+              href="mailto:support@itup.kr"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary-dark transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

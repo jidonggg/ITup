@@ -105,8 +105,20 @@ interface LayoutContextType {
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 
+// 초기 레이아웃 가져오기 (lazy initialization)
+function getInitialLayout(): LayoutOption {
+  if (typeof window === "undefined") return layoutOptions[0];
+
+  const savedLayout = localStorage.getItem("itup-layout");
+  if (savedLayout) {
+    const layout = layoutOptions.find((l) => l.id === savedLayout);
+    if (layout) return layout;
+  }
+  return layoutOptions[0];
+}
+
 export function LayoutProvider({ children }: { children: ReactNode }) {
-  const [currentLayout, setCurrentLayout] = useState<LayoutOption>(layoutOptions[0]);
+  const [currentLayout, setCurrentLayout] = useState<LayoutOption>(getInitialLayout);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -146,19 +158,9 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
     const layout = layoutOptions.find((l) => l.id === layoutId);
     if (layout) {
       setCurrentLayout(layout);
-      localStorage.setItem("coffeechat-layout", layoutId);
+      localStorage.setItem("itup-layout", layoutId);
     }
   };
-
-  useEffect(() => {
-    const savedLayout = localStorage.getItem("coffeechat-layout");
-    if (savedLayout) {
-      const layout = layoutOptions.find((l) => l.id === savedLayout);
-      if (layout) {
-        setCurrentLayout(layout);
-      }
-    }
-  }, []);
 
   return (
     <LayoutContext.Provider value={{ currentLayout, setLayout, layoutOptions }}>

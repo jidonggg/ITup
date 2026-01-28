@@ -30,7 +30,7 @@ async function sendWithResend(params: SendEmailParams): Promise<SendEmailResult>
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "커피챗 <noreply@coffeechat.kr>",
+        from: "커피챗 <noreply@itup.kr>",
         to: params.to,
         subject: params.template.subject,
         html: params.template.html,

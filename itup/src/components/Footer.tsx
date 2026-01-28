@@ -7,8 +7,8 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 const footerLinks = {
   서비스: [
     { label: "멘토 찾기", href: "/mentors" },
+    { label: "멘토 등록", href: "/mentor/register" },
     { label: "멘토링 소개", href: "#features" },
-    { label: "요금제", href: "#pricing" },
     { label: "기업 서비스", href: "/business" },
   ],
   회사: [
@@ -105,7 +105,7 @@ export default function Footer() {
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <span className="text-white text-xl">☕</span>
               </div>
-              <span className="text-xl font-bold">ITup</span>
+              <span className="text-xl font-bold">커피챗</span>
             </Link>
             <p className="text-muted text-sm mb-6 max-w-xs">
               게임 업계 현직자와 함께하는 1:1 멘토링 플랫폼. 당신의 게임 업계 커리어를 함께
@@ -178,7 +178,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="pt-8 border-t border-card-border text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-muted text-sm">
-            <p>&copy; 2025 ITup. All rights reserved.</p>
+            <p>&copy; 2025 커피챗. All rights reserved.</p>
             <div className="flex gap-6">
               <a href="/terms" className="hover:text-primary transition-colors">
                 이용약관

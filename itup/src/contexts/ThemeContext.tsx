@@ -21,10 +21,10 @@ export interface Theme {
 }
 
 export const themes: Theme[] = [
-  // === ITup 기본 다크 테마 (스타일 가이드 기준) ===
+  // === 커피챗 기본 다크 테마 (스타일 가이드 기준) ===
   {
     id: "itup-dark",
-    name: "ITup 다크",
+    name: "커피챗 다크",
     description: "게임 업계 느낌의 다크 테마 (기본)",
     colors: {
       background: "#0F172A",  // slate-900
@@ -224,9 +224,28 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// 다크 테마 ID 목록
+const darkThemeIds = ["itup-dark", "coffee-dark", "default", "midnight-gold"];
+
+// 초기 테마 가져오기 (lazy initialization)
+function getInitialTheme(): { theme: Theme; isDark: boolean } {
+  if (typeof window === "undefined") {
+    return { theme: themes[0], isDark: true };
+  }
+
+  const savedTheme = localStorage.getItem("itup-theme");
+  if (savedTheme) {
+    const theme = themes.find((t) => t.id === savedTheme);
+    if (theme) {
+      return { theme, isDark: darkThemeIds.includes(savedTheme) };
+    }
+  }
+  return { theme: themes[0], isDark: true };
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [currentTheme, setCurrentTheme] = useState<Theme>(themes[0]); // itup-dark (기본)
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [currentTheme, setCurrentTheme] = useState<Theme>(() => getInitialTheme().theme);
+  const [isDarkMode, setIsDarkMode] = useState(() => getInitialTheme().isDark);
 
   const applyTheme = (theme: Theme) => {
     const root = document.documentElement;
@@ -250,11 +269,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const theme = themes.find((t) => t.id === themeId);
     if (theme) {
       setCurrentTheme(theme);
-      // 다크 테마 ID들
-      const darkThemes = ["itup-dark", "coffee-dark", "default", "midnight-gold"];
-      setIsDarkMode(darkThemes.includes(themeId));
+      setIsDarkMode(darkThemeIds.includes(themeId));
       localStorage.setItem("itup-theme", themeId);
-      localStorage.setItem("itup-dark-mode", darkThemes.includes(themeId) ? "true" : "false");
+      localStorage.setItem("itup-dark-mode", darkThemeIds.includes(themeId) ? "true" : "false");
     }
   };
 
@@ -265,16 +282,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setTheme("itup-dark");
     }
   };
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("itup-theme");
-    if (savedTheme) {
-      const theme = themes.find((t) => t.id === savedTheme);
-      if (theme) {
-        setCurrentTheme(theme);
-      }
-    }
-  }, []);
 
   return (
     <ThemeContext.Provider value={{ currentTheme, setTheme, themes, isDarkMode, toggleDarkMode }}>

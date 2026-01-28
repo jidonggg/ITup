@@ -88,7 +88,7 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
 
       await widgets.requestPayment({
         orderId,
-        orderName: `ITup ${plan.name} 플랜`,
+        orderName: `커피챗 ${plan.name} 플랜`,
         successUrl: `${window.location.origin}/payment/success`,
         failUrl: `${window.location.origin}/payment/fail`,
         customerEmail: user?.email || undefined,

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode, useMemo } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from "react";
 import { User, Session, SupabaseClient } from "@supabase/supabase-js";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Profile } from "@/lib/supabase/types";
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [isConfigured]);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     if (!supabase) return;
 
     const { data } = await supabase
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     setProfile(data);
-  };
+  }, [supabase]);
 
   const refreshProfile = async () => {
     if (user) {
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeout);
       data.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, fetchProfile]);
 
   const signUp = async (email: string, password: string, name?: string) => {
     if (!supabase) {

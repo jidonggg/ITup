@@ -29,7 +29,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold mb-4 text-foreground">제1조 (목적)</h2>
             <p className="leading-relaxed">
-              이 약관은 ITup(이하 &quot;회사&quot;)이 제공하는 멘토링 플랫폼 서비스(이하 &quot;서비스&quot;)의
+              이 약관은 커피챗(이하 &quot;회사&quot;)이 제공하는 멘토링 플랫폼 서비스(이하 &quot;서비스&quot;)의
               이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
             </p>
           </section>

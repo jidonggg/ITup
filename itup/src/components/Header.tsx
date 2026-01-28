@@ -81,7 +81,7 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
               <span className="text-white text-xl">☕</span>
             </div>
             <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-              ITup
+              커피챗
             </span>
           </Link>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useCallback, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { useAuth } from "./AuthContext";
@@ -53,9 +53,43 @@ function getDeviceInfo() {
 export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const pageStartTime = useRef<number>(Date.now());
+  const pageStartTime = useRef<number>(0);
   const lastPath = useRef<string>("");
   const sessionInitialized = useRef<boolean>(false);
+
+  // 체류시간 저장 함수 (useCallback으로 메모이제이션)
+  const saveDuration = useCallback(async (path: string, duration: number) => {
+    if (!isSupabaseConfigured() || duration < 1) return;
+
+    const sessionId = getSessionId();
+    const supabase = createClient();
+
+    try {
+      // 가장 최근 페이지뷰의 duration 업데이트
+      const { data } = await supabase
+        .from("page_views")
+        .select("id")
+        .eq("session_id", sessionId)
+        .eq("path", path)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (data) {
+        await supabase
+          .from("page_views")
+          .update({ duration_seconds: duration })
+          .eq("id", data.id);
+      }
+    } catch {
+      // 무시
+    }
+  }, []);
+
+  // 페이지 시작 시간 초기화
+  useEffect(() => {
+    pageStartTime.current = Date.now();
+  }, []);
 
   // 세션 초기화
   useEffect(() => {
@@ -126,36 +160,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     };
 
     trackPageView();
-  }, [pathname, user]);
-
-  // 체류시간 저장
-  const saveDuration = async (path: string, duration: number) => {
-    if (!isSupabaseConfigured() || duration < 1) return;
-
-    const sessionId = getSessionId();
-    const supabase = createClient();
-
-    try {
-      // 가장 최근 페이지뷰의 duration 업데이트
-      const { data } = await supabase
-        .from("page_views")
-        .select("id")
-        .eq("session_id", sessionId)
-        .eq("path", path)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (data) {
-        await supabase
-          .from("page_views")
-          .update({ duration_seconds: duration })
-          .eq("id", data.id);
-      }
-    } catch (error) {
-      // 무시
-    }
-  };
+  }, [pathname, user, saveDuration]);
 
   // 페이지 떠날 때 체류시간 저장
   useEffect(() => {

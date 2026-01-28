@@ -129,7 +129,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
             <>
               <h2 className="text-2xl font-bold mb-2">회원가입</h2>
               <p className="text-muted text-sm mb-6">
-                ITup에서 멘토링을 시작해보세요
+                커피챗에서 멘토링을 시작해보세요
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">

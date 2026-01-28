@@ -101,13 +101,13 @@ export async function POST(request: NextRequest) {
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: "ITup <noreply@itup.vercel.app>",
+        from: "커피챗 <noreply@itup.vercel.app>",
         to: email,
-        subject: "[ITup] 멘토 인증 코드",
+        subject: "[커피챗] 멘토 인증 코드",
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #8B5CF6;">ITup 멘토 인증</h2>
-            <p>안녕하세요, ITup 멘토 인증을 위한 코드입니다.</p>
+            <h2 style="color: #8B5CF6;">커피챗 멘토 인증</h2>
+            <p>안녕하세요, 커피챗 멘토 인증을 위한 코드입니다.</p>
             <div style="background: #F3F4F6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
               <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #8B5CF6;">
                 ${code}
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
             </p>
             <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;">
             <p style="color: #9CA3AF; font-size: 12px;">
-              이 이메일은 ITup 멘토 인증을 위해 발송되었습니다.
+              이 이메일은 커피챗 멘토 인증을 위해 발송되었습니다.
             </p>
           </div>
         `,

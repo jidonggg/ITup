@@ -3,7 +3,7 @@ import { MentorData } from "@/components/MentorDetailModal";
 export type ConsultType = "coffee" | "resume" | "interview";
 
 export const consultTypeLabels: Record<ConsultType, string> = {
-  coffee: "커피챗",
+  coffee: "1:1 상담",
   resume: "이력서/포트폴리오",
   interview: "모의면접",
 };

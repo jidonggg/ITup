@@ -30,7 +30,7 @@ function convertToMentorData(mentor: Mentor): MentorData & { id: string } {
 const companies = ["전체", "넥슨", "넷마블", "크래프톤", "스마일게이트", "펄어비스", "기타"];
 const consultTypes: { value: ConsultType | "all"; label: string }[] = [
   { value: "all", label: "전체" },
-  { value: "coffee", label: "커피챗" },
+  { value: "coffee", label: "1:1 상담" },
   { value: "resume", label: "이력서/포트폴리오" },
   { value: "interview", label: "모의면접" },
 ];

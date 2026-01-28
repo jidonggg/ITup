@@ -237,7 +237,7 @@ export default function MyPage() {
               <span className="text-white text-sm">☕</span>
             </div>
             <span className="font-bold text-foreground group-hover:text-primary transition-colors">
-              ITup
+              커피챗
             </span>
           </Link>
           <button

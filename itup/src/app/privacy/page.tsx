@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           {/* 개요 */}
           <section>
             <p className="leading-relaxed">
-              ITup(이하 &quot;회사&quot;)은 회원의 개인정보를 중요시하며, 「개인정보 보호법」을 준수합니다.
+              커피챗(이하 &quot;회사&quot;)은 회원의 개인정보를 중요시하며, 「개인정보 보호법」을 준수합니다.
               회사는 개인정보처리방침을 통하여 회원이 제공하는 개인정보가 어떠한 용도와 방식으로
               이용되고 있으며, 개인정보보호를 위해 어떠한 조치가 취해지고 있는지 알려드립니다.
             </p>
@@ -144,7 +144,7 @@ export default function PrivacyPage() {
 
             <div className="bg-secondary/50 rounded-lg p-4">
               <p><strong>개인정보 보호책임자</strong></p>
-              <p>이메일: privacy@coffeechat.kr</p>
+              <p>이메일: privacy@itup.kr</p>
             </div>
 
             <p className="mt-4">

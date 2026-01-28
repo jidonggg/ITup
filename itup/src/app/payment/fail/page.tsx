@@ -63,7 +63,7 @@ function PaymentFailContent() {
 
         <p className="mt-8 text-sm text-muted">
           문제가 계속되면{" "}
-          <a href="mailto:support@coffeechat.com" className="text-primary hover:underline">
+          <a href="mailto:support@itup.kr" className="text-primary hover:underline">
             고객센터
           </a>
           로 문의해 주세요.

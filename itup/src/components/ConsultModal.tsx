@@ -211,7 +211,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       // 결제 요청
       await widgets.requestPayment({
         orderId,
-        orderName: `ITup 멘토링 상담 - ${mentorName || "멘토"}`,
+        orderName: `커피챗 멘토링 상담 - ${mentorName || "멘토"}`,
         successUrl: `${window.location.origin}/payment/success?consultationId=${consultationId || "local"}`,
         failUrl: `${window.location.origin}/payment/fail`,
         customerEmail: user?.email || formData.email,
