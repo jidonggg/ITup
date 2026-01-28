@@ -119,7 +119,7 @@ export default function Pricing({ onConsultClick, onPaymentClick }: PricingProps
         <div className="text-center mt-12">
           <p className="text-muted">
             궁금한 점이 있으신가요?{" "}
-            <a href="#" className="text-primary hover:underline">
+            <a href="/faq" className="text-primary hover:underline">
               자주 묻는 질문
             </a>
             을 확인해보세요.

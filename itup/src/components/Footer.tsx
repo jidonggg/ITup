@@ -10,7 +10,7 @@ const footerLinks = {
     { label: "회사 소개", href: "#" },
   ],
   지원: [
-    { label: "자주 묻는 질문", href: "#" },
+    { label: "자주 묻는 질문", href: "/faq" },
     { label: "문의하기", href: "mailto:support@coffeechat.kr" },
     { label: "이용약관", href: "/terms" },
     { label: "개인정보처리방침", href: "/privacy" },
