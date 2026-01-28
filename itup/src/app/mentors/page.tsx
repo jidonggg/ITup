@@ -35,10 +35,16 @@ const consultTypes: { value: ConsultType | "all"; label: string }[] = [
   { value: "interview", label: "모의면접" },
 ];
 
+// Initial fallback data with IDs
+const initialMentors = fallbackMentors.map((m, i) => ({
+  ...m,
+  id: `fallback-${i}`,
+}));
+
 export default function MentorsPage() {
-  const [mentors, setMentors] = useState<(MentorData & { id: string })[]>([]);
-  const [filteredMentors, setFilteredMentors] = useState<(MentorData & { id: string })[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [mentors, setMentors] = useState<(MentorData & { id: string })[]>(initialMentors);
+  const [filteredMentors, setFilteredMentors] = useState<(MentorData & { id: string })[]>(initialMentors);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Filters
   const [selectedCompany, setSelectedCompany] = useState("전체");
@@ -53,19 +59,12 @@ export default function MentorsPage() {
 
   useEffect(() => {
     const fetchMentors = async () => {
-      // Fallback data with generated IDs
-      const fallbackWithIds = fallbackMentors.map((m, i) => ({
-        ...m,
-        id: `fallback-${i}`,
-      }));
-
       if (!isSupabaseConfigured()) {
-        setMentors(fallbackWithIds);
-        setFilteredMentors(fallbackWithIds);
-        setIsLoading(false);
+        // Already have initial data, no need to fetch
         return;
       }
 
+      setIsLoading(true);
       try {
         const supabase = createClient();
         const { data, error } = await supabase
@@ -76,10 +75,7 @@ export default function MentorsPage() {
 
         if (error) {
           console.error("Error fetching mentors:", error);
-          // Use fallback on error
-          setMentors(fallbackWithIds);
-          setFilteredMentors(fallbackWithIds);
-          setIsLoading(false);
+          // Keep initial fallback data
           return;
         }
 
@@ -87,16 +83,11 @@ export default function MentorsPage() {
           const converted = data.map(convertToMentorData);
           setMentors(converted);
           setFilteredMentors(converted);
-        } else {
-          // Use fallback when no data
-          setMentors(fallbackWithIds);
-          setFilteredMentors(fallbackWithIds);
         }
+        // If no data, keep the initial fallback data
       } catch (error) {
         console.error("Error fetching mentors:", error);
-        // Use fallback on error
-        setMentors(fallbackWithIds);
-        setFilteredMentors(fallbackWithIds);
+        // Keep initial fallback data
       } finally {
         setIsLoading(false);
       }
