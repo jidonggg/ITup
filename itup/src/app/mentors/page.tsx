@@ -387,7 +387,9 @@ export default function MentorsPage() {
         isOpen={isConsultModalOpen}
         onClose={closeConsultModal}
         mentorId={consultMentorId}
+        mentorName={selectedMentor?.name}
         mentorAvailableTimes={selectedMentor?.availableTimes}
+        mentorPrice={selectedMentor?.price}
       />
     </div>
   );

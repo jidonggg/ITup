@@ -24,6 +24,7 @@ export default function HomeClient() {
   const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
+  const [consultMentor, setConsultMentor] = useState<MentorData | null>(null);
   const [consultMentorId, setConsultMentorId] = useState<string | undefined>();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
@@ -44,6 +45,7 @@ export default function HomeClient() {
   const closeConsultModal = () => {
     setIsConsultModalOpen(false);
     setConsultMentorId(undefined);
+    setConsultMentor(null);
   };
 
   const openMentorModal = (mentor: MentorData) => {
@@ -103,14 +105,22 @@ export default function HomeClient() {
       <Pricing onConsultClick={openConsultModal} onPaymentClick={openPaymentModal} />
       <CTA onConsultClick={openConsultModal} />
       <Footer />
-      <ConsultModal isOpen={isConsultModalOpen} onClose={closeConsultModal} mentorId={consultMentorId} />
+      <ConsultModal
+        isOpen={isConsultModalOpen}
+        onClose={closeConsultModal}
+        mentorId={consultMentorId}
+        mentorName={consultMentor?.name}
+        mentorAvailableTimes={consultMentor?.availableTimes}
+        mentorPrice={consultMentor?.price}
+      />
       <MentorDetailModal
         isOpen={isMentorModalOpen}
         onClose={closeMentorModal}
         mentor={selectedMentor}
         onConsultClick={() => {
-          if (selectedMentor?.id) {
+          if (selectedMentor) {
             setConsultMentorId(selectedMentor.id);
+            setConsultMentor(selectedMentor);
           }
           closeMentorModal();
           openConsultModal();

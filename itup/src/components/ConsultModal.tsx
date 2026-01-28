@@ -5,12 +5,17 @@ import { useModalClose, useBodyScrollLock, formatPhoneNumber } from "@/hooks/use
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
+
+const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq";
 
 interface ConsultModalProps {
   isOpen: boolean;
   onClose: () => void;
   mentorId?: string;
+  mentorName?: string;
   mentorAvailableTimes?: string[];
+  mentorPrice?: number;
 }
 
 interface FormData {
@@ -31,7 +36,7 @@ const initialFormData: FormData = {
   message: "",
 };
 
-export default function ConsultModal({ isOpen, onClose, mentorId, mentorAvailableTimes }: ConsultModalProps) {
+export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, mentorAvailableTimes, mentorPrice }: ConsultModalProps) {
   const { user, profile } = useAuth();
   const { trackEvent } = useAnalytics();
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -39,6 +44,11 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorAvailabl
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [step, setStep] = useState<"form" | "payment" | "success">("form");
+  const [consultationId, setConsultationId] = useState<string | null>(null);
+
+  const price = mentorPrice || 50000; // 기본 가격 50,000원
+  const discountedPrice = Math.floor(price * 0.7); // 첫 상담 30% 할인
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
@@ -131,16 +141,17 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorAvailabl
 
     if (!isSupabaseConfigured()) {
       saveToLocalStorage();
-      trackEvent("submit", "상담신청_완료", { interest: formData.interest, mentorId: mentorId || "general" });
+      trackEvent("submit", "상담신청_폼완료", { interest: formData.interest, mentorId: mentorId || "general" });
+      setStep("payment");
       setIsLoading(false);
-      setIsSubmitted(true);
       return;
     }
 
     try {
       const supabase = createClient();
 
-      const { error } = await supabase.from("consultations").insert({
+      // 상담 신청 저장 (결제 대기 상태)
+      const { data, error } = await supabase.from("consultations").insert({
         mentor_id: mentorId || null,
         user_name: formData.name,
         user_phone: formData.phone,
@@ -148,39 +159,47 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorAvailabl
         interest: formData.interest || null,
         preferred_time: formData.preferredTime || null,
         message: formData.message || null,
-      });
+        status: "pending",
+      }).select("id").single();
 
       if (error) {
         console.error("Error saving consultation:", error);
         saveToLocalStorage();
-      } else {
-        // 이메일 알림 발송 (비동기, 실패해도 상담 신청은 완료 처리)
-        fetch("/api/email/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "consultation_request",
-            data: {
-              mentorId,
-              menteeName: formData.name,
-              menteeEmail: formData.email,
-              menteePhone: formData.phone,
-              interest: formData.interest,
-              preferredTime: formData.preferredTime,
-              message: formData.message,
-            },
-          }),
-        }).catch(console.error);
+      } else if (data) {
+        setConsultationId(data.id);
       }
 
-      trackEvent("submit", "상담신청_완료", { interest: formData.interest, mentorId: mentorId || "general" });
+      trackEvent("submit", "상담신청_폼완료", { interest: formData.interest, mentorId: mentorId || "general" });
+      setStep("payment");
       setIsLoading(false);
-      setIsSubmitted(true);
     } catch (error) {
       console.error("Error saving consultation:", error);
       saveToLocalStorage();
+      setStep("payment");
       setIsLoading(false);
-      setIsSubmitted(true);
+    }
+  };
+
+  const handlePayment = async () => {
+    setIsLoading(true);
+    try {
+      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+      const orderId = `CONSULT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // 결제 위젯 없이 직접 결제 요청
+      await tossPayments.requestPayment("카드", {
+        amount: discountedPrice,
+        orderId,
+        orderName: `ITup 멘토링 상담 - ${mentorName || "멘토"}`,
+        successUrl: `${window.location.origin}/payment/success?consultationId=${consultationId || "local"}`,
+        failUrl: `${window.location.origin}/payment/fail`,
+        customerEmail: user?.email || formData.email,
+        customerName: profile?.name || formData.name,
+      });
+    } catch (error) {
+      console.error("Payment error:", error);
+      // 사용자가 결제창을 닫은 경우 등
+      setIsLoading(false);
     }
   };
 
@@ -188,6 +207,8 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorAvailabl
     setFormData(initialFormData);
     setErrors({});
     setIsSubmitted(false);
+    setStep("form");
+    setConsultationId(null);
     onClose();
   };
 
@@ -226,7 +247,67 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorAvailabl
         </button>
 
         <div className="p-6 md:p-8">
-          {isSubmitted ? (
+          {step === "payment" ? (
+            /* 결제 화면 */
+            <div className="text-center py-4">
+              <h2 className="text-2xl font-bold mb-2">결제하기</h2>
+              <p className="text-muted text-sm mb-6">
+                상담 신청을 완료하려면 결제를 진행해주세요.
+              </p>
+
+              {/* 결제 정보 */}
+              <div className="bg-secondary/50 rounded-xl p-4 mb-6 text-left">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-muted">멘토</span>
+                  <span className="font-medium">{mentorName || "멘토"}</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-muted">상담 시간</span>
+                  <span className="font-medium">30분</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-muted">정가</span>
+                  <span className="text-muted line-through">{price.toLocaleString()}원</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-card-border">
+                  <span className="font-medium">
+                    결제 금액
+                    <span className="ml-2 text-xs text-green-500 font-normal">첫 상담 30% 할인</span>
+                  </span>
+                  <span className="text-xl font-bold text-primary">{discountedPrice.toLocaleString()}원</span>
+                </div>
+              </div>
+
+              {/* 신청 정보 요약 */}
+              <div className="bg-secondary/30 rounded-xl p-4 mb-6 text-left text-sm">
+                <p className="text-muted mb-1">신청자: {formData.name}</p>
+                <p className="text-muted mb-1">연락처: {formData.phone}</p>
+                {formData.preferredTime && (
+                  <p className="text-muted">희망 시간: {formData.preferredTime}</p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setStep("form")}
+                  className="flex-1 py-3 border border-card-border text-foreground rounded-xl font-medium hover:bg-secondary transition-colors cursor-pointer"
+                >
+                  이전으로
+                </button>
+                <button
+                  onClick={handlePayment}
+                  disabled={isLoading}
+                  className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                >
+                  {isLoading ? "처리 중..." : `${discountedPrice.toLocaleString()}원 결제하기`}
+                </button>
+              </div>
+
+              <p className="mt-4 text-xs text-muted">
+                결제는 토스페이먼츠를 통해 안전하게 처리됩니다.
+              </p>
+            </div>
+          ) : isSubmitted ? (
             /* 성공 화면 */
             <div className="text-center py-8">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -248,9 +329,9 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorAvailabl
           ) : (
             /* 폼 화면 */
             <>
-              <h2 className="text-2xl font-bold mb-2">무료 상담 신청</h2>
+              <h2 className="text-2xl font-bold mb-2">상담 신청</h2>
               <p className="text-muted text-sm mb-6">
-                아래 정보를 입력하시면 멘토가 직접 연락드립니다.
+                아래 정보를 입력하고 결제를 진행해주세요.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -388,7 +469,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorAvailabl
                       처리 중...
                     </span>
                   ) : (
-                    "상담 신청하기"
+                    "다음: 결제하기"
                   )}
                 </button>
               </form>

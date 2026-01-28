@@ -33,8 +33,17 @@
   - 첫 상담 30% 할인 배지 표시
 - **관련 기획**: `docs/business/pricing.md`, `docs/service/features.md`
 
-### 다음 작업
-- 상담 신청 → 결제 연동 흐름 구현
+#### 3. 상담-결제 흐름 연동
+- **파일**:
+  - `src/components/ConsultModal.tsx` - 결제 단계 추가
+  - `src/app/mentors/page.tsx` - 멘토 정보 props 전달
+  - `src/components/HomeClient.tsx` - 멘토 정보 props 전달
+- **변경**:
+  - 상담 신청 폼 → 결제 확인 → 결제 진행 (2단계 플로우)
+  - 토스페이먼츠 결제 연동
+  - 첫 상담 30% 할인 적용 (50,000원 → 35,000원)
+  - 결제 정보 요약 UI 추가
+- **관련 기획**: `docs/service/scenarios.md` 2.1절
 
 ---
 

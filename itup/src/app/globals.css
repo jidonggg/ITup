@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf8f5;
-  --foreground: #2d2a26;
-  --primary: #8b6f4e;
-  --primary-light: #a68968;
-  --primary-dark: #6b5438;
-  --secondary: #f0ebe4;
-  --accent: #c49a6c;
-  --muted: #8a8279;
-  --card-bg: #ffffff;
-  --card-border: #e5ddd3;
+  /* ITup 다크 테마 (스타일 가이드 기준) */
+  --background: #0F172A;  /* slate-900 */
+  --foreground: #FFFFFF;  /* white */
+  --primary: #2563EB;     /* blue-600 */
+  --primary-light: #3B82F6; /* blue-500 */
+  --primary-dark: #1D4ED8;  /* blue-700 */
+  --secondary: #1E293B;   /* slate-800 */
+  --accent: #9333EA;      /* purple-600 */
+  --muted: #64748B;       /* slate-500 */
+  --card-bg: #1E293B;     /* slate-800 */
+  --card-border: #334155; /* slate-700 */
 
   /* Layout variables */
   --card-radius: 1rem;

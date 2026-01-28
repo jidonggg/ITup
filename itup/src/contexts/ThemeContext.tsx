@@ -21,11 +21,29 @@ export interface Theme {
 }
 
 export const themes: Theme[] = [
-  // === 라이트 테마 (기본) ===
+  // === ITup 기본 다크 테마 (스타일 가이드 기준) ===
+  {
+    id: "itup-dark",
+    name: "ITup 다크",
+    description: "게임 업계 느낌의 다크 테마 (기본)",
+    colors: {
+      background: "#0F172A",  // slate-900
+      foreground: "#FFFFFF",  // white
+      primary: "#2563EB",     // blue-600
+      primaryLight: "#3B82F6", // blue-500
+      primaryDark: "#1D4ED8",  // blue-700
+      secondary: "#1E293B",   // slate-800
+      accent: "#9333EA",      // purple-600
+      muted: "#64748B",       // slate-500
+      cardBg: "#1E293B",      // slate-800
+      cardBorder: "#334155",  // slate-700
+    },
+  },
+  // === 라이트 테마 ===
   {
     id: "latte-light",
     name: "라떼 라이트",
-    description: "부드러운 크림 라이트 (기본)",
+    description: "부드러운 크림 라이트",
     colors: {
       background: "#faf8f5",
       foreground: "#2d2a26",
@@ -207,8 +225,8 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [currentTheme, setCurrentTheme] = useState<Theme>(themes[0]); // latte-light (기본)
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState<Theme>(themes[0]); // itup-dark (기본)
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   const applyTheme = (theme: Theme) => {
     const root = document.documentElement;
@@ -232,9 +250,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const theme = themes.find((t) => t.id === themeId);
     if (theme) {
       setCurrentTheme(theme);
-      setIsDarkMode(themeId === "coffee-dark");
-      localStorage.setItem("coffeechat-theme", themeId);
-      localStorage.setItem("coffeechat-dark-mode", themeId === "coffee-dark" ? "true" : "false");
+      // 다크 테마 ID들
+      const darkThemes = ["itup-dark", "coffee-dark", "default", "midnight-gold"];
+      setIsDarkMode(darkThemes.includes(themeId));
+      localStorage.setItem("itup-theme", themeId);
+      localStorage.setItem("itup-dark-mode", darkThemes.includes(themeId) ? "true" : "false");
     }
   };
 
@@ -242,12 +262,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (isDarkMode) {
       setTheme("latte-light");
     } else {
-      setTheme("coffee-dark");
+      setTheme("itup-dark");
     }
   };
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("coffeechat-theme");
+    const savedTheme = localStorage.getItem("itup-theme");
     if (savedTheme) {
       const theme = themes.find((t) => t.id === savedTheme);
       if (theme) {
