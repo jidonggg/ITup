@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mentor, Consultation } from "@/lib/supabase/types";
 
@@ -31,6 +32,7 @@ const interestLabels: Record<string, string> = {
 
 export default function MentorDashboardPage() {
   const { user, isInitialized } = useAuth();
+  const { showToast } = useToast();
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,25 +47,22 @@ export default function MentorDashboardPage() {
       return;
     }
 
-    fetchMentorData();
-  }, [isInitialized, user]);
+    const fetchMentorData = async () => {
+      if (!isSupabaseConfigured()) {
+        setError("데이터베이스 연결이 필요합니다.");
+        setIsLoading(false);
+        return;
+      }
 
-  const fetchMentorData = async () => {
-    if (!isSupabaseConfigured()) {
-      setError("데이터베이스 연결이 필요합니다.");
-      setIsLoading(false);
-      return;
-    }
+      const supabase = createClient();
 
-    const supabase = createClient();
-
-    try {
-      // 현재 사용자가 멘토인지 확인
-      const { data: mentorData, error: mentorError } = await supabase
-        .from("mentors")
-        .select("*")
-        .eq("user_id", user!.id)
-        .single();
+      try {
+        // 현재 사용자가 멘토인지 확인
+        const { data: mentorData, error: mentorError } = await supabase
+          .from("mentors")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
 
       if (mentorError || !mentorData) {
         setError("멘토 정보를 찾을 수 없습니다.");
@@ -91,7 +90,10 @@ export default function MentorDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+    };
+
+    fetchMentorData();
+  }, [isInitialized, user]);
 
   const updateConsultationStatus = async (consultationId: string, newStatus: ConsultationStatus) => {
     if (!isSupabaseConfigured()) return;
@@ -107,9 +109,10 @@ export default function MentorDashboardPage() {
 
       if (error) {
         console.error("Error updating status:", error);
-        alert("상태 변경에 실패했습니다.");
+        showToast("상태 변경에 실패했습니다.", "error");
         return;
       }
+      showToast("상태가 변경되었습니다.", "success");
 
       // 로컬 상태 업데이트
       setConsultations((prev) =>
@@ -131,7 +134,7 @@ export default function MentorDashboardPage() {
       }
     } catch (err) {
       console.error("Error:", err);
-      alert("오류가 발생했습니다.");
+      showToast("오류가 발생했습니다.", "error");
     } finally {
       setUpdatingId(null);
     }
@@ -208,7 +211,7 @@ export default function MentorDashboardPage() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <span className="text-white text-sm">☕</span>
               </div>
-              <span className="font-bold">커피챗</span>
+              <span className="font-bold">ITup</span>
             </Link>
             <span className="text-muted">/</span>
             <span className="font-medium">멘토 대시보드</span>

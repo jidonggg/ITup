@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { isAdmin } from "@/lib/admin";
 import { Mentor, Consultation } from "@/lib/supabase/types";
@@ -40,6 +41,7 @@ interface Stats {
 
 export default function AdminPage() {
   const { user, isInitialized } = useAuth();
+  const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
@@ -265,7 +267,7 @@ export default function AdminPage() {
     try {
       const token = await getAuthToken();
       if (!token) {
-        alert("인증이 필요합니다.");
+        showToast("인증이 필요합니다.", "error");
         return;
       }
 
@@ -284,7 +286,7 @@ export default function AdminPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        alert(result.error || "멘토 상태 변경 중 오류가 발생했습니다.");
+        showToast(result.error || "멘토 상태 변경 중 오류가 발생했습니다.", "error");
         return;
       }
 
@@ -310,7 +312,7 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("오류가 발생했습니다.");
+      showToast("오류가 발생했습니다.", "error");
     } finally {
       setUpdatingMentorId(null);
     }
@@ -322,7 +324,7 @@ export default function AdminPage() {
     try {
       const token = await getAuthToken();
       if (!token) {
-        alert("인증이 필요합니다.");
+        showToast("인증이 필요합니다.", "error");
         return;
       }
 
@@ -336,10 +338,11 @@ export default function AdminPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        alert(result.error || "멘토 삭제 중 오류가 발생했습니다.");
+        showToast(result.error || "멘토 삭제 중 오류가 발생했습니다.", "error");
         return;
       }
 
+      showToast("멘토가 삭제되었습니다.", "success");
       setMentors(prev => prev.filter(m => m.id !== mentorId));
       setStats(prev => ({
         ...prev,
@@ -347,7 +350,7 @@ export default function AdminPage() {
       }));
     } catch (error) {
       console.error("Error:", error);
-      alert("오류가 발생했습니다.");
+      showToast("오류가 발생했습니다.", "error");
     }
   };
 
@@ -428,7 +431,7 @@ export default function AdminPage() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
                 <span className="text-white text-sm font-bold">A</span>
               </div>
-              <span className="font-bold">커피챗 Admin</span>
+              <span className="font-bold">ITup Admin</span>
             </Link>
           </div>
           <div className="flex items-center gap-4">

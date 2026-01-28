@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { skillCategories } from "@/data/mentors";
 
 type ConsultType = "coffee" | "resume" | "interview";
 
 const consultTypeOptions: { value: ConsultType; label: string }[] = [
-  { value: "coffee", label: "커피챗" },
+  { value: "coffee", label: "1:1 상담" },
   { value: "resume", label: "이력서/포트폴리오" },
   { value: "interview", label: "모의면접" },
 ];
@@ -49,8 +49,8 @@ const initialFormData: FormData = {
 };
 
 export default function MentorEditPage() {
-  const _router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const { showToast } = useToast();
   const [mentorId, setMentorId] = useState<string | null>(null);
   const [isApproved, setIsApproved] = useState(false);
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -168,7 +168,7 @@ export default function MentorEditPage() {
 
       if (error) {
         console.error("Error updating mentor:", error);
-        alert("프로필 수정 중 오류가 발생했습니다. 다시 시도해주세요.");
+        showToast("프로필 수정 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
         setIsSubmitting(false);
         return;
       }
@@ -176,7 +176,7 @@ export default function MentorEditPage() {
       setIsSuccess(true);
     } catch (error) {
       console.error("Error updating mentor:", error);
-      alert("프로필 수정 중 오류가 발생했습니다. 다시 시도해주세요.");
+      showToast("프로필 수정 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
     } finally {
       setIsSubmitting(false);
     }

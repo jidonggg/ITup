@@ -4,10 +4,13 @@ import { useState, useEffect } from "react";
 import { useModalClose, useBodyScrollLock, formatPhoneNumber } from "@/hooks/useModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
+import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
+import { PRICES } from "@/lib/constants";
 
-const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq";
+// 토스페이먼츠 클라이언트 키 (환경변수 필수)
+const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
 
 interface ConsultModalProps {
   isOpen: boolean;
@@ -39,6 +42,7 @@ const initialFormData: FormData = {
 export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, mentorAvailableTimes, mentorPrice }: ConsultModalProps) {
   const { user, profile } = useAuth();
   const { trackEvent } = useAnalytics();
+  const { showToast } = useToast();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -47,49 +51,52 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   const [step, setStep] = useState<"form" | "payment" | "success">("form");
   const [consultationId, setConsultationId] = useState<string | null>(null);
 
-  const price = mentorPrice || 50000; // 기본 가격 50,000원
+  const price = mentorPrice || PRICES.DEFAULT_CONSULT;
   const discountedPrice = Math.floor(price * 0.7); // 첫 상담 30% 할인
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
 
-  // 모달 오픈 추적 및 멘토 시간 가져오기
+  // 모달 오픈 시 초기화 및 데이터 로드
   useEffect(() => {
-    if (isOpen) {
-      trackEvent("modal", "상담모달_오픈", { mentorId: mentorId || "general" });
+    if (!isOpen) return;
 
-      // props로 전달된 시간이 있으면 사용
+    // 이벤트 추적
+    trackEvent("modal", "상담모달_오픈", { mentorId: mentorId || "general" });
+
+    // 멘토 시간 로드 (비동기 작업)
+    const loadMentorTimes = async () => {
       if (mentorAvailableTimes && mentorAvailableTimes.length > 0) {
-        setAvailableTimes(mentorAvailableTimes);
+        // props로 전달된 시간 사용 (비동기 콜백으로 처리)
+        requestAnimationFrame(() => setAvailableTimes(mentorAvailableTimes));
       } else if (mentorId && isSupabaseConfigured()) {
-        // 없으면 DB에서 가져오기
-        const fetchMentorTimes = async () => {
-          const supabase = createClient();
-          const { data } = await supabase
-            .from("mentors")
-            .select("available_times")
-            .eq("id", mentorId)
-            .single();
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("mentors")
+          .select("available_times")
+          .eq("id", mentorId)
+          .single();
 
-          if (data?.available_times) {
-            setAvailableTimes(data.available_times);
-          }
-        };
-        fetchMentorTimes();
+        if (data?.available_times) {
+          setAvailableTimes(data.available_times);
+        }
       }
-    }
-  }, [isOpen, mentorId, mentorAvailableTimes, trackEvent]);
+    };
 
-  useEffect(() => {
-    if (isOpen && user) {
-      setFormData((prev) => ({
-        ...prev,
-        name: profile?.name || prev.name,
-        email: user.email || prev.email,
-        phone: profile?.phone || prev.phone,
-      }));
+    // 유저 정보로 폼 초기화 (비동기 콜백으로 처리)
+    if (user) {
+      requestAnimationFrame(() => {
+        setFormData((prev) => ({
+          ...prev,
+          name: profile?.name || prev.name,
+          email: user.email || prev.email,
+          phone: profile?.phone || prev.phone,
+        }));
+      });
     }
-  }, [isOpen, user, profile]);
+
+    loadMentorTimes();
+  }, [isOpen, mentorId, mentorAvailableTimes, trackEvent, user, profile]);
 
   const interests = [
     { value: "programming", label: "프로그래밍" },
@@ -181,6 +188,11 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   };
 
   const handlePayment = async () => {
+    if (!TOSS_CLIENT_KEY) {
+      showToast("결제 시스템이 설정되지 않았습니다. 관리자에게 문의해주세요.", "error");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);

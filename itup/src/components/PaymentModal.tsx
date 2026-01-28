@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { PlanInfo } from "@/lib/payment/types";
 import { loadTossPayments, TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 
-// 테스트용 클라이언트 키 (실제 배포 시 환경변수로 변경)
-const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq";
+// 토스페이먼츠 클라이언트 키 (환경변수 필수)
+const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ interface PaymentModalProps {
 
 export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
   const { user, profile } = useAuth();
+  const { showToast } = useToast();
   const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,12 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
       try {
         setIsLoading(true);
         setError(null);
+
+        if (!TOSS_CLIENT_KEY) {
+          setError("결제 시스템이 설정되지 않았습니다.");
+          setIsLoading(false);
+          return;
+        }
 
         const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
         const customerKey = user?.id || `guest_${Date.now()}`;
@@ -77,7 +85,7 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
     if (!widgets || !plan) return;
 
     if (!agreedToTerms) {
-      alert("결제 약관에 동의해주세요.");
+      showToast("결제 약관에 동의해주세요.", "warning");
       return;
     }
 
@@ -94,7 +102,7 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
       });
     } catch (err) {
       console.error("Payment error:", err);
-      alert("결제 요청 중 오류가 발생했습니다.");
+      showToast("결제 요청 중 오류가 발생했습니다.", "error");
     }
   };
 

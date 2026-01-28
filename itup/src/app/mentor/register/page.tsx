@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { skillCategories } from "@/data/mentors";
 import LoginModal from "@/components/auth/LoginModal";
@@ -12,7 +13,7 @@ import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 type ConsultType = "coffee" | "resume" | "interview";
 
 const consultTypeOptions: { value: ConsultType; label: string }[] = [
-  { value: "coffee", label: "커피챗" },
+  { value: "coffee", label: "1:1 상담" },
   { value: "resume", label: "이력서/포트폴리오" },
   { value: "interview", label: "모의면접" },
 ];
@@ -53,6 +54,7 @@ const initialFormData: FormData = {
 export default function MentorRegisterPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const { showToast } = useToast();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,7 +106,7 @@ export default function MentorRegisterPage() {
     if (!validateForm()) return;
 
     if (!isSupabaseConfigured()) {
-      alert("Supabase가 설정되지 않았습니다. 환경 변수를 확인해주세요.");
+      showToast("Supabase가 설정되지 않았습니다. 환경 변수를 확인해주세요.", "error");
       return;
     }
 
@@ -138,7 +140,7 @@ export default function MentorRegisterPage() {
 
       if (error) {
         console.error("Error registering mentor:", error);
-        alert("멘토 등록 중 오류가 발생했습니다. 다시 시도해주세요.");
+        showToast("멘토 등록 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
         setIsSubmitting(false);
         return;
       }
@@ -146,7 +148,7 @@ export default function MentorRegisterPage() {
       setIsSuccess(true);
     } catch (error) {
       console.error("Error registering mentor:", error);
-      alert("멘토 등록 중 오류가 발생했습니다. 다시 시도해주세요.");
+      showToast("멘토 등록 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -252,7 +254,7 @@ export default function MentorRegisterPage() {
             </button>
             <h1 className="text-3xl font-bold mb-2">멘토 등록</h1>
             <p className="text-muted">
-              커피챗 멘토가 되어 후배 개발자들의 성장을 도와주세요
+              ITup 멘토가 되어 후배 개발자들의 성장을 도와주세요
             </p>
           </div>
 

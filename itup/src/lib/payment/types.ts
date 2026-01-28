@@ -1,3 +1,5 @@
+import { PRICES } from "@/lib/constants";
+
 export interface PlanInfo {
   id: string;
   name: string;
@@ -11,7 +13,7 @@ export const plans: PlanInfo[] = [
   {
     id: "basic",
     name: "Basic",
-    price: 99000,
+    price: PRICES.BASIC_PLAN,
     period: "월",
     description: "게임 업계 입문자를 위한 기본 플랜",
     features: [
@@ -25,7 +27,7 @@ export const plans: PlanInfo[] = [
   {
     id: "pro",
     name: "Pro",
-    price: 199000,
+    price: PRICES.STANDARD_PLAN,
     period: "월",
     description: "집중적인 취업 준비를 위한 프로 플랜",
     features: [
@@ -40,7 +42,7 @@ export const plans: PlanInfo[] = [
   {
     id: "premium",
     name: "Premium",
-    price: 399000,
+    price: PRICES.PREMIUM_PLAN,
     period: "월",
     description: "확실한 취업 성공을 위한 프리미엄 플랜",
     features: [

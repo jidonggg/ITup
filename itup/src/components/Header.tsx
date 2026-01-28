@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import AuthButton from "@/components/auth/AuthButton";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,6 +41,7 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
   // 기본 네비게이션 링크
   const baseNavLinks = [
     { href: "/mentors", label: "멘토 둘러보기" },
+    { href: "/mentor/register", label: "멘토 등록" },
     { href: "/faq", label: "FAQ" },
   ];
 
@@ -74,14 +76,14 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
               <span className="text-white text-xl">☕</span>
             </div>
             <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
               ITup
             </span>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">

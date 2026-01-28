@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Consultation, Mentor, Payment, Subscription } from "@/lib/supabase/types";
 import { plans } from "@/lib/payment/types";
@@ -17,6 +18,7 @@ type TabType = "profile" | "consultations" | "subscription";
 export default function MyPage() {
   const router = useRouter();
   const { user, profile, isLoading, isInitialized, signOut, refreshProfile } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const [consultations, setConsultations] = useState<ConsultationWithMentor[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -161,10 +163,11 @@ export default function MyPage() {
 
       if (error) {
         console.error("Error updating profile:", error);
-        alert("프로필 수정에 실패했습니다.");
+        showToast("프로필 수정에 실패했습니다.", "error");
       } else {
         await refreshProfile();
         setIsEditing(false);
+        showToast("프로필이 수정되었습니다.", "success");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -234,7 +237,7 @@ export default function MyPage() {
               <span className="text-white text-sm">☕</span>
             </div>
             <span className="font-bold text-foreground group-hover:text-primary transition-colors">
-              커피챗
+              ITup
             </span>
           </Link>
           <button
