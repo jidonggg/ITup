@@ -41,6 +41,30 @@ export interface Consultation {
   created_at: string;
 }
 
+export interface Payment {
+  id: string;
+  user_id: string;
+  user_email: string;
+  plan_id: string;
+  plan_name: string;
+  amount: number;
+  payment_key: string | null;
+  order_id: string;
+  status: "pending" | "completed" | "failed" | "refunded";
+  created_at: string;
+}
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  plan_name: string;
+  status: "active" | "cancelled" | "expired";
+  current_period_start: string;
+  current_period_end: string;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
