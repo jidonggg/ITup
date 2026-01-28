@@ -8,10 +8,14 @@ const footerLinks = {
     { label: "멘토 찾기", href: "/mentors" },
     { label: "멘토링 소개", href: "#features" },
     { label: "요금제", href: "#pricing" },
+    { label: "기업 서비스", href: "/business" },
   ],
-  지원: [
+  회사: [
+    { label: "회사 소개", href: "/about" },
     { label: "자주 묻는 질문", href: "/faq" },
     { label: "문의하기", href: "mailto:support@coffeechat.kr" },
+  ],
+  지원: [
     { label: "이용약관", href: "/terms" },
     { label: "개인정보처리방침", href: "/privacy" },
   ],

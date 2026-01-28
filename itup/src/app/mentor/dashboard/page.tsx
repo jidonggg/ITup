@@ -117,6 +117,18 @@ export default function MentorDashboardPage() {
           c.id === consultationId ? { ...c, status: newStatus } : c
         )
       );
+
+      // 상담 확정 시 이메일 알림 발송
+      if (newStatus === "confirmed") {
+        fetch("/api/email/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "consultation_confirmed",
+            data: { consultationId },
+          }),
+        }).catch(console.error);
+      }
     } catch (err) {
       console.error("Error:", err);
       alert("오류가 발생했습니다.");

@@ -153,6 +153,24 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorAvailabl
       if (error) {
         console.error("Error saving consultation:", error);
         saveToLocalStorage();
+      } else {
+        // 이메일 알림 발송 (비동기, 실패해도 상담 신청은 완료 처리)
+        fetch("/api/email/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "consultation_request",
+            data: {
+              mentorId,
+              menteeName: formData.name,
+              menteeEmail: formData.email,
+              menteePhone: formData.phone,
+              interest: formData.interest,
+              preferredTime: formData.preferredTime,
+              message: formData.message,
+            },
+          }),
+        }).catch(console.error);
       }
 
       trackEvent("submit", "상담신청_완료", { interest: formData.interest, mentorId: mentorId || "general" });

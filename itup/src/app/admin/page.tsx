@@ -296,6 +296,18 @@ export default function AdminPage() {
         ...prev,
         pendingMentors: prev.pendingMentors + (approve ? -1 : 1),
       }));
+
+      // 멘토 승인 시 이메일 알림 발송
+      if (approve) {
+        fetch("/api/email/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "mentor_approved",
+            data: { mentorId },
+          }),
+        }).catch(console.error);
+      }
     } catch (error) {
       console.error("Error:", error);
       alert("오류가 발생했습니다.");
