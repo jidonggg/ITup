@@ -1,7 +1,7 @@
 # 컴포넌트 명세 (Component Specification)
 
 > 작성자: 디자인 기획자
-> 최종 업데이트: YYYY-MM-DD
+> 최종 업데이트: 2025-01-28
 
 ---
 
