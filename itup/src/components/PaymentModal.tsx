@@ -22,7 +22,6 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
   const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
@@ -84,11 +83,6 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
   const handlePayment = async () => {
     if (!widgets || !plan) return;
 
-    if (!agreedToTerms) {
-      showToast("결제 약관에 동의해주세요.", "warning");
-      return;
-    }
-
     try {
       const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -107,7 +101,6 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
   };
 
   const handleClose = () => {
-    setAgreedToTerms(false);
     setError(null);
     onClose();
   };
@@ -178,34 +171,26 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
               {/* 결제 수단 선택 */}
               <div id="payment-methods" className="mb-4" />
 
-              {/* 약관 동의 */}
+              {/* 약관 동의 (토스페이먼츠 제공) */}
               <div id="payment-agreement" className="mb-4" />
 
-              {/* 추가 약관 동의 */}
-              <label className="flex items-start gap-3 mb-6 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-1 w-4 h-4 accent-primary"
-                />
-                <span className="text-sm text-muted">
-                  위 상품의 구매 조건을 확인하였으며,{" "}
-                  <a href="/terms" target="_blank" className="text-primary hover:underline">
-                    이용약관
-                  </a>
-                  {" "}및{" "}
-                  <a href="/privacy" target="_blank" className="text-primary hover:underline">
-                    개인정보처리방침
-                  </a>
-                  에 동의합니다.
-                </span>
-              </label>
+              {/* 서비스 약관 안내 */}
+              <p className="text-xs text-muted mb-6">
+                결제 진행 시{" "}
+                <a href="/terms" target="_blank" className="text-primary hover:underline">
+                  이용약관
+                </a>
+                {" "}및{" "}
+                <a href="/privacy" target="_blank" className="text-primary hover:underline">
+                  개인정보처리방침
+                </a>
+                에 동의한 것으로 간주됩니다.
+              </p>
 
               {/* 결제 버튼 */}
               <button
                 onClick={handlePayment}
-                disabled={!agreedToTerms}
+                disabled={false}
                 className="w-full py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold text-lg hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {plan.price.toLocaleString()}원 결제하기

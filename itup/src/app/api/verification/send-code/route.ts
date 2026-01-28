@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-
-// 인증 코드 임시 저장 (메모리, 5분 TTL)
-// 프로덕션에서는 Redis 사용 권장
-const verificationCodes = new Map<string, { code: string; expires: number }>();
+import { saveVerificationCode } from "@/lib/verification-store";
 
 // 게임 회사 도메인 목록
 const GAME_COMPANY_DOMAINS = [
@@ -35,6 +32,28 @@ const GAME_COMPANY_DOMAINS = [
   "lineplus.com", "linecorp.com",
 ];
 
+// Rate limiting (메모리 기반, 프로덕션에서는 Redis 권장)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 3; // 5분당 최대 3회
+const RATE_LIMIT_WINDOW = 5 * 60 * 1000;
+
+function checkRateLimit(email: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(email);
+
+  if (!record || now > record.resetAt) {
+    rateLimitMap.set(email, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+
+  if (record.count >= RATE_LIMIT) {
+    return false;
+  }
+
+  record.count++;
+  return true;
+}
+
 function isValidCompanyEmail(email: string): boolean {
   const domain = email.split("@")[1]?.toLowerCase();
   if (!domain) return false;
@@ -50,10 +69,18 @@ function generateCode(): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, mentorId } = await request.json();
+    const { email } = await request.json();
 
     if (!email) {
       return NextResponse.json({ error: "이메일이 필요합니다." }, { status: 400 });
+    }
+
+    // Rate limiting 체크
+    if (!checkRateLimit(email)) {
+      return NextResponse.json(
+        { error: "너무 많은 요청입니다. 5분 후에 다시 시도해주세요." },
+        { status: 429 }
+      );
     }
 
     // 회사 이메일 도메인 검증
@@ -66,15 +93,9 @@ export async function POST(request: NextRequest) {
 
     // 인증 코드 생성
     const code = generateCode();
-    const expires = Date.now() + 5 * 60 * 1000; // 5분
 
-    // 메모리에 임시 저장 (키: 이메일)
-    verificationCodes.set(email, { code, expires });
-
-    // 5분 후 자동 삭제
-    setTimeout(() => {
-      verificationCodes.delete(email);
-    }, 5 * 60 * 1000);
+    // 공유 저장소에 저장 (Supabase 또는 메모리)
+    await saveVerificationCode(email, code);
 
     // 이메일 발송
     if (process.env.RESEND_API_KEY) {
@@ -120,6 +141,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-// 코드 검증용 export (verify-code에서 사용)
-export { verificationCodes };

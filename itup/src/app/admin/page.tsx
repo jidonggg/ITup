@@ -300,10 +300,13 @@ export default function AdminPage() {
       }));
 
       // 멘토 승인 시 이메일 알림 발송
-      if (approve) {
+      if (approve && token) {
         fetch("/api/email/notify", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
           body: JSON.stringify({
             type: "mentor_approved",
             data: { mentorId },

@@ -219,7 +219,12 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       });
     } catch (error) {
       console.error("Payment error:", error);
-      // 사용자가 결제창을 닫은 경우 등
+      // 사용자가 결제창을 닫은 경우 또는 오류 발생 시
+      const errorMessage = error instanceof Error ? error.message : "";
+      // PAY_PROCESS_CANCELED는 사용자가 직접 닫은 경우이므로 Toast 표시 안함
+      if (!errorMessage.includes("PAY_PROCESS_CANCELED")) {
+        showToast("결제 처리 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
+      }
       setIsLoading(false);
     }
   };

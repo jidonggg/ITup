@@ -6,6 +6,10 @@ import {
   consultationConfirmedTemplate,
   mentorApprovedTemplate,
 } from "@/lib/email/templates";
+import { isAdmin } from "@/lib/admin";
+
+// 내부 API 시크릿 (서버-서버 통신용)
+const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
 
 // 서버사이드 Supabase 클라이언트
 function getServiceSupabase() {
@@ -19,8 +23,41 @@ function getServiceSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+// 인증 검증: 관리자 토큰 또는 내부 API 시크릿 필요
+async function verifyAuth(request: NextRequest): Promise<boolean> {
+  // 1. 내부 API 시크릿 확인 (서버-서버 통신)
+  const apiSecret = request.headers.get("x-api-secret");
+  if (INTERNAL_API_SECRET && apiSecret === INTERNAL_API_SECRET) {
+    return true;
+  }
+
+  // 2. 관리자 세션 토큰 확인
+  const authHeader = request.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.substring(7);
+    const supabase = getServiceSupabase();
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user && isAdmin(user.email)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // 인증 검증
+    const isAuthorized = await verifyAuth(request);
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { type, data } = body;
 

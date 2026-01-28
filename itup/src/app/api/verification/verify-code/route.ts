@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
-// 인증 코드 저장소 (send-code와 공유)
-// 주의: Serverless 환경에서는 메모리 공유 불가, Redis 필요
-const verificationCodes = new Map<string, { code: string; expires: number }>();
+import { getVerificationCode, deleteVerificationCode } from "@/lib/verification-store";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,8 +13,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 저장된 코드 확인
-    const stored = verificationCodes.get(email);
+    // 공유 저장소에서 코드 조회
+    const stored = await getVerificationCode(email);
 
     if (!stored) {
       return NextResponse.json(
@@ -28,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // 만료 확인
     if (Date.now() > stored.expires) {
-      verificationCodes.delete(email);
+      await deleteVerificationCode(email);
       return NextResponse.json(
         { error: "인증 코드가 만료되었습니다. 다시 요청해주세요." },
         { status: 400 }
@@ -44,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 검증 성공 - 즉시 코드 삭제 (개인정보 보호)
-    verificationCodes.delete(email);
+    await deleteVerificationCode(email);
 
     // Supabase에 인증 상태 저장
     if (mentorId && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
