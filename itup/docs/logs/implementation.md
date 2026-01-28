@@ -6,4 +6,36 @@
 
 ---
 
+## [2025-01-28] 기획 기반 기능 보완
+
+### 작업자
+코더1
+
+### 작업 내용
+
+#### 1. Header 네비게이션 동적 링크 구현
+- **파일**: `src/components/Header.tsx`
+- **변경**:
+  - 앵커 링크(#features 등) → 실제 페이지 링크로 변경
+  - 역할 기반 동적 메뉴 구현
+  - 비로그인: 멘토 둘러보기, FAQ
+  - 멘토: + 대시보드, 마이페이지
+  - 관리자: + 관리자, 마이페이지
+- **관련 기획**: `docs/service/user-flow.md` 6.1절
+
+#### 2. 멘토 가격 표시 기능 추가
+- **파일**:
+  - `src/lib/supabase/types.ts` - Mentor 인터페이스에 price 필드 추가
+  - `src/components/MentorDetailModal.tsx` - 가격 섹션 UI 추가
+  - `src/components/Mentors.tsx` - convertToMentorData에 price 매핑
+- **변경**:
+  - 멘토 상세 모달에 상담 가격 표시 (기본값 50,000원/30분)
+  - 첫 상담 30% 할인 배지 표시
+- **관련 기획**: `docs/business/pricing.md`, `docs/service/features.md`
+
+### 다음 작업
+- 상담 신청 → 결제 연동 흐름 구현
+
+---
+
 <!-- 최신 기록이 위로 올라갑니다 -->

@@ -13,7 +13,7 @@ const footerLinks = {
   회사: [
     { label: "회사 소개", href: "/about" },
     { label: "자주 묻는 질문", href: "/faq" },
-    { label: "문의하기", href: "mailto:support@coffeechat.kr" },
+    { label: "문의하기", href: "mailto:support@itup.kr" },
   ],
   지원: [
     { label: "이용약관", href: "/terms" },
@@ -104,7 +104,7 @@ export default function Footer() {
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <span className="text-white text-xl">☕</span>
               </div>
-              <span className="text-xl font-bold">커피챗</span>
+              <span className="text-xl font-bold">ITup</span>
             </a>
             <p className="text-muted text-sm mb-6 max-w-xs">
               게임 업계 현직자와 함께하는 1:1 멘토링 플랫폼. 당신의 게임 업계 커리어를 함께
@@ -112,13 +112,13 @@ export default function Footer() {
             </p>
             {/* 문의 이메일 */}
             <a
-              href="mailto:support@coffeechat.kr"
+              href="mailto:support@itup.kr"
               className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              support@coffeechat.kr
+              support@itup.kr
             </a>
           </div>
 
@@ -177,7 +177,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="pt-8 border-t border-card-border text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-muted text-sm">
-            <p>&copy; 2025 커피챗. All rights reserved.</p>
+            <p>&copy; 2025 ITup. All rights reserved.</p>
             <div className="flex gap-6">
               <a href="/terms" className="hover:text-primary transition-colors">
                 이용약관

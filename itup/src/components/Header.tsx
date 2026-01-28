@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import AuthButton from "@/components/auth/AuthButton";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
   onLoginClick?: () => void;
@@ -14,6 +15,7 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const { user, profile } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,12 +37,30 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileMenuOpen]);
 
-  const navLinks = [
-    { href: "#features", label: "특징" },
-    { href: "#mentors", label: "멘토" },
-    { href: "#testimonials", label: "후기" },
-    { href: "#pricing", label: "요금" },
+  // 기본 네비게이션 링크
+  const baseNavLinks = [
+    { href: "/mentors", label: "멘토 둘러보기" },
+    { href: "/faq", label: "FAQ" },
   ];
+
+  // 역할별 추가 링크
+  const getNavLinks = () => {
+    const links = [...baseNavLinks];
+
+    if (user && profile) {
+      if (profile.role === "admin") {
+        links.push({ href: "/admin", label: "관리자" });
+      }
+      if (profile.role === "mentor") {
+        links.push({ href: "/mentor/dashboard", label: "대시보드" });
+      }
+      links.push({ href: "/mypage", label: "마이페이지" });
+    }
+
+    return links;
+  };
+
+  const navLinks = getNavLinks();
 
   return (
     <header
@@ -59,7 +79,7 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
               <span className="text-white text-xl">☕</span>
             </div>
             <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-              커피챗
+              ITup
             </span>
           </a>
 

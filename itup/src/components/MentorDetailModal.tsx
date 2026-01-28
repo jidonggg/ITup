@@ -17,6 +17,7 @@ export interface MentorData {
   availableTimes: string[];
   reviews: number;
   consultTypes: ConsultType[];
+  price?: number;
 }
 
 interface MentorDetailModalProps {
@@ -167,6 +168,23 @@ export default function MentorDetailModal({
                   {time}
                 </span>
               ))}
+            </div>
+          </div>
+
+          {/* Price */}
+          <div className="mb-6 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl border border-primary/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-muted mb-1">상담 가격</h3>
+                <p className="text-2xl font-bold text-primary">
+                  {mentor.price ? `${mentor.price.toLocaleString()}원` : "50,000원"}
+                  <span className="text-sm font-normal text-muted ml-1">/ 30분</span>
+                </p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-muted">첫 상담</span>
+                <p className="text-sm font-semibold text-green-500">30% 할인</p>
+              </div>
             </div>
           </div>
 

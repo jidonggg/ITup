@@ -22,6 +22,7 @@ export interface Mentor {
   bio: string | null;
   available_times: string[] | null;
   consult_types: ConsultType[];
+  price: number | null;
   rating: number;
   sessions: number;
   reviews: number;

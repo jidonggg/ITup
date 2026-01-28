@@ -27,6 +27,7 @@ function convertToMentorData(mentor: Mentor): MentorData {
     bio: mentor.bio || "",
     availableTimes: mentor.available_times || [],
     consultTypes: mentor.consult_types as ConsultType[],
+    price: mentor.price || undefined,
   };
 }
 
@@ -99,9 +100,9 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
         </div>
 
         {/* Mentors Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (
-            Array.from({ length: 4 }).map((_, index) => (
+            Array.from({ length: 3 }).map((_, index) => (
               <MentorCardSkeleton key={index} cardRadius={cardRadius} />
             ))
           ) : (
