@@ -65,6 +65,13 @@ export interface Subscription {
   created_at: string;
 }
 
+export interface NewsletterSubscription {
+  id: string;
+  email: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {

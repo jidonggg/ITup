@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+
 const footerLinks = {
   서비스: [
     { label: "멘토 찾기", href: "/mentors" },
@@ -65,6 +68,69 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email || !email.includes("@")) {
+      setMessage({ type: "error", text: "올바른 이메일을 입력해주세요." });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage(null);
+
+    try {
+      if (isSupabaseConfigured()) {
+        const supabase = createClient();
+
+        // Check if email already exists
+        const { data: existing } = await supabase
+          .from("newsletter_subscriptions")
+          .select("id, is_active")
+          .eq("email", email)
+          .single();
+
+        if (existing) {
+          if (existing.is_active) {
+            setMessage({ type: "error", text: "이미 구독 중인 이메일입니다." });
+          } else {
+            // Reactivate subscription
+            await supabase
+              .from("newsletter_subscriptions")
+              .update({ is_active: true })
+              .eq("id", existing.id);
+            setMessage({ type: "success", text: "뉴스레터 구독이 재활성화되었습니다!" });
+            setEmail("");
+          }
+        } else {
+          // Create new subscription
+          const { error } = await supabase
+            .from("newsletter_subscriptions")
+            .insert({ email, is_active: true });
+
+          if (error) {
+            throw error;
+          }
+          setMessage({ type: "success", text: "뉴스레터 구독이 완료되었습니다!" });
+          setEmail("");
+        }
+      } else {
+        // Demo mode
+        setMessage({ type: "success", text: "구독 신청이 접수되었습니다. (데모 모드)" });
+        setEmail("");
+      }
+    } catch (error) {
+      console.error("Newsletter subscription error:", error);
+      setMessage({ type: "error", text: "구독 처리 중 오류가 발생했습니다." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <footer className="bg-secondary/50 border-t border-card-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
@@ -123,16 +189,30 @@ export default function Footer() {
             <h4 className="font-semibold mb-1">뉴스레터 구독</h4>
             <p className="text-muted text-sm">게임 업계 취업 팁과 멘토링 소식을 받아보세요.</p>
           </div>
-          <div className="flex w-full md:w-auto gap-2 sm:gap-3">
-            <input
-              type="email"
-              placeholder="이메일 주소"
-              className="flex-1 md:w-64 px-4 py-3 bg-card-bg border border-card-border rounded-full text-sm focus:outline-none focus:border-primary transition-colors"
-            />
-            <button className="px-4 sm:px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 cursor-pointer whitespace-nowrap">
-              구독
-            </button>
-          </div>
+          <form onSubmit={handleNewsletterSubmit} className="flex flex-col w-full md:w-auto gap-2">
+            <div className="flex w-full md:w-auto gap-2 sm:gap-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="이메일 주소"
+                className="flex-1 md:w-64 px-4 py-3 bg-card-bg border border-card-border rounded-full text-sm focus:outline-none focus:border-primary transition-colors"
+                disabled={isSubmitting}
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-4 sm:px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 cursor-pointer whitespace-nowrap disabled:opacity-50"
+              >
+                {isSubmitting ? "처리중..." : "구독"}
+              </button>
+            </div>
+            {message && (
+              <p className={`text-sm text-center md:text-right ${message.type === "success" ? "text-green-500" : "text-red-500"}`}>
+                {message.text}
+              </p>
+            )}
+          </form>
         </div>
 
         {/* Copyright */}
