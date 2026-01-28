@@ -4,6 +4,14 @@ import { createClient } from "@supabase/supabase-js";
 // TossPayments API 시크릿 키
 const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY || "";
 
+// 가격 설정 (서버에서 검증용)
+const PRICES: Record<string, number> = {
+  CONSULT: 35000, // 상담 (30% 할인 적용가)
+  BASIC: 99000,
+  STANDARD: 199000,
+  PREMIUM: 399000,
+};
+
 // 서버사이드 Supabase 클라이언트
 function getServiceSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -16,6 +24,12 @@ function getServiceSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+// orderId에서 예상 금액 계산
+function getExpectedAmount(orderId: string): number | null {
+  const prefix = orderId.split("_")[0].toUpperCase();
+  return PRICES[prefix] || null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -26,6 +40,34 @@ export async function POST(request: NextRequest) {
         { error: "Missing required parameters" },
         { status: 400 }
       );
+    }
+
+    const supabase = getServiceSupabase();
+
+    // 1. 결제 금액 서버 검증
+    const expectedAmount = getExpectedAmount(orderId);
+    if (expectedAmount && Number(amount) !== expectedAmount) {
+      console.error(`Amount mismatch: expected ${expectedAmount}, got ${amount}`);
+      return NextResponse.json(
+        { error: "결제 금액이 일치하지 않습니다." },
+        { status: 400 }
+      );
+    }
+
+    // 2. 결제 중복 확인 (payment_key)
+    if (supabase) {
+      const { data: existingPayment } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("payment_key", paymentKey)
+        .single();
+
+      if (existingPayment) {
+        return NextResponse.json(
+          { error: "이미 처리된 결제입니다." },
+          { status: 400 }
+        );
+      }
     }
 
     // TossPayments 결제 승인 API 호출
@@ -58,8 +100,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 결제 성공 - DB에 저장
-    const supabase = getServiceSupabase();
-
     if (supabase) {
       // 사용자 ID 추출 (orderId 형식: PLAN_userId_timestamp)
       const orderParts = orderId.split("_");

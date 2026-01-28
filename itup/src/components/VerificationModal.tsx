@@ -59,7 +59,7 @@ export default function VerificationModal({
 
       showToast("인증 코드가 발송되었습니다.", "success");
       setStep("verify");
-    } catch (err) {
+    } catch {
       setError("인증 코드 발송에 실패했습니다.");
     } finally {
       setIsLoading(false);
@@ -92,7 +92,7 @@ export default function VerificationModal({
       setStep("success");
       showToast("인증이 완료되었습니다!", "success");
       onVerified?.();
-    } catch (err) {
+    } catch {
       setError("인증 처리 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);

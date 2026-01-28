@@ -25,10 +25,12 @@ export const PAGINATION = {
 
 // 유효성 검사 상수
 export const VALIDATION = {
-  MIN_PASSWORD_LENGTH: 6,
+  MIN_PASSWORD_LENGTH: 8,
   MAX_BIO_LENGTH: 500,
   MAX_NAME_LENGTH: 50,
   PHONE_REGEX: /^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/,
+  // 비밀번호: 최소 8자, 영문+숫자 필수
+  PASSWORD_REGEX: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
 } as const;
 
 // 기간 상수 (ms)

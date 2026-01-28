@@ -115,6 +115,19 @@ export default function MentorRegisterPage() {
     try {
       const supabase = createClient();
 
+      // 중복 가입 확인
+      const { data: existingMentor } = await supabase
+        .from("mentors")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (existingMentor) {
+        showToast("이미 멘토로 등록되어 있습니다.", "error");
+        setIsSubmitting(false);
+        return;
+      }
+
       const previousCompaniesArray = formData.previousCompanies
         .split(",")
         .map((s) => s.trim())

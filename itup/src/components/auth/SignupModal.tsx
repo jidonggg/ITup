@@ -41,8 +41,14 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
       return;
     }
 
-    if (password.length < 6) {
-      setError("비밀번호는 최소 6자 이상이어야 합니다.");
+    if (password.length < 8) {
+      setError("비밀번호는 최소 8자 이상이어야 합니다.");
+      return;
+    }
+
+    // 비밀번호 복잡성 검사: 영문 + 숫자 필수
+    if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
+      setError("비밀번호는 영문과 숫자를 모두 포함해야 합니다.");
       return;
     }
 
@@ -123,7 +129,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
             <>
               <h2 className="text-2xl font-bold mb-2">회원가입</h2>
               <p className="text-muted text-sm mb-6">
-                커피챗에서 멘토링을 시작해보세요
+                ITup에서 멘토링을 시작해보세요
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -172,7 +178,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="최소 6자 이상"
+                    placeholder="8자 이상, 영문+숫자 포함"
                     required
                     className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
                   />
