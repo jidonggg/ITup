@@ -203,6 +203,9 @@ export default function MentorDashboardPage() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted">{mentor?.name} 멘토</span>
+            <Link href="/mentor/edit" className="text-sm text-accent hover:underline">
+              프로필 수정
+            </Link>
             <Link href="/" className="text-sm text-primary hover:underline">
               사이트로 이동
             </Link>

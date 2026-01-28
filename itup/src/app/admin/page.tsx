@@ -19,6 +19,16 @@ interface DailyStats {
   unique_sessions: number;
 }
 
+interface PageStats {
+  path: string;
+  views: number;
+}
+
+interface ClickStats {
+  target: string;
+  clicks: number;
+}
+
 interface Stats {
   totalMentors: number;
   pendingMentors: number;
@@ -54,6 +64,10 @@ export default function AdminPage() {
 
   // Daily stats
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
+
+  // Analytics data
+  const [pageStats, setPageStats] = useState<PageStats[]>([]);
+  const [clickStats, setClickStats] = useState<ClickStats[]>([]);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -191,6 +205,46 @@ export default function AdminPage() {
 
         setDailyStats(dailyStatsList);
       }
+
+      // Page stats (top pages)
+      const { data: pageData } = await supabase
+        .from("page_views")
+        .select("path");
+
+      if (pageData) {
+        const pageCounts: Record<string, number> = {};
+        pageData.forEach((pv) => {
+          const path = pv.path || "/";
+          pageCounts[path] = (pageCounts[path] || 0) + 1;
+        });
+
+        const pageStatsList = Object.entries(pageCounts)
+          .map(([path, views]) => ({ path, views }))
+          .sort((a, b) => b.views - a.views)
+          .slice(0, 10);
+
+        setPageStats(pageStatsList);
+      }
+
+      // Click stats (top actions)
+      const { data: clickData } = await supabase
+        .from("analytics_events")
+        .select("target");
+
+      if (clickData) {
+        const clickCounts: Record<string, number> = {};
+        clickData.forEach((ev) => {
+          const target = ev.target || "unknown";
+          clickCounts[target] = (clickCounts[target] || 0) + 1;
+        });
+
+        const clickStatsList = Object.entries(clickCounts)
+          .map(([target, clicks]) => ({ target, clicks }))
+          .sort((a, b) => b.clicks - a.clicks)
+          .slice(0, 10);
+
+        setClickStats(clickStatsList);
+      }
     } catch (error) {
       console.error("Admin fetch error:", error);
     } finally {
@@ -198,33 +252,53 @@ export default function AdminPage() {
     }
   };
 
-  const handleApproveMentor = async (mentorId: string, approve: boolean) => {
-    if (!isSupabaseConfigured()) return;
-
-    setUpdatingMentorId(mentorId);
+  // 서버 API를 통한 관리자 작업 (보안 강화)
+  const getAuthToken = async () => {
     const supabase = createClient();
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token;
+  };
+
+  const handleApproveMentor = async (mentorId: string, approve: boolean) => {
+    setUpdatingMentorId(mentorId);
 
     try {
-      const { error } = await supabase
-        .from("mentors")
-        .update({ is_approved: approve })
-        .eq("id", mentorId);
-
-      if (error) {
-        console.error("Error updating mentor:", error);
-        alert("멘토 상태 변경 중 오류가 발생했습니다.");
-      } else {
-        // Update local state
-        setMentors(prev => prev.map(m =>
-          m.id === mentorId ? { ...m, is_approved: approve } : m
-        ));
-        setStats(prev => ({
-          ...prev,
-          pendingMentors: prev.pendingMentors + (approve ? -1 : 1),
-        }));
+      const token = await getAuthToken();
+      if (!token) {
+        alert("인증이 필요합니다.");
+        return;
       }
+
+      const response = await fetch("/api/admin/mentors", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mentorId,
+          action: approve ? "approve" : "reject",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.error || "멘토 상태 변경 중 오류가 발생했습니다.");
+        return;
+      }
+
+      // Update local state
+      setMentors(prev => prev.map(m =>
+        m.id === mentorId ? { ...m, is_approved: approve } : m
+      ));
+      setStats(prev => ({
+        ...prev,
+        pendingMentors: prev.pendingMentors + (approve ? -1 : 1),
+      }));
     } catch (error) {
       console.error("Error:", error);
+      alert("오류가 발생했습니다.");
     } finally {
       setUpdatingMentorId(null);
     }
@@ -232,28 +306,36 @@ export default function AdminPage() {
 
   const handleDeleteMentor = async (mentorId: string) => {
     if (!confirm("정말 이 멘토를 삭제하시겠습니까?")) return;
-    if (!isSupabaseConfigured()) return;
-
-    const supabase = createClient();
 
     try {
-      const { error } = await supabase
-        .from("mentors")
-        .delete()
-        .eq("id", mentorId);
-
-      if (error) {
-        console.error("Error deleting mentor:", error);
-        alert("멘토 삭제 중 오류가 발생했습니다.");
-      } else {
-        setMentors(prev => prev.filter(m => m.id !== mentorId));
-        setStats(prev => ({
-          ...prev,
-          totalMentors: prev.totalMentors - 1,
-        }));
+      const token = await getAuthToken();
+      if (!token) {
+        alert("인증이 필요합니다.");
+        return;
       }
+
+      const response = await fetch(`/api/admin/mentors?mentorId=${mentorId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.error || "멘토 삭제 중 오류가 발생했습니다.");
+        return;
+      }
+
+      setMentors(prev => prev.filter(m => m.id !== mentorId));
+      setStats(prev => ({
+        ...prev,
+        totalMentors: prev.totalMentors - 1,
+      }));
     } catch (error) {
       console.error("Error:", error);
+      alert("오류가 발생했습니다.");
     }
   };
 
@@ -622,11 +704,123 @@ export default function AdminPage() {
 
         {/* Analytics Tab */}
         {activeTab === "analytics" && (
-          <div className="text-center py-12">
-            <p className="text-muted mb-4">상세 분석 기능은 추후 업데이트 예정입니다.</p>
-            <p className="text-sm text-muted">
-              현재 개요 탭에서 기본 통계를 확인할 수 있습니다.
-            </p>
+          <div className="space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">총 페이지뷰</p>
+                <p className="text-2xl font-bold text-primary">{stats.totalPageViews.toLocaleString()}</p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">총 세션</p>
+                <p className="text-2xl font-bold text-accent">{stats.totalSessions.toLocaleString()}</p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">평균 페이지/세션</p>
+                <p className="text-2xl font-bold text-green-500">
+                  {stats.totalSessions > 0
+                    ? (stats.totalPageViews / stats.totalSessions).toFixed(1)
+                    : "0"}
+                </p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">상담 전환율</p>
+                <p className="text-2xl font-bold text-blue-500">
+                  {stats.totalSessions > 0
+                    ? ((stats.totalConsultations / stats.totalSessions) * 100).toFixed(1)
+                    : "0"}%
+                </p>
+              </div>
+            </div>
+
+            {/* Two Column Layout */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Top Pages */}
+              <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-4">인기 페이지 (Top 10)</h3>
+                {pageStats.length > 0 ? (
+                  <div className="space-y-3">
+                    {pageStats.map((page, idx) => (
+                      <div key={page.path} className="flex items-center gap-3">
+                        <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{page.path}</p>
+                          <div className="h-2 bg-secondary rounded-full overflow-hidden mt-1">
+                            <div
+                              className="h-full bg-gradient-to-r from-primary to-accent"
+                              style={{
+                                width: `${(page.views / (pageStats[0]?.views || 1)) * 100}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-sm text-muted">{page.views.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted text-center py-8">데이터가 없습니다.</p>
+                )}
+              </div>
+
+              {/* Top Actions */}
+              <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-4">사용자 클릭 분석 (Top 10)</h3>
+                {clickStats.length > 0 ? (
+                  <div className="space-y-3">
+                    {clickStats.map((click, idx) => (
+                      <div key={click.target} className="flex items-center gap-3">
+                        <span className="w-6 h-6 rounded-full bg-accent/20 text-accent text-xs font-bold flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{click.target}</p>
+                          <div className="h-2 bg-secondary rounded-full overflow-hidden mt-1">
+                            <div
+                              className="h-full bg-gradient-to-r from-accent to-primary"
+                              style={{
+                                width: `${(click.clicks / (clickStats[0]?.clicks || 1)) * 100}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-sm text-muted">{click.clicks.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted text-center py-8">데이터가 없습니다.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Daily Traffic Chart */}
+            <div className="bg-card-bg border border-card-border rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4">일별 트래픽 (최근 7일)</h3>
+              {dailyStats.length > 0 ? (
+                <div className="space-y-2">
+                  {dailyStats.map((day) => (
+                    <div key={day.date} className="flex items-center gap-4">
+                      <span className="w-28 text-sm text-muted">{day.date}</span>
+                      <div className="flex-1 h-6 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary to-accent"
+                          style={{
+                            width: `${Math.min(100, (day.views / Math.max(...dailyStats.map((d) => d.views), 1)) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="w-20 text-sm text-right">{day.views} 뷰</span>
+                      <span className="w-20 text-sm text-right text-muted">{day.unique_sessions} 세션</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted text-center py-8">데이터가 없습니다.</p>
+              )}
+            </div>
           </div>
         )}
 

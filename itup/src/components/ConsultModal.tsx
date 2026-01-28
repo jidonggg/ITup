@@ -10,6 +10,7 @@ interface ConsultModalProps {
   isOpen: boolean;
   onClose: () => void;
   mentorId?: string;
+  mentorAvailableTimes?: string[];
 }
 
 interface FormData {
@@ -17,6 +18,7 @@ interface FormData {
   phone: string;
   email: string;
   interest: string;
+  preferredTime: string;
   message: string;
 }
 
@@ -25,26 +27,48 @@ const initialFormData: FormData = {
   phone: "",
   email: "",
   interest: "",
+  preferredTime: "",
   message: "",
 };
 
-export default function ConsultModal({ isOpen, onClose, mentorId }: ConsultModalProps) {
+export default function ConsultModal({ isOpen, onClose, mentorId, mentorAvailableTimes }: ConsultModalProps) {
   const { user, profile } = useAuth();
   const { trackEvent } = useAnalytics();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
 
-  // 모달 오픈 추적
+  // 모달 오픈 추적 및 멘토 시간 가져오기
   useEffect(() => {
     if (isOpen) {
       trackEvent("modal", "상담모달_오픈", { mentorId: mentorId || "general" });
+
+      // props로 전달된 시간이 있으면 사용
+      if (mentorAvailableTimes && mentorAvailableTimes.length > 0) {
+        setAvailableTimes(mentorAvailableTimes);
+      } else if (mentorId && isSupabaseConfigured()) {
+        // 없으면 DB에서 가져오기
+        const fetchMentorTimes = async () => {
+          const supabase = createClient();
+          const { data } = await supabase
+            .from("mentors")
+            .select("available_times")
+            .eq("id", mentorId)
+            .single();
+
+          if (data?.available_times) {
+            setAvailableTimes(data.available_times);
+          }
+        };
+        fetchMentorTimes();
+      }
     }
-  }, [isOpen, mentorId, trackEvent]);
+  }, [isOpen, mentorId, mentorAvailableTimes, trackEvent]);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -122,6 +146,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId }: ConsultModal
         user_phone: formData.phone,
         user_email: formData.email,
         interest: formData.interest || null,
+        preferred_time: formData.preferredTime || null,
         message: formData.message || null,
       });
 
@@ -288,6 +313,34 @@ export default function ConsultModal({ isOpen, onClose, mentorId }: ConsultModal
                     ))}
                   </select>
                 </div>
+
+                {/* 희망 시간 */}
+                {availableTimes.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">희망 상담 시간</label>
+                    <div className="flex flex-wrap gap-2">
+                      {availableTimes.map((time) => (
+                        <button
+                          key={time}
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, preferredTime: time }))}
+                          className={`px-3 py-2 text-sm rounded-lg border transition-colors cursor-pointer ${
+                            formData.preferredTime === time
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-card-border bg-secondary text-muted hover:border-primary/50"
+                          }`}
+                        >
+                          {time}
+                        </button>
+                      ))}
+                    </div>
+                    {formData.preferredTime && (
+                      <p className="mt-2 text-sm text-primary">
+                        선택: {formData.preferredTime}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* 문의 내용 */}
                 <div>

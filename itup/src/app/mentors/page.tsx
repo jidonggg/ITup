@@ -41,6 +41,8 @@ const initialMentors = fallbackMentors.map((m, i) => ({
   id: `fallback-${i}`,
 }));
 
+const MENTORS_PER_PAGE = 9;
+
 export default function MentorsPage() {
   const [mentors, setMentors] = useState<(MentorData & { id: string })[]>(initialMentors);
   const [filteredMentors, setFilteredMentors] = useState<(MentorData & { id: string })[]>(initialMentors);
@@ -50,6 +52,9 @@ export default function MentorsPage() {
   const [selectedCompany, setSelectedCompany] = useState("전체");
   const [selectedConsultType, setSelectedConsultType] = useState<ConsultType | "all">("all");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Modals
   const [selectedMentor, setSelectedMentor] = useState<(MentorData & { id: string }) | null>(null);
@@ -123,7 +128,15 @@ export default function MentorsPage() {
     }
 
     setFilteredMentors(result);
+    setCurrentPage(1); // 필터 변경 시 첫 페이지로
   }, [mentors, selectedCompany, selectedConsultType, selectedSkills]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredMentors.length / MENTORS_PER_PAGE);
+  const paginatedMentors = filteredMentors.slice(
+    (currentPage - 1) * MENTORS_PER_PAGE,
+    currentPage * MENTORS_PER_PAGE
+  );
 
   const handleSkillToggle = (skill: string) => {
     setSelectedSkills(prev =>
@@ -146,20 +159,21 @@ export default function MentorsPage() {
 
   const closeMentorModal = () => {
     setIsMentorModalOpen(false);
-    setSelectedMentor(null);
+    // selectedMentor는 ConsultModal에서 사용하므로 여기서 null로 설정하지 않음
   };
 
   const openConsultModal = () => {
     if (selectedMentor) {
       setConsultMentorId(selectedMentor.id);
     }
-    closeMentorModal();
+    setIsMentorModalOpen(false);
     setIsConsultModalOpen(true);
   };
 
   const closeConsultModal = () => {
     setIsConsultModalOpen(false);
     setConsultMentorId(undefined);
+    setSelectedMentor(null); // ConsultModal 닫을 때 selectedMentor 초기화
   };
 
   const hasActiveFilters = selectedCompany !== "전체" || selectedConsultType !== "all" || selectedSkills.length > 0;
@@ -307,15 +321,56 @@ export default function MentorsPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredMentors.map(mentor => (
-                  <MentorCard
-                    key={mentor.id}
-                    mentor={mentor}
-                    onClick={() => openMentorModal(mentor)}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {paginatedMentors.map(mentor => (
+                    <MentorCard
+                      key={mentor.id}
+                      mentor={mentor}
+                      onClick={() => openMentorModal(mentor)}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-8">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 rounded-lg border border-card-border text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                          currentPage === page
+                            ? "bg-primary text-white"
+                            : "border border-card-border hover:border-primary hover:text-primary"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-2 rounded-lg border border-card-border text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -332,6 +387,7 @@ export default function MentorsPage() {
         isOpen={isConsultModalOpen}
         onClose={closeConsultModal}
         mentorId={consultMentorId}
+        mentorAvailableTimes={selectedMentor?.availableTimes}
       />
     </div>
   );

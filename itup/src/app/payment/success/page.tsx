@@ -23,17 +23,22 @@ function PaymentSuccessContent() {
       }
 
       try {
-        // 실제 운영 환경에서는 서버에서 결제 검증 API를 호출해야 합니다.
-        // 여기서는 클라이언트에서 간단히 처리합니다.
+        // 서버 API 호출하여 결제 검증 및 승인
+        const response = await fetch("/api/payment/confirm", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ paymentKey, orderId, amount }),
+        });
 
-        // TODO: 서버 API 호출하여 결제 검증
-        // const response = await fetch('/api/payment/verify', {
-        //   method: 'POST',
-        //   body: JSON.stringify({ paymentKey, orderId, amount }),
-        // });
+        const result = await response.json();
 
-        // 테스트 모드에서는 바로 성공 처리
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        if (!response.ok) {
+          setError(result.error || "결제 검증에 실패했습니다.");
+          setIsVerifying(false);
+          return;
+        }
 
         setIsVerified(true);
         setIsVerifying(false);
