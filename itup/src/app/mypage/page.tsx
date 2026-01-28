@@ -525,7 +525,7 @@ export default function MyPage() {
                       className="flex items-center justify-between p-4 bg-background border border-card-border rounded-xl"
                     >
                       <div>
-                        <p className="font-medium">{payment.plan_name} 플랜</p>
+                        <p className="font-medium">{payment.plan_type?.toUpperCase() || "상담"} 플랜</p>
                         <p className="text-xs text-muted">
                           {new Date(payment.created_at).toLocaleDateString("ko-KR", {
                             year: "numeric",

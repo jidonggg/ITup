@@ -101,16 +101,20 @@ export async function POST(request: NextRequest) {
 
     // 결제 성공 - DB에 저장
     if (supabase) {
-      // 사용자 ID 추출 (orderId 형식: PLAN_userId_timestamp)
+      // orderId 파싱 (형식: TYPE_ID_timestamp 또는 TYPE_timestamp_random)
       const orderParts = orderId.split("_");
-      const planType = orderParts[0]; // BASIC, PRO, PREMIUM
-      const userId = orderParts.length > 2 ? orderParts[1] : null;
+      const planType = orderParts[0].toUpperCase();
+
+      // consultationId 추출 (URL 쿼리에서 전달됨)
+      const url = new URL(request.url);
+      const consultationId = url.searchParams.get("consultationId");
 
       // payments 테이블에 저장
-      const { error: paymentError } = await supabase
+      const { data: paymentData, error: paymentError } = await supabase
         .from("payments")
         .insert({
-          user_id: userId,
+          user_id: null, // 나중에 세션에서 추출 가능
+          consultation_id: consultationId && consultationId !== "local" ? consultationId : null,
           order_id: orderId,
           payment_key: paymentKey,
           amount: Number(amount),
@@ -120,29 +124,60 @@ export async function POST(request: NextRequest) {
           approved_at: tossResult.approvedAt,
           receipt_url: tossResult.receipt?.url,
           raw_response: tossResult,
-        });
+        })
+        .select("id")
+        .single();
 
       if (paymentError) {
         console.error("Payment save error:", paymentError);
-        // 결제는 성공했으므로 에러 로그만 남기고 진행
       }
 
-      // 구독 정보 업데이트 (선택적)
-      if (userId && planType) {
-        const subscriptionEndDate = new Date();
-        subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + 1);
+      // 상담 결제인 경우: 상담 상태를 confirmed로 업데이트
+      if (planType === "CONSULT" && consultationId && consultationId !== "local") {
+        const { error: consultError } = await supabase
+          .from("consultations")
+          .update({
+            status: "confirmed",
+            payment_id: paymentData?.id || null,
+          })
+          .eq("id", consultationId);
 
-        await supabase
-          .from("subscriptions")
-          .upsert({
-            user_id: userId,
-            plan_type: planType.toLowerCase(),
-            status: "active",
-            current_period_start: new Date().toISOString(),
-            current_period_end: subscriptionEndDate.toISOString(),
-          }, {
-            onConflict: "user_id",
-          });
+        if (consultError) {
+          console.error("Consultation update error:", consultError);
+        }
+
+        // 멘토에게 이메일 알림 발송 (비동기)
+        fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ""}/api/email/notify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "consultation_confirmed",
+            data: { consultationId },
+          }),
+        }).catch(console.error);
+      }
+
+      // 구독 플랜 결제인 경우: 구독 정보 업데이트
+      if (["BASIC", "STANDARD", "PREMIUM"].includes(planType)) {
+        // userId는 세션에서 추출 필요 - 현재는 orderId에서 파싱 시도
+        const userId = orderParts.length > 2 ? orderParts[1] : null;
+
+        if (userId) {
+          const subscriptionEndDate = new Date();
+          subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + 1);
+
+          await supabase
+            .from("subscriptions")
+            .upsert({
+              user_id: userId,
+              plan_type: planType.toLowerCase(),
+              status: "active",
+              current_period_start: new Date().toISOString(),
+              current_period_end: subscriptionEndDate.toISOString(),
+            }, {
+              onConflict: "user_id",
+            });
+        }
       }
     }
 

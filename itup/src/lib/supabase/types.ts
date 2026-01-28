@@ -37,25 +37,38 @@ export interface Mentor {
 export interface Consultation {
   id: string;
   mentor_id: string | null;
+  user_id: string | null;
   user_name: string;
   user_phone: string;
   user_email: string;
   interest: string | null;
+  preferred_time: string | null;
   message: string | null;
+  payment_id: string | null;
   status: "pending" | "confirmed" | "completed" | "cancelled";
   created_at: string;
 }
 
 export interface Payment {
   id: string;
-  user_id: string;
-  user_email: string;
-  plan_id: string;
-  plan_name: string;
-  amount: number;
-  payment_key: string | null;
+  user_id: string | null;
+  consultation_id: string | null;
   order_id: string;
+  payment_key: string | null;
+  amount: number;
   status: "pending" | "completed" | "failed" | "refunded";
+  plan_type: string | null;
+  payment_method: string | null;
+  approved_at: string | null;
+  receipt_url: string | null;
+  created_at: string;
+}
+
+export interface VerificationCode {
+  id: string;
+  email: string;
+  code: string;
+  expires_at: string;
   created_at: string;
 }
 
