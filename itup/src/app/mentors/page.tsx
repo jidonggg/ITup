@@ -53,12 +53,13 @@ export default function MentorsPage() {
 
   useEffect(() => {
     const fetchMentors = async () => {
+      // Fallback data with generated IDs
+      const fallbackWithIds = fallbackMentors.map((m, i) => ({
+        ...m,
+        id: `fallback-${i}`,
+      }));
+
       if (!isSupabaseConfigured()) {
-        // Fallback data with generated IDs
-        const fallbackWithIds = fallbackMentors.map((m, i) => ({
-          ...m,
-          id: `fallback-${i}`,
-        }));
         setMentors(fallbackWithIds);
         setFilteredMentors(fallbackWithIds);
         setIsLoading(false);
@@ -75,6 +76,10 @@ export default function MentorsPage() {
 
         if (error) {
           console.error("Error fetching mentors:", error);
+          // Use fallback on error
+          setMentors(fallbackWithIds);
+          setFilteredMentors(fallbackWithIds);
+          setIsLoading(false);
           return;
         }
 
@@ -82,9 +87,16 @@ export default function MentorsPage() {
           const converted = data.map(convertToMentorData);
           setMentors(converted);
           setFilteredMentors(converted);
+        } else {
+          // Use fallback when no data
+          setMentors(fallbackWithIds);
+          setFilteredMentors(fallbackWithIds);
         }
       } catch (error) {
         console.error("Error fetching mentors:", error);
+        // Use fallback on error
+        setMentors(fallbackWithIds);
+        setFilteredMentors(fallbackWithIds);
       } finally {
         setIsLoading(false);
       }
