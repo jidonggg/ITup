@@ -1,5 +1,19 @@
 # CHANGELOG - 커피챗 (CoffeeChat) 멘토링 플랫폼
 
+## [v1.3.3] - 2026-01-28
+
+### 새 기능 (New Features)
+- **뉴스레터 구독** (Footer)
+  - 이메일 구독 폼 기능 구현
+  - 중복 이메일 체크
+  - 구독 재활성화 처리
+  - 성공/오류 메시지 표시
+
+### 변경 사항
+- `types.ts`: NewsletterSubscription 타입 추가
+
+---
+
 ## [v1.3.2] - 2026-01-28
 
 ### 새 기능 (New Features)
