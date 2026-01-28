@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { skillCategories, allSkills } from "@/data/mentors";
+import { skillCategories } from "@/data/mentors";
 import LoginModal from "@/components/auth/LoginModal";
 import SignupModal from "@/components/auth/SignupModal";
 import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";

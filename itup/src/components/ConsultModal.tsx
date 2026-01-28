@@ -184,11 +184,20 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     setIsLoading(true);
     try {
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+      const customerKey = user?.id || `guest_${Date.now()}`;
       const orderId = `CONSULT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // 결제 위젯 없이 직접 결제 요청
-      await tossPayments.requestPayment("카드", {
-        amount: discountedPrice,
+      // 위젯 인스턴스 생성
+      const widgets = tossPayments.widgets({ customerKey });
+
+      // 결제 금액 설정
+      await widgets.setAmount({
+        currency: "KRW",
+        value: discountedPrice,
+      });
+
+      // 결제 요청
+      await widgets.requestPayment({
         orderId,
         orderName: `ITup 멘토링 상담 - ${mentorName || "멘토"}`,
         successUrl: `${window.location.origin}/payment/success?consultationId=${consultationId || "local"}`,

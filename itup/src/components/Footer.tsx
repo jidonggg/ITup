@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 const footerLinks = {
@@ -100,12 +101,12 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
           {/* Logo & Description */}
           <div className="col-span-2">
-            <a href="/" className="flex items-center gap-2 mb-4">
+            <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <span className="text-white text-xl">☕</span>
               </div>
               <span className="text-xl font-bold">ITup</span>
-            </a>
+            </Link>
             <p className="text-muted text-sm mb-6 max-w-xs">
               게임 업계 현직자와 함께하는 1:1 멘토링 플랫폼. 당신의 게임 업계 커리어를 함께
               만들어갑니다.

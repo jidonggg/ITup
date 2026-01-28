@@ -29,7 +29,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold mb-4 text-foreground">제1조 (목적)</h2>
             <p className="leading-relaxed">
-              이 약관은 커피챗(이하 "회사")이 제공하는 멘토링 플랫폼 서비스(이하 "서비스")의
+              이 약관은 ITup(이하 &quot;회사&quot;)이 제공하는 멘토링 플랫폼 서비스(이하 &quot;서비스&quot;)의
               이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
             </p>
           </section>
@@ -38,10 +38,10 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold mb-4 text-foreground">제2조 (정의)</h2>
             <ol className="list-decimal list-inside space-y-2">
-              <li>"서비스"란 회사가 제공하는 게임 업계 멘토링 연결 플랫폼을 의미합니다.</li>
-              <li>"회원"이란 이 약관에 동의하고 서비스를 이용하는 자를 의미합니다.</li>
-              <li>"멘토"란 회사의 심사를 거쳐 멘토링을 제공하는 자를 의미합니다.</li>
-              <li>"멘티"란 멘토링을 신청하고 제공받는 회원을 의미합니다.</li>
+              <li>&quot;서비스&quot;란 회사가 제공하는 게임 업계 멘토링 연결 플랫폼을 의미합니다.</li>
+              <li>&quot;회원&quot;이란 이 약관에 동의하고 서비스를 이용하는 자를 의미합니다.</li>
+              <li>&quot;멘토&quot;란 회사의 심사를 거쳐 멘토링을 제공하는 자를 의미합니다.</li>
+              <li>&quot;멘티&quot;란 멘토링을 신청하고 제공받는 회원을 의미합니다.</li>
             </ol>
           </section>
 

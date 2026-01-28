@@ -49,7 +49,7 @@ const initialFormData: FormData = {
 };
 
 export default function MentorEditPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [mentorId, setMentorId] = useState<string | null>(null);
   const [isApproved, setIsApproved] = useState(false);
