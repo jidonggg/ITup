@@ -1,0 +1,160 @@
+# CHANGELOG - 커피챗 (CoffeeChat) 멘토링 플랫폼
+
+## [v1.3.0] - 2026-01-28
+
+### 새 기능 (New Features)
+- **멘토 대시보드** (`/mentor/dashboard`)
+  - 상담 요청 목록 및 관리 기능
+  - 상담 상태 변경 (대기중 → 확정 → 완료/취소)
+  - 통계 표시 (전체, 대기중, 확정, 완료)
+
+- **토스페이먼츠 결제 시스템**
+  - 결제 모달 (`PaymentModal.tsx`) - 토스페이먼츠 SDK 연동
+  - 결제 성공 페이지 (`/payment/success`)
+  - 결제 실패 페이지 (`/payment/fail`)
+  - 요금제: Basic(99,000원), Pro(199,000원), Premium(399,000원)
+
+### 변경 사항
+- `Pricing.tsx`: 결제 버튼 클릭 시 결제 모달 연동
+- `HomeClient.tsx`: PaymentModal 통합
+
+---
+
+## [v1.2.0] - 2026-01-28
+
+### 새 기능 (New Features)
+- **비밀번호 찾기/재설정**
+  - 비밀번호 찾기 모달 (`ForgotPasswordModal.tsx`)
+  - 비밀번호 재설정 페이지 (`/auth/reset-password`)
+  - Supabase 이메일 인증 연동
+
+### 변경 사항
+- `LoginModal.tsx`: "비밀번호를 잊으셨나요?" 링크 추가
+- 문서 업데이트 (qa-report.md, technical-report.md)
+
+---
+
+## [v1.1.0] - 2026-01-28
+
+### 새 기능 (New Features)
+- **사용자 행동 분석 시스템** (`AnalyticsContext.tsx`)
+  - 페이지 뷰 추적
+  - 클릭 이벤트 추적
+  - 세션 시간 측정
+  - Supabase `user_analytics` 테이블 연동
+
+- **운영자 대시보드** (`/admin`)
+  - 실시간 통계 (총 방문자, 오늘 방문자, 평균 체류시간, 전환율)
+  - 인기 페이지 순위
+  - 최근 활동 로그
+  - 클릭 분석
+
+### 성능 개선
+- 로딩 타임아웃 2초 → 0.5초로 단축
+
+### 버그 수정
+- AuthContext 초기화 로직 개선
+- 마이페이지 로딩 상태 수정
+- 디버그 console.log 제거
+
+---
+
+## [v1.0.0] - 2026-01-28
+
+### 새 기능 (New Features)
+- **Supabase 인증 시스템**
+  - 이메일/비밀번호 로그인
+  - Google OAuth 로그인
+  - 회원가입 및 이메일 인증
+  - 사용자 프로필 관리
+
+- **멘토링 플랫폼 핵심 기능**
+  - 멘토 목록 페이지 (`/mentors`) - Supabase 동적 로딩
+  - 멘토 상세 모달
+  - 상담 신청 모달 - DB 저장 연동
+  - 멘토 등록 페이지 (`/mentor/register`)
+
+- **마이페이지** (`/mypage`)
+  - 프로필 정보 표시
+  - 로그아웃 기능
+
+- **정적 페이지**
+  - 이용약관 (`/terms`)
+  - 개인정보처리방침 (`/privacy`)
+
+### UI/UX
+- Hero 섹션 헤드라인 로테이션 애니메이션
+- 반응형 디자인 개선
+- 모달 UX 개선 (ESC 키 닫기, 배경 클릭 닫기)
+
+---
+
+## [v0.1.0] - 2026-01-27
+
+### 초기 설정
+- Next.js 16.1.5 + React 19 프로젝트 생성
+- Tailwind CSS 설정
+- 기본 컴포넌트 구조
+  - Header, Hero, Stats, Features
+  - Mentors, Testimonials, Pricing
+  - CTA, Footer
+- 테마 시스템 (다크/라이트 모드)
+
+---
+
+## 페이지 목록
+
+| 경로 | 설명 | 상태 |
+|------|------|------|
+| `/` | 메인 랜딩 페이지 | 완료 |
+| `/mentors` | 멘토 전체 목록 | 완료 |
+| `/mypage` | 마이페이지 | 완료 |
+| `/admin` | 운영자 대시보드 | 완료 |
+| `/mentor/register` | 멘토 등록 | 완료 |
+| `/mentor/dashboard` | 멘토 대시보드 | 완료 |
+| `/payment/success` | 결제 성공 | 완료 |
+| `/payment/fail` | 결제 실패 | 완료 |
+| `/auth/reset-password` | 비밀번호 재설정 | 완료 |
+| `/terms` | 이용약관 | 완료 |
+| `/privacy` | 개인정보처리방침 | 완료 |
+
+---
+
+## 기술 스택
+
+- **Frontend**: Next.js 16.1.5, React 19.2.3, TypeScript
+- **Styling**: Tailwind CSS
+- **Backend/DB**: Supabase (PostgreSQL, Auth)
+- **결제**: TossPayments SDK
+- **배포**: Vercel (예정)
+
+---
+
+## 커밋 히스토리
+
+```
+b12a974 feat: 멘토 대시보드 및 토스페이먼츠 결제 시스템 추가
+d362a3a feat: 비밀번호 찾기/재설정 기능 추가 및 문서 업데이트
+6b78604 feat: 사용자 행동 분석 기능 강화
+8c895a4 feat: 사용자 분석 시스템 및 운영자 대시보드 추가
+c47c045 chore: 디버그 console.log 제거, QA 완료
+062b7c7 perf: 로딩 타임아웃 2초 → 0.5초로 단축
+94360a4 fix: AuthContext 2초 타임아웃 강제 로딩 완료
+52fc02f fix: AuthContext isInitialized 플래그 추가
+719e08f fix: 헤드라인 통일 및 마이페이지 로딩 수정
+8e48f98 feat: Hero 헤드라인 로테이션 추가
+389b468 fix: AuthContext 초기화 로직 개선
+a9c9cef fix: AuthContext isLoading 상태 수정
+06254ba style: Hero 메인 문구 변경
+def049e debug: AuthContext 및 마이페이지 디버깅 로그 추가
+a26446f feat: Supabase 인증 시스템 및 주요 기능 추가
+0f7ed75 chore: 프로젝트명 커피챗으로 변경
+6ddae75 chore: 프로젝트명 ITup → camo 변경
+a7a5cc8 refactor: 멘토 프로필 정책 변경
+6511fbc style: 반응형 UI 개선
+becd589 feat: 모달 UX 개선
+9c822e8 refactor: 멘토 데이터 개인정보 보호 및 상담 유형 추가
+70d6c31 feat: 멘토 상세 모달 추가
+061d389 feat: 상담 신청 모달 추가 및 인터랙션 개선
+fab83c9 first setting
+```
