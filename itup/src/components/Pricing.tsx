@@ -21,7 +21,7 @@ const tierOptions: { id: MentorTier; label: string }[] = [
 // 티어에 해당하는 experience 문자열
 const TIER_EXPERIENCE: Record<MentorTier, string> = {
   junior: "3-5년",
-  senior: "5-7년",
+  senior: "5-10년",
   lead: "10년 이상",
 };
 
