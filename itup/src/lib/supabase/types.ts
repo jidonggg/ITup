@@ -46,6 +46,7 @@ export interface Consultation {
   message: string | null;
   payment_id: string | null;
   status: "pending" | "confirmed" | "completed" | "cancelled";
+  has_review: boolean;
   created_at: string;
 }
 
@@ -90,6 +91,17 @@ export interface NewsletterSubscription {
   created_at: string;
 }
 
+export interface Review {
+  id: string;
+  consultation_id: string;
+  mentor_id: string;
+  user_id: string;
+  user_name: string;
+  rating: number;
+  content: string;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -105,8 +117,28 @@ export interface Database {
       };
       consultations: {
         Row: Consultation;
-        Insert: Omit<Consultation, "id" | "created_at" | "status">;
+        Insert: Omit<Consultation, "id" | "created_at" | "status" | "has_review">;
         Update: Partial<Omit<Consultation, "id" | "created_at">>;
+      };
+      reviews: {
+        Row: Review;
+        Insert: Omit<Review, "id" | "created_at">;
+        Update: Partial<Omit<Review, "id" | "created_at">>;
+      };
+      payments: {
+        Row: Payment;
+        Insert: Omit<Payment, "id" | "created_at">;
+        Update: Partial<Omit<Payment, "id" | "created_at">>;
+      };
+      subscriptions: {
+        Row: Subscription;
+        Insert: Omit<Subscription, "id" | "created_at">;
+        Update: Partial<Omit<Subscription, "id" | "created_at">>;
+      };
+      newsletter_subscriptions: {
+        Row: NewsletterSubscription;
+        Insert: Omit<NewsletterSubscription, "id" | "created_at">;
+        Update: Partial<Omit<NewsletterSubscription, "id" | "created_at">>;
       };
     };
     Views: Record<string, never>;

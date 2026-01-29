@@ -8,6 +8,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Consultation, Mentor, Payment, Subscription } from "@/lib/supabase/types";
 import { plans } from "@/lib/payment/types";
+import ReviewModal from "@/components/ReviewModal";
 
 interface ConsultationWithMentor extends Consultation {
   mentor?: Mentor | null;
@@ -29,6 +30,8 @@ export default function MyPage() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedConsultation, setSelectedConsultation] = useState<ConsultationWithMentor | null>(null);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -50,7 +53,7 @@ export default function MyPage() {
         const { data: consultData, error } = await supabase
           .from("consultations")
           .select("*")
-          .eq("user_email", user.email)
+          .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
         if (error) {
@@ -179,6 +182,22 @@ export default function MyPage() {
   const handleLogout = async () => {
     await signOut();
     router.push("/");
+  };
+
+  const handleOpenReview = (consultation: ConsultationWithMentor) => {
+    setSelectedConsultation(consultation);
+    setReviewModalOpen(true);
+  };
+
+  const handleReviewSuccess = () => {
+    // 상담 목록에서 해당 상담의 has_review를 true로 업데이트
+    setConsultations((prev) =>
+      prev.map((c) =>
+        c.id === selectedConsultation?.id ? { ...c, has_review: true } : c
+      )
+    );
+    setReviewModalOpen(false);
+    setSelectedConsultation(null);
   };
 
   const getStatusBadge = (status: string) => {
@@ -413,15 +432,31 @@ export default function MyPage() {
                         {consultation.message}
                       </p>
                     )}
-                    <p className="text-xs text-muted">
-                      신청일: {new Date(consultation.created_at).toLocaleDateString("ko-KR", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted">
+                        신청일: {new Date(consultation.created_at).toLocaleDateString("ko-KR", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                      {/* 완료된 상담에 리뷰 버튼 표시 */}
+                      {consultation.status === "completed" && !consultation.has_review && consultation.mentor_id && (
+                        <button
+                          onClick={() => handleOpenReview(consultation)}
+                          className="px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors cursor-pointer"
+                        >
+                          리뷰 작성
+                        </button>
+                      )}
+                      {consultation.status === "completed" && consultation.has_review && (
+                        <span className="px-3 py-1.5 text-xs font-medium bg-green-500/10 text-green-500 rounded-lg">
+                          리뷰 완료
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -559,6 +594,23 @@ export default function MyPage() {
           </Link>
         </div>
       </main>
+
+      {/* Review Modal */}
+      {selectedConsultation && selectedConsultation.mentor_id && (
+        <ReviewModal
+          isOpen={reviewModalOpen}
+          onClose={() => {
+            setReviewModalOpen(false);
+            setSelectedConsultation(null);
+          }}
+          consultationId={selectedConsultation.id}
+          mentorId={selectedConsultation.mentor_id}
+          mentorName={selectedConsultation.mentor?.name || "멘토"}
+          userId={user.id}
+          userName={profile?.name || user.email || "익명"}
+          onSuccess={handleReviewSuccess}
+        />
+      )}
     </div>
   );
 }

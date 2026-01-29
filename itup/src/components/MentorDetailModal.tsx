@@ -1,7 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { ConsultType, consultTypeLabels } from "@/data/mentors";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { Review } from "@/lib/supabase/types";
 
 export interface MentorData {
   id?: string;
@@ -33,8 +36,45 @@ export default function MentorDetailModal({
   mentor,
   onConsultClick,
 }: MentorDetailModalProps) {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [reviewsError, setReviewsError] = useState(false);
+  const [totalReviewCount, setTotalReviewCount] = useState(0);
+
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
+
+  // Fetch reviews when modal opens
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!isOpen || !mentor?.id || !isSupabaseConfigured()) return;
+
+      setReviews([]);
+      setReviewsError(false);
+      setIsLoadingReviews(true);
+      try {
+        const supabase = createClient();
+        const { data, count } = await supabase
+          .from("reviews")
+          .select("*", { count: "exact" })
+          .eq("mentor_id", mentor.id)
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (data) {
+          setReviews(data);
+          setTotalReviewCount(count ?? data.length);
+        }
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+        setReviewsError(true);
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    };
+
+    fetchReviews();
+  }, [isOpen, mentor?.id]);
 
   if (!isOpen || !mentor) return null;
 
@@ -187,6 +227,67 @@ export default function MentorDetailModal({
               </div>
             </div>
           </div>
+
+          {/* Reviews Section */}
+          {mentor.reviews > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-muted mb-3">
+                멘티 후기 ({mentor.reviews}개)
+              </h3>
+              {isLoadingReviews ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
+                </div>
+              ) : reviewsError ? (
+                <p className="text-sm text-red-400 text-center py-4">
+                  리뷰를 불러오지 못했습니다.
+                </p>
+              ) : reviews.length > 0 ? (
+                <div className="space-y-3">
+                  {reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      className="p-3 bg-secondary/50 rounded-xl"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{review.user_name}</span>
+                          <div className="flex items-center gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <svg
+                                key={i}
+                                className={`w-3 h-3 ${
+                                  i < review.rating
+                                    ? "text-yellow-400 fill-yellow-400"
+                                    : "text-gray-600"
+                                }`}
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted">
+                          {new Date(review.created_at).toLocaleDateString("ko-KR")}
+                        </span>
+                      </div>
+                      <p className="text-sm text-foreground/80">{review.content}</p>
+                    </div>
+                  ))}
+                  {totalReviewCount > 5 && (
+                    <p className="text-xs text-muted text-center pt-2">
+                      최신 리뷰 5개 표시 중 (전체 {totalReviewCount}개)
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted text-center py-4">
+                  아직 작성된 리뷰가 없습니다.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* CTA Button */}
           <button
