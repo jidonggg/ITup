@@ -59,14 +59,14 @@ export default function Footer() {
 
         if (existing) {
           if (existing.is_active) {
-            setMessage({ type: "error", text: "이미 구독 중인 이메일입니다." });
+            setMessage({ type: "error", text: "이미 구독 중인 이메일이에요." });
           } else {
             // Reactivate subscription
             await supabase
               .from("newsletter_subscriptions")
               .update({ is_active: true })
               .eq("id", existing.id);
-            setMessage({ type: "success", text: "뉴스레터 구독이 재활성화되었습니다!" });
+            setMessage({ type: "success", text: "뉴스레터 구독이 재활성화되었어요!" });
             setEmail("");
           }
         } else {
@@ -78,17 +78,17 @@ export default function Footer() {
           if (error) {
             throw error;
           }
-          setMessage({ type: "success", text: "뉴스레터 구독이 완료되었습니다!" });
+          setMessage({ type: "success", text: "뉴스레터 구독이 완료되었어요!" });
           setEmail("");
         }
       } else {
         // Demo mode
-        setMessage({ type: "success", text: "구독 신청이 접수되었습니다. (데모 모드)" });
+        setMessage({ type: "success", text: "구독 신청이 접수되었어요. (데모 모드)" });
         setEmail("");
       }
     } catch (error) {
       console.error("Newsletter subscription error:", error);
-      setMessage({ type: "error", text: "구독 처리 중 오류가 발생했습니다." });
+      setMessage({ type: "error", text: "구독 처리 중 오류가 발생했어요." });
     } finally {
       setIsSubmitting(false);
     }

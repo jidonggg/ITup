@@ -189,7 +189,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
 
   const handlePayment = async () => {
     if (!TOSS_CLIENT_KEY) {
-      showToast("결제 시스템이 설정되지 않았습니다. 관리자에게 문의해주세요.", "error");
+      showToast("결제 시스템이 설정되지 않았어요. 관리자에게 문의해주세요.", "error");
       return;
     }
 
@@ -223,7 +223,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       const errorMessage = error instanceof Error ? error.message : "";
       // PAY_PROCESS_CANCELED는 사용자가 직접 닫은 경우이므로 Toast 표시 안함
       if (!errorMessage.includes("PAY_PROCESS_CANCELED")) {
-        showToast("결제 처리 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
+        showToast("결제 처리 중 오류가 발생했어요. 다시 시도해주세요.", "error");
       }
       setIsLoading(false);
     }
@@ -278,7 +278,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
             <div className="text-center py-4">
               <h2 className="text-2xl font-bold mb-2">결제하기</h2>
               <p className="text-muted text-sm mb-6">
-                상담 신청을 완료하려면 결제를 진행해주세요.
+                커피챗 신청을 완료하려면 결제를 진행해주세요.
               </p>
 
               {/* 결제 정보 */}
@@ -330,7 +330,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
               </div>
 
               <p className="mt-4 text-xs text-muted">
-                결제는 토스페이먼츠를 통해 안전하게 처리됩니다.
+                결제는 토스페이먼츠를 통해 안전하게 처리돼요.
               </p>
             </div>
           ) : isSubmitted ? (
