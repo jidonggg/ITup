@@ -108,8 +108,7 @@ export default function Footer() {
               <span className="text-xl font-bold">커피챗</span>
             </Link>
             <p className="text-muted text-sm mb-6 max-w-xs">
-              게임 업계 현직자와 함께하는 1:1 멘토링 플랫폼. 당신의 게임 업계 커리어를 함께
-              만들어갑니다.
+              현직자 멘토와 편하게 나누는 커피챗. 게임 업계 커리어를 함께 만들어가요.
             </p>
             {/* 문의 이메일 */}
             <a
@@ -147,7 +146,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-8 border-t border-card-border">
           <div className="text-center md:text-left">
             <h4 className="font-semibold mb-1">뉴스레터 구독</h4>
-            <p className="text-muted text-sm">게임 업계 취업 팁과 멘토링 소식을 받아보세요.</p>
+            <p className="text-muted text-sm">취업 꿀팁 받아보기</p>
           </div>
           <form onSubmit={handleNewsletterSubmit} className="flex flex-col w-full md:w-auto gap-2">
             <div className="flex w-full md:w-auto gap-2 sm:gap-3">
@@ -178,7 +177,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="pt-8 border-t border-card-border text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-muted text-sm">
-            <p>&copy; 2025 커피챗. All rights reserved.</p>
+            <p>&copy; 2026 커피챗. All rights reserved.</p>
             <div className="flex gap-6">
               <a href="/terms" className="hover:text-primary transition-colors">
                 이용약관

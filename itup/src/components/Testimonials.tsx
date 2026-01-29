@@ -75,10 +75,10 @@ export default function Testimonials() {
             Testimonials
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            멘티들의 <span className="text-primary">성공 스토리</span>
+            이렇게 <span className="text-primary">도움 받았어요</span>
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
-            커피챗과 함께 게임 업계에 성공적으로 진입한 분들의 이야기
+            커피챗으로 게임 업계에 들어간 분들의 후기예요
           </p>
         </div>
 

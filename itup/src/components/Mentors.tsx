@@ -92,10 +92,10 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
             Mentors
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            <span className="text-primary">현직자</span> 멘토를 만나보세요
+            이런 <span className="text-primary">멘토</span>들이 기다리고 있어요
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
-            국내 유명 게임사에서 활약 중인 현직자들이 여러분의 성장을 도와드립니다
+            국내 유명 게임사 현직자들과 이야기 나눠요
           </p>
         </div>
 

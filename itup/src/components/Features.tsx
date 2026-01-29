@@ -10,8 +10,8 @@ const features = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
       </svg>
     ),
-    title: "1:1 맞춤 멘토링",
-    description: "현직자 멘토와 1:1로 진행되는 맞춤형 커리어 상담과 포트폴리오 리뷰를 제공합니다.",
+    title: "1:1 맞춤 커피챗",
+    description: "현직자 멘토와 1:1로 편하게 나누는 커리어 이야기와 포트폴리오 리뷰를 받을 수 있어요.",
   },
   {
     icon: (
@@ -20,7 +20,7 @@ const features = [
       </svg>
     ),
     title: "실무 인사이트",
-    description: "게임 회사 내부에서만 알 수 있는 실무 경험과 인사이트를 직접 전달받으세요.",
+    description: "게임 회사 안에서만 알 수 있는 실무 경험과 인사이트를 직접 들을 수 있어요.",
   },
   {
     icon: (
@@ -29,7 +29,7 @@ const features = [
       </svg>
     ),
     title: "포트폴리오 리뷰",
-    description: "실제 채용 담당자 관점에서 포트폴리오를 검토하고 개선점을 제시합니다.",
+    description: "실제 채용 담당자 관점에서 포트폴리오를 봐주고 개선할 점을 알려줘요.",
   },
   {
     icon: (
@@ -38,7 +38,7 @@ const features = [
       </svg>
     ),
     title: "모의 면접",
-    description: "실제 면접과 동일한 환경에서 모의 면접을 진행하고 피드백을 제공합니다.",
+    description: "실제 면접과 같은 환경에서 연습하고 바로 피드백 받을 수 있어요.",
   },
   {
     icon: (
@@ -47,7 +47,7 @@ const features = [
       </svg>
     ),
     title: "검증된 멘토",
-    description: "넥슨, 넷마블, 크래프톤 등 국내외 유명 게임사 현직자들로 구성되어 있습니다.",
+    description: "넥슨, 넷마블, 크래프톤 등 유명 게임사 현직자들이에요.",
   },
   {
     icon: (
@@ -56,7 +56,7 @@ const features = [
       </svg>
     ),
     title: "유연한 일정",
-    description: "멘토와 멘티가 서로 맞는 시간에 자유롭게 일정을 조율할 수 있습니다.",
+    description: "서로 맞는 시간에 자유롭게 잡을 수 있어요.",
   },
 ];
 
@@ -92,10 +92,10 @@ export default function Features() {
             Features
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            왜 <span className="text-primary">커피챗</span>인가요?
+            이런 게 <span className="text-primary">좋아요</span>
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
-            게임 업계 취업과 성장을 위한 최적의 멘토링 플랫폼
+            게임 업계 취업과 성장, 이렇게 도와줄 수 있어요
           </p>
         </div>
 

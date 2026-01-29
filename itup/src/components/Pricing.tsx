@@ -13,52 +13,37 @@ const plans = [
   {
     id: "basic",
     name: "Basic",
-    price: "99,000",
+    price: "59,000",
     period: "월",
-    description: "게임 업계 입문자를 위한 기본 플랜",
+    description: "가볍게 시작하는 커피챗",
+    priceNote: "하루 커피 한 잔 가격으로",
     features: [
-      "월 2회 1:1 멘토링 (회당 50분)",
-      "커리어 로드맵 설계",
+      "월 2회 1:1 커피챗 (회당 50분)",
+      "커리어 로드맵 같이 그려봐요",
       "이력서 첨삭 1회",
       "이메일 질문 무제한",
       "커뮤니티 접근 권한",
     ],
     highlighted: false,
-    cta: "시작하기",
+    cta: "가볍게 시작하기",
   },
   {
     id: "pro",
     name: "Pro",
-    price: "199,000",
+    price: "129,000",
     period: "월",
-    description: "집중적인 취업 준비를 위한 프로 플랜",
+    description: "본격적으로 준비하는 커피챗",
+    priceNote: "점심 한 끼 가격으로 매주 멘토를 만나요",
     features: [
-      "월 4회 1:1 멘토링 (회당 60분)",
-      "맞춤형 커리어 컨설팅",
-      "포트폴리오 심층 리뷰",
+      "월 4회 1:1 커피챗 (회당 60분)",
+      "맞춤 커리어 이야기",
+      "포트폴리오 꼼꼼 리뷰",
       "모의 면접 2회",
       "24시간 내 질문 답변",
-      "멘토 직접 선택 가능",
+      "원하는 멘토 직접 선택",
     ],
     highlighted: true,
-    cta: "가장 인기 있는 플랜",
-  },
-  {
-    id: "premium",
-    name: "Premium",
-    price: "399,000",
-    period: "월",
-    description: "확실한 취업 성공을 위한 프리미엄 플랜",
-    features: [
-      "무제한 1:1 멘토링",
-      "전담 멘토 배정",
-      "포트폴리오 완성 프로젝트",
-      "모의 면접 무제한",
-      "취업 성공시 환급 혜택",
-      "채용 담당자 연결 지원",
-    ],
-    highlighted: false,
-    cta: "프리미엄 시작",
+    cta: "제일 인기 있어요",
   },
 ];
 
@@ -91,15 +76,36 @@ export default function Pricing({ onConsultClick, onPaymentClick }: PricingProps
             Pricing
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            나에게 맞는 <span className="text-primary">플랜</span> 선택
+            어떤 <span className="text-primary">커피챗</span>이 좋을까?
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
-            목표와 상황에 맞는 플랜을 선택하세요. 언제든 업그레이드 가능합니다.
+            부담 없이 시작해보세요. 언제든 바꿀 수 있어요.
           </p>
         </div>
 
+        {/* Single Session Card */}
+        <div className={`mb-10 max-w-2xl mx-auto p-6 md:p-8 ${cardRadius} ${cardEffect} border border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5`}>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg font-semibold">단건 커피챗</span>
+                <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-xs font-medium rounded-full">첫 15분 무료</span>
+              </div>
+              <p className="text-muted text-sm">구독 없이 한 번만 만나볼 수도 있어요</p>
+            </div>
+            <button
+              onClick={onConsultClick}
+              className={`px-6 py-3 border border-primary text-primary font-medium hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer whitespace-nowrap ${
+                cardRadius === "rounded-lg" ? "rounded-lg" : "rounded-full"
+              }`}
+            >
+              무료로 시작하기
+            </button>
+          </div>
+        </div>
+
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
           {plans.map((plan, index) => (
             <PricingCard
               key={plan.name}
@@ -118,7 +124,7 @@ export default function Pricing({ onConsultClick, onPaymentClick }: PricingProps
         {/* FAQ Link */}
         <div className="text-center mt-12">
           <p className="text-muted">
-            궁금한 점이 있으신가요?{" "}
+            궁금한 게 있으면{" "}
             <a href="/faq" className="text-primary hover:underline">
               자주 묻는 질문
             </a>
@@ -137,6 +143,7 @@ interface PricingCardProps {
     price: string;
     period: string;
     description: string;
+    priceNote?: string;
     features: string[];
     highlighted: boolean;
     cta: string;
@@ -184,6 +191,9 @@ function PricingCard({ plan, index, isHovered, onHover, onConsultClick, onPaymen
             </span>
             <span className="text-muted mb-2">원/{plan.period}</span>
           </div>
+          {plan.priceNote && (
+            <p className="text-xs text-muted mt-2">{plan.priceNote}</p>
+          )}
         </div>
 
         {/* Features */}

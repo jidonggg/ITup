@@ -45,14 +45,14 @@ export default function CTA({ onConsultClick }: CTAProps) {
             게임 업계 커리어,
             <br />
             <span className="bg-gradient-to-r from-primary via-accent to-primary-light bg-clip-text text-transparent animate-gradient">
-              지금 시작하세요
+              한번 해볼까요?
             </span>
           </h2>
 
           <p className="text-muted text-lg mb-8 max-w-xl mx-auto">
-            현직자 멘토와의 첫 상담은 무료입니다.
+            첫 커피챗은 무료예요.
             <br />
-            부담 없이 커리어 고민을 나눠보세요.
+            가볍게 이야기 나눠봐요.
           </p>
 
           {/* CTA Buttons */}
@@ -62,7 +62,7 @@ export default function CTA({ onConsultClick }: CTAProps) {
               className="group relative px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-semibold text-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300 animate-pulse-glow cursor-pointer"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                무료 상담 신청하기
+                무료로 시작하기
                 <svg
                   className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
                   fill="none"
@@ -84,7 +84,7 @@ export default function CTA({ onConsultClick }: CTAProps) {
               href="#mentors"
               className="px-8 py-4 border border-card-border text-foreground rounded-full font-medium hover:border-primary hover:text-primary transition-all duration-300"
             >
-              멘토 둘러보기
+              어떤 멘토가 있는지 볼래요
             </a>
           </div>
 

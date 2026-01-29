@@ -9,9 +9,9 @@ interface HeroProps {
 }
 
 const headlines = [
-  { line1: "혼자 고민하지 마세요", line2: "커피챗하세요" },
-  { line1: "준비가 막막할 땐", line2: "커피챗하세요" },
-  { line1: "게임 업계 선배와", line2: "커피챗하세요" },
+  { line1: "궁금한 거 있으면", line2: "커피챗하세요" },
+  { line1: "현직자한테 물어보고 싶을 땐", line2: "커피챗하세요" },
+  { line1: "편하게 물어보세요", line2: "커피챗하세요" },
 ];
 
 export default function Hero({ onConsultClick }: HeroProps) {
@@ -95,7 +95,7 @@ export default function Hero({ onConsultClick }: HeroProps) {
           }`}>
             <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
             <span className="text-sm text-primary-light">
-              게임 업계 현직자와 함께하는 멘토링
+              현직자 멘토와 편하게 나누는 커피챗
             </span>
           </div>
 
@@ -119,9 +119,9 @@ export default function Hero({ onConsultClick }: HeroProps) {
           <p className={`text-lg sm:text-xl text-muted mb-10 animate-fade-in-up [animation-delay:200ms] ${
             currentLayout.heroStyle === "center" ? "max-w-2xl mx-auto" : "max-w-xl"
           }`}>
-            현직 게임 개발자, 기획자, 아티스트와의 1:1 멘토링으로
+            현직 게임 개발자, 기획자, 아티스트와
             <br className="hidden sm:block" />
-            당신의 게임 업계 진입을 도와드립니다.
+            편하게 물어보세요.
           </p>
 
           {/* CTA Buttons */}
@@ -136,7 +136,7 @@ export default function Hero({ onConsultClick }: HeroProps) {
                 "rounded-full"
               }`}
             >
-              <span className="relative z-10">무료 상담 신청</span>
+              <span className="relative z-10">무료로 시작하기</span>
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </button>
           </div>

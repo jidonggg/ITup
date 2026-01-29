@@ -1,9 +1,8 @@
 // 가격 상수
 export const PRICES = {
   DEFAULT_CONSULT: 50000,
-  BASIC_PLAN: 99000,
-  STANDARD_PLAN: 199000,
-  PREMIUM_PLAN: 399000,
+  BASIC_PLAN: 59000,
+  STANDARD_PLAN: 129000,
 } as const;
 
 // 타임아웃 상수 (ms)

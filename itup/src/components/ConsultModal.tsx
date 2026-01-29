@@ -325,7 +325,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                   disabled={isLoading}
                   className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 cursor-pointer"
                 >
-                  {isLoading ? "처리 중..." : `${discountedPrice.toLocaleString()}원 결제하기`}
+                  {isLoading ? "처리 중..." : `${discountedPrice.toLocaleString()}원 결제할게요`}
                 </button>
               </div>
 
@@ -341,9 +341,9 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">신청이 완료되었습니다!</h3>
+              <h3 className="text-xl font-semibold mb-2">신청 완료! 곧 연락드릴게요</h3>
               <p className="text-muted mb-6">
-                빠른 시일 내에 연락드리겠습니다.
+                조금만 기다려주세요!
               </p>
               <button
                 onClick={handleClose}
@@ -355,9 +355,9 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
           ) : (
             /* 폼 화면 */
             <>
-              <h2 className="text-2xl font-bold mb-2">상담 신청</h2>
+              <h2 className="text-2xl font-bold mb-2">커피챗 신청</h2>
               <p className="text-muted text-sm mb-6">
-                아래 정보를 입력하고 결제를 진행해주세요.
+                간단한 정보만 알려주세요.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -474,7 +474,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
-                    placeholder="궁금한 점이나 상담받고 싶은 내용을 적어주세요"
+                    placeholder="편하게 적어주세요 (선택사항)"
                     rows={3}
                     className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors resize-none"
                   />
@@ -495,7 +495,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                       처리 중...
                     </span>
                   ) : (
-                    "다음: 결제하기"
+                    "다음으로"
                   )}
                 </button>
               </form>
