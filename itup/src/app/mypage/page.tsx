@@ -16,7 +16,6 @@ interface ConsultationWithMentor extends Consultation {
 type TabType = "profile" | "consultations" | "payments";
 
 const PRODUCT_TYPE_LABELS: Record<string, { icon: string; label: string }> = {
-  text: { icon: "💬", label: "텍스트 상담" },
   coffee: { icon: "☕", label: "커피챗" },
   resume: { icon: "📄", label: "이력서/포폴 첨삭" },
   interview: { icon: "🎤", label: "모의면접" },

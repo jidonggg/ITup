@@ -6,7 +6,6 @@ const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY || "";
 
 // 상품 가격 (서버에서 검증용)
 const PRODUCT_PRICES: Record<string, number> = {
-  TEXT: 5000,
   COFFEE: 15000,
   RESUME: 39000,
   INTERVIEW: 59000,

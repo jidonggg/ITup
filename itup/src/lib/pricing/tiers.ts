@@ -16,10 +16,9 @@ export const MENTOR_TIERS: Record<MentorTier, TierInfo> = {
   lead: { id: "lead", name: "리드", badge: "👑", multiplier: 1.6 },
 };
 
-// 구조형("1-3년") 또는 자유형("8년") 경력 문자열에서 연차 추출
+// 구조형("3-5년") 또는 자유형("8년") 경력 문자열에서 연차 추출
+// 멘토 등록 최소 조건: 3년차 이상
 const EXPERIENCE_YEAR_MAP: Record<string, number> = {
-  "1년 미만": 0,
-  "1-3년": 1,
   "3-5년": 3,
   "5-7년": 5,
   "7-10년": 7,
@@ -36,8 +35,8 @@ export function getYearsFromExperience(experience: string): number {
 
 export function getMentorTier(experience: string): MentorTier {
   const years = getYearsFromExperience(experience);
-  if (years >= 7) return "lead";
-  if (years >= 3) return "senior";
+  if (years >= 10) return "lead";
+  if (years >= 5) return "senior";
   return "junior";
 }
 
@@ -47,7 +46,6 @@ export function getTierInfo(experience: string): TierInfo {
 
 // 베이스 가격 (주니어 = 1.0x)
 const BASE_PRICES: Record<ProductType, number> = {
-  text: PRICES.TEXT_CHAT,
   coffee: PRICES.COFFEE_CHAT,
   resume: PRICES.RESUME_REVIEW,
   interview: PRICES.MOCK_INTERVIEW,

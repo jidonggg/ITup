@@ -20,7 +20,7 @@ const tierOptions: { id: MentorTier; label: string }[] = [
 
 // 티어에 해당하는 experience 문자열
 const TIER_EXPERIENCE: Record<MentorTier, string> = {
-  junior: "1-3년",
+  junior: "3-5년",
   senior: "5-7년",
   lead: "10년 이상",
 };
@@ -99,9 +99,9 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
           ))}
         </div>
 
-        {/* Product Cards (4) */}
+        {/* Product Cards (3) */}
         <h3 className="text-xl font-semibold text-center mb-6">상품</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8 max-w-6xl mx-auto mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto mb-16">
           {products.map((product, index) => (
             <ProductCard
               key={product.id}

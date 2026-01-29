@@ -14,7 +14,6 @@ import { getTieredPrice } from "@/lib/pricing/tiers";
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
 
 const PRODUCT_PREFIX_MAP: Record<ProductType, string> = {
-  text: "TEXT",
   coffee: "COFFEE",
   resume: "RESUME",
   interview: "INTERVIEW",
@@ -356,7 +355,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
               {/* 상품 타입 선택 */}
               <div className="mb-6">
                 <label className="block text-sm font-medium mb-2">상품 선택</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {products.map((product) => (
                     <button
                       key={product.id}

@@ -1,6 +1,5 @@
 // 상품 가격 상수
 export const PRICES = {
-  TEXT_CHAT: 5000,
   COFFEE_CHAT: 15000,
   RESUME_REVIEW: 39000,
   MOCK_INTERVIEW: 59000,

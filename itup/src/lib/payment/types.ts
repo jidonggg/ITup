@@ -1,6 +1,6 @@
 import { PRICES } from "@/lib/constants";
 
-export type ProductType = "text" | "coffee" | "resume" | "interview";
+export type ProductType = "coffee" | "resume" | "interview";
 export type BundleType = "starter" | "allinone" | "full";
 
 export interface ProductInfo {
@@ -25,20 +25,6 @@ export interface BundleInfo {
 }
 
 export const products: ProductInfo[] = [
-  {
-    id: "text",
-    name: "텍스트 상담",
-    price: PRICES.TEXT_CHAT,
-    description: "카카오톡 오픈채팅으로 가볍게 질문해봐요",
-    features: [
-      "카카오톡 오픈채팅 3일 이용",
-      "텍스트 기반 Q&A",
-      "멘토 24시간 내 답변",
-      "간단한 커리어 질문에 딱",
-    ],
-    icon: "💬",
-    duration: "3일간 (카카오톡)",
-  },
   {
     id: "coffee",
     name: "커피챗",
