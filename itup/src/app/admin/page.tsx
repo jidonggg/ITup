@@ -62,7 +62,20 @@ export default function AdminPage() {
 
   // Consultations
   const [consultations, setConsultations] = useState<(Consultation & { mentor_name?: string })[]>([]);
-  const [consultFilter, setConsultFilter] = useState<"all" | "pending" | "confirmed" | "completed">("all");
+  const [consultFilter, setConsultFilter] = useState<"all" | "pending" | "confirmed" | "completed" | "cancelled">("all");
+
+  // Payments (for refund)
+  const [paymentMap, setPaymentMap] = useState<Record<string, { id: string; amount: number; status: string }>>({});
+
+  // Refund modal
+  const [refundTarget, setRefundTarget] = useState<{
+    consultationId: string;
+    paymentId: string;
+    amount: number;
+    userName: string;
+  } | null>(null);
+  const [refundReason, setRefundReason] = useState("");
+  const [refundLoading, setRefundLoading] = useState(false);
 
   // Daily stats
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
@@ -163,6 +176,21 @@ export default function AdminPage() {
           totalConsultations: consultsData.length,
           pendingConsultations: pendingCount,
         }));
+      }
+
+      // Fetch payments (for refund mapping)
+      const { data: paymentsData } = await supabase
+        .from("payments")
+        .select("id, consultation_id, amount, status");
+
+      if (paymentsData) {
+        const pMap: Record<string, { id: string; amount: number; status: string }> = {};
+        paymentsData.forEach(p => {
+          if (p.consultation_id) {
+            pMap[p.consultation_id] = { id: p.id, amount: p.amount, status: p.status };
+          }
+        });
+        setPaymentMap(pMap);
       }
 
       // Fetch analytics
@@ -357,6 +385,62 @@ export default function AdminPage() {
     }
   };
 
+  const handleRefund = async () => {
+    if (!refundTarget) return;
+    setRefundLoading(true);
+
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        showToast("인증이 필요해요.", "error");
+        return;
+      }
+
+      const response = await fetch("/api/payment/refund", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          paymentId: refundTarget.paymentId,
+          reason: refundReason || "관리자 환불 처리",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        showToast(result.error || "환불 처리 중 오류가 발생했어요.", "error");
+        return;
+      }
+
+      showToast(result.message || "환불이 완료됐어요.", "success");
+
+      // Update local state
+      setConsultations(prev => prev.map(c =>
+        c.id === refundTarget.consultationId ? { ...c, status: "cancelled" as const } : c
+      ));
+      setPaymentMap(prev => {
+        const updated = { ...prev };
+        if (updated[refundTarget.consultationId]) {
+          updated[refundTarget.consultationId] = {
+            ...updated[refundTarget.consultationId],
+            status: "refunded",
+          };
+        }
+        return updated;
+      });
+      setRefundTarget(null);
+      setRefundReason("");
+    } catch (error) {
+      console.error("Refund error:", error);
+      showToast("환불 처리 중 오류가 발생했어요.", "error");
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
   const filteredMentors = mentors.filter(m => {
     if (mentorFilter === "pending") return !m.is_approved;
     if (mentorFilter === "approved") return m.is_approved;
@@ -382,12 +466,14 @@ export default function AdminPage() {
       confirmed: "bg-blue-500/20 text-blue-500",
       completed: "bg-green-500/20 text-green-500",
       cancelled: "bg-red-500/20 text-red-500",
+      refunded: "bg-purple-500/20 text-purple-500",
     };
     const labels: Record<string, string> = {
       pending: "대기중",
       confirmed: "확정",
       completed: "완료",
       cancelled: "취소",
+      refunded: "환불됨",
     };
 
     return (
@@ -664,6 +750,7 @@ export default function AdminPage() {
                 { value: "pending" as const, label: "대기중" },
                 { value: "confirmed" as const, label: "확정" },
                 { value: "completed" as const, label: "완료" },
+                { value: "cancelled" as const, label: "취소/환불" },
               ].map((f) => (
                 <button
                   key={f.value}
@@ -689,6 +776,7 @@ export default function AdminPage() {
                     <th className="px-4 py-3 text-left text-sm font-medium">관심 분야</th>
                     <th className="px-4 py-3 text-center text-sm font-medium">상태</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">신청일</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium">관리</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -708,11 +796,30 @@ export default function AdminPage() {
                       <td className="px-4 py-3 text-sm text-muted">
                         {new Date(consult.created_at).toLocaleDateString("ko-KR")}
                       </td>
+                      <td className="px-4 py-3 text-center">
+                        {paymentMap[consult.id] &&
+                          paymentMap[consult.id].status === "completed" &&
+                          (consult.status === "completed" || consult.status === "confirmed") ? (
+                          <button
+                            onClick={() => setRefundTarget({
+                              consultationId: consult.id,
+                              paymentId: paymentMap[consult.id].id,
+                              amount: paymentMap[consult.id].amount,
+                              userName: consult.user_name,
+                            })}
+                            className="px-3 py-1 bg-red-500 text-white rounded text-xs cursor-pointer hover:bg-red-600"
+                          >
+                            환불
+                          </button>
+                        ) : paymentMap[consult.id]?.status === "refunded" ? (
+                          <span className="text-xs text-purple-500">환불됨</span>
+                        ) : null}
+                      </td>
                     </tr>
                   ))}
                   {filteredConsultations.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted">
                         상담 신청이 없습니다.
                       </td>
                     </tr>
@@ -855,6 +962,52 @@ export default function AdminPage() {
           </button>
         </div>
       </main>
+
+      {/* Refund Modal */}
+      {refundTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-card-bg border border-card-border rounded-2xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-bold mb-4">환불 처리</h3>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted mb-1">신청자</p>
+                <p className="font-medium">{refundTarget.userName}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted mb-1">환불 금액</p>
+                <p className="text-xl font-bold text-red-500">
+                  {refundTarget.amount.toLocaleString()}원
+                </p>
+              </div>
+              <div>
+                <label className="text-sm text-muted mb-1 block">환불 사유</label>
+                <input
+                  type="text"
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  placeholder="환불 사유를 입력해주세요"
+                  className="w-full px-4 py-2 bg-secondary border border-card-border rounded-lg text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => { setRefundTarget(null); setRefundReason(""); }}
+                className="flex-1 px-4 py-2 border border-card-border rounded-lg text-sm cursor-pointer hover:border-primary transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleRefund}
+                disabled={refundLoading}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg text-sm cursor-pointer hover:bg-red-600 disabled:opacity-50 transition-colors"
+              >
+                {refundLoading ? "처리중..." : "환불 확정"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
