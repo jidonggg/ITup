@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { LayoutProvider } from "@/contexts/LayoutContext";
 import { AnalyticsProvider } from "@/contexts/AnalyticsContext";
 import { ToastProvider } from "@/contexts/ToastContext";
-import ThemeSelector from "@/components/ThemeSelector";
 import ToastContainer from "@/components/Toast";
 
 const geistSans = Geist({
@@ -72,37 +69,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 다크모드 깜빡임 방지 스크립트
-  const themeScript = `
-    (function() {
-      try {
-        var theme = localStorage.getItem('itup-theme') || 'itup-dark';
-        document.documentElement.setAttribute('data-theme', theme);
-      } catch (e) {}
-    })();
-  `;
-
   return (
-    <html lang="ko" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
+    <html lang="ko">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <ThemeProvider>
-          <LayoutProvider>
-            <AuthProvider>
-              <AnalyticsProvider>
-                <ToastProvider>
-                  {children}
-                  <ThemeSelector />
-                  <ToastContainer />
-                </ToastProvider>
-              </AnalyticsProvider>
-            </AuthProvider>
-          </LayoutProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <AnalyticsProvider>
+            <ToastProvider>
+              {children}
+              <ToastContainer />
+            </ToastProvider>
+          </AnalyticsProvider>
+        </AuthProvider>
       </body>
     </html>
   );

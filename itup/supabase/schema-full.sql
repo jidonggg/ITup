@@ -246,6 +246,10 @@ CREATE POLICY "Users can view own consultations" ON public.consultations
   FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Admins can view all consultations" ON public.consultations
   FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Mentors can update their consultations" ON public.consultations
+  FOR UPDATE USING (mentor_id IN (SELECT id FROM public.mentors WHERE user_id = auth.uid()));
+CREATE POLICY "Admins can update all consultations" ON public.consultations
+  FOR UPDATE USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
 
 -- =============================================
 -- RLS 정책 — payments

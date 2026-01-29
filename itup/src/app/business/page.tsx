@@ -77,9 +77,6 @@ export default function BusinessPage() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // In production, save to database or send email
-    console.log("Business inquiry:", formData);
-
     setIsLoading(false);
     setIsSubmitted(true);
   };

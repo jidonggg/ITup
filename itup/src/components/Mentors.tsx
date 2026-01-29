@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { useLayout } from "@/contexts/LayoutContext";
 import { MentorData } from "@/components/MentorDetailModal";
 import { mentorsData as fallbackMentors } from "@/data/mentors";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -33,16 +32,8 @@ function convertToMentorData(mentor: Mentor): MentorData {
 
 export default function Mentors({ onMentorClick }: MentorsProps) {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
-  const { currentLayout } = useLayout();
   const [mentors, setMentors] = useState<MentorData[]>(fallbackMentors);
   const [isLoading, setIsLoading] = useState(true);
-
-  const cardRadius = currentLayout.cardStyle === "rounded" ? "rounded-2xl" :
-                     currentLayout.cardStyle === "sharp" ? "rounded-lg" : "rounded-3xl";
-
-  const cardEffect = currentLayout.cardEffect === "glass" ? "card-glass" :
-                     currentLayout.cardEffect === "glow" ? "card-glow" :
-                     currentLayout.cardEffect === "float" ? "card-float" : "";
 
   useEffect(() => {
     const fetchMentors = async () => {
@@ -103,7 +94,7 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, index) => (
-              <MentorCardSkeleton key={index} cardRadius={cardRadius} />
+              <MentorCardSkeleton key={index} />
             ))
           ) : (
             mentors.map((mentor, index) => (
@@ -112,8 +103,6 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
                 mentor={mentor}
                 index={index}
                 onClick={() => onMentorClick(mentor)}
-                cardRadius={cardRadius}
-                cardEffect={cardEffect}
               />
             ))
           )}
@@ -123,10 +112,7 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
         <div className="text-center mt-12">
           <a
             href="/mentors"
-            className={`group inline-flex items-center gap-2 px-8 py-4 border border-card-border text-foreground hover:border-primary hover:text-primary transition-all duration-300 cursor-pointer ${
-              currentLayout.cardStyle === "rounded" ? "rounded-full" :
-              currentLayout.cardStyle === "sharp" ? "rounded-lg" : "rounded-full"
-            }`}
+            className="group inline-flex items-center gap-2 px-8 py-4 border border-card-border text-foreground hover:border-primary hover:text-primary transition-all duration-300 cursor-pointer rounded-full"
           >
             모든 멘토 보기
             <svg
@@ -148,13 +134,11 @@ interface MentorCardProps {
   mentor: MentorData;
   index: number;
   onClick: () => void;
-  cardRadius: string;
-  cardEffect: string;
 }
 
-function MentorCardSkeleton({ cardRadius }: { cardRadius: string }) {
+function MentorCardSkeleton() {
   return (
-    <div className={`bg-card-bg border border-card-border ${cardRadius} overflow-hidden animate-pulse`}>
+    <div className="bg-card-bg border border-card-border rounded-2xl overflow-hidden animate-pulse">
       <div className="h-48 bg-secondary" />
       <div className="p-6">
         <div className="h-6 bg-secondary rounded w-2/3 mb-2" />
@@ -172,7 +156,7 @@ function MentorCardSkeleton({ cardRadius }: { cardRadius: string }) {
   );
 }
 
-function MentorCard({ mentor, index, onClick, cardRadius, cardEffect }: MentorCardProps) {
+function MentorCard({ mentor, index, onClick }: MentorCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
@@ -183,7 +167,7 @@ function MentorCard({ mentor, index, onClick, cardRadius, cardEffect }: MentorCa
     >
       <div
         onClick={onClick}
-        className={`group relative bg-card-bg border border-card-border ${cardRadius} ${cardEffect} overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer`}
+        className="group relative bg-card-bg border border-card-border rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer"
       >
         {/* Avatar Section */}
         <div className="relative h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">

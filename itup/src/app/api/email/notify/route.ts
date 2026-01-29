@@ -23,7 +23,7 @@ function getServiceSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-// 인증 검증: 관리자 토큰 또는 내부 API 시크릿 필요
+// 인증 검증: 관리자 토큰, 인증된 사용자 토큰, 또는 내부 API 시크릿 필요
 async function verifyAuth(request: NextRequest): Promise<boolean> {
   // 1. 내부 API 시크릿 확인 (서버-서버 통신)
   const apiSecret = request.headers.get("x-api-secret");
@@ -31,14 +31,14 @@ async function verifyAuth(request: NextRequest): Promise<boolean> {
     return true;
   }
 
-  // 2. 관리자 세션 토큰 확인
+  // 2. 인증된 사용자 세션 토큰 확인 (관리자 또는 멘토)
   const authHeader = request.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
     const supabase = getServiceSupabase();
     if (supabase) {
       const { data: { user } } = await supabase.auth.getUser(token);
-      if (user && isAdmin(user.email)) {
+      if (user) {
         return true;
       }
     }

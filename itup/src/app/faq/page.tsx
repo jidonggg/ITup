@@ -93,7 +93,7 @@ const faqData: FAQItem[] = [
   {
     category: "기타",
     question: "문의사항이 있으면 어디로 연락하나요?",
-    answer: "이메일 support@itup.kr 또는 카카오톡 채널 '커피챗'으로 문의해주세요. 빠르게 답변드릴게요.",
+    answer: "이메일 support@itup.kr로 문의해주세요. 빠르게 답변드릴게요.",
   },
   {
     category: "기타",
@@ -213,7 +213,7 @@ export default function FAQPage() {
           <p className="text-muted mb-6">
             편하게 문의해주세요. 빠르게 답변드릴게요.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <a
               href="mailto:support@itup.kr"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary-dark transition-colors"
@@ -222,15 +222,6 @@ export default function FAQPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               이메일 문의
-            </a>
-            <a
-              href="#"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-card-border text-foreground rounded-full font-medium hover:border-primary hover:text-primary transition-colors"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.123.49.18.484.378.352.156-.103 2.5-1.683 3.512-2.37.517.077 1.056.117 1.62.117 4.97 0 9-3.186 9-7.115C21 6.185 16.97 3 12 3z"/>
-              </svg>
-              카카오톡 문의
             </a>
           </div>
         </div>

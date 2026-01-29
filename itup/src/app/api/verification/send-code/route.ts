@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: "커피챗 <noreply@itup.vercel.app>",
+        from: "커피챗 <noreply@itup.kr>",
         to: email,
         subject: "[커피챗] 멘토 인증 코드",
         html: `

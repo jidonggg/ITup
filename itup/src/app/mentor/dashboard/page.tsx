@@ -125,9 +125,13 @@ export default function MentorDashboardPage() {
 
       // 상담 확정 시 이메일 알림 발송
       if (newStatus === "confirmed") {
+        const { data: { session } } = await supabase.auth.getSession();
         fetch("/api/email/notify", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(session?.access_token ? { "Authorization": `Bearer ${session.access_token}` } : {}),
+          },
           body: JSON.stringify({
             type: "consultation_confirmed",
             data: { consultationId },

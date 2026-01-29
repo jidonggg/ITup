@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { useLayout } from "@/contexts/LayoutContext";
 import { products, bundles, ProductType, BundleType } from "@/lib/payment/types";
 import { MENTOR_TIERS, MentorTier, getTieredPrice } from "@/lib/pricing/tiers";
 
@@ -27,30 +26,17 @@ const TIER_EXPERIENCE: Record<MentorTier, string> = {
 
 export default function Pricing({ onConsultClick, onProductClick, onBundleClick }: PricingProps) {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
-  const { currentLayout } = useLayout();
   const [selectedTier, setSelectedTier] = useState<MentorTier>("junior");
 
-  const cardRadius = currentLayout.cardStyle === "rounded" ? "rounded-2xl" :
-                     currentLayout.cardStyle === "sharp" ? "rounded-lg" : "rounded-3xl";
-
-  const sectionSpacing = currentLayout.spacing === "compact" ? "py-16" :
-                         currentLayout.spacing === "spacious" ? "py-32" : "py-24";
-
-  const cardEffect = currentLayout.cardEffect === "glass" ? "card-glass" :
-                     currentLayout.cardEffect === "glow" ? "card-glow" :
-                     currentLayout.cardEffect === "float" ? "card-float" : "";
-
   return (
-    <section id="pricing" className={`${sectionSpacing} relative`}>
+    <section id="pricing" className="py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title */}
         <div
           ref={titleRef}
           className={`text-center mb-16 scroll-animate ${titleVisible ? "visible" : ""}`}
         >
-          <span className={`inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium mb-4 ${
-            currentLayout.cardStyle === "sharp" ? "rounded" : "rounded-full"
-          }`}>
+          <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium mb-4 rounded-full">
             Pricing
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
@@ -62,7 +48,7 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
         </div>
 
         {/* Free Coffee Chat Banner */}
-        <div className={`mb-10 max-w-2xl mx-auto p-6 md:p-8 ${cardRadius} ${cardEffect} border border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5`}>
+        <div className="mb-10 max-w-2xl mx-auto p-6 md:p-8 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -73,9 +59,7 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
             </div>
             <button
               onClick={onConsultClick}
-              className={`px-6 py-3 border border-primary text-primary font-medium hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer whitespace-nowrap ${
-                cardRadius === "rounded-lg" ? "rounded-lg" : "rounded-full"
-              }`}
+              className="px-6 py-3 border border-primary text-primary font-medium hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer whitespace-nowrap rounded-full"
             >
               무료로 시작하기
             </button>
@@ -109,8 +93,6 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
               index={index}
               onProductClick={onProductClick}
               onConsultClick={onConsultClick}
-              cardRadius={cardRadius}
-              cardEffect={cardEffect}
               tierExperience={TIER_EXPERIENCE[selectedTier]}
             />
           ))}
@@ -125,8 +107,6 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
               bundle={bundle}
               index={index}
               onBundleClick={onBundleClick}
-              cardRadius={cardRadius}
-              cardEffect={cardEffect}
               highlighted={bundle.id === "allinone"}
             />
           ))}
@@ -152,12 +132,10 @@ interface ProductCardProps {
   index: number;
   onProductClick?: (productId: ProductType) => void;
   onConsultClick: () => void;
-  cardRadius: string;
-  cardEffect: string;
   tierExperience: string;
 }
 
-function ProductCard({ product, index, onProductClick, onConsultClick, cardRadius, cardEffect, tierExperience }: ProductCardProps) {
+function ProductCard({ product, index, onProductClick, onConsultClick, tierExperience }: ProductCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
   const tieredPrice = getTieredPrice(product.id, tierExperience);
 
@@ -168,7 +146,7 @@ function ProductCard({ product, index, onProductClick, onConsultClick, cardRadiu
       style={{ transitionDelay: `${index * 100}ms` }}
     >
       <div
-        className={`relative h-full p-6 md:p-8 ${cardRadius} ${cardEffect} border bg-card-bg border-card-border hover:border-primary/50 transition-all duration-300`}
+        className="relative h-full p-6 md:p-8 rounded-2xl border bg-card-bg border-card-border hover:border-primary/50 transition-all duration-300"
       >
         {/* Icon + Name */}
         <div className="text-center mb-6">
@@ -209,9 +187,7 @@ function ProductCard({ product, index, onProductClick, onConsultClick, cardRadiu
         {/* CTA */}
         <button
           onClick={() => onProductClick ? onProductClick(product.id) : onConsultClick()}
-          className={`w-full py-3 font-medium transition-all duration-300 cursor-pointer border border-card-border text-foreground hover:border-primary hover:text-primary ${
-            cardRadius === "rounded-lg" ? "rounded-lg" : "rounded-full"
-          }`}
+          className="w-full py-3 font-medium transition-all duration-300 cursor-pointer border border-card-border text-foreground hover:border-primary hover:text-primary rounded-full"
         >
           신청하기
         </button>
@@ -224,12 +200,10 @@ interface BundleCardProps {
   bundle: (typeof bundles)[number];
   index: number;
   onBundleClick?: (bundleId: BundleType) => void;
-  cardRadius: string;
-  cardEffect: string;
   highlighted: boolean;
 }
 
-function BundleCard({ bundle, index, onBundleClick, cardRadius, cardEffect, highlighted }: BundleCardProps) {
+function BundleCard({ bundle, index, onBundleClick, highlighted }: BundleCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
   const discountPercent = Math.round((1 - bundle.price / bundle.originalPrice) * 100);
 
@@ -240,7 +214,7 @@ function BundleCard({ bundle, index, onBundleClick, cardRadius, cardEffect, high
       style={{ transitionDelay: `${index * 100}ms` }}
     >
       <div
-        className={`relative h-full p-6 md:p-8 ${cardRadius} ${cardEffect} border transition-all duration-300 ${
+        className={`relative h-full p-6 md:p-8 rounded-2xl border transition-all duration-300 ${
           highlighted
             ? "bg-gradient-to-b from-primary/10 to-card-bg border-primary shadow-lg shadow-primary/20"
             : "bg-card-bg border-card-border hover:border-primary/50"
@@ -299,9 +273,7 @@ function BundleCard({ bundle, index, onBundleClick, cardRadius, cardEffect, high
         {/* CTA */}
         <button
           onClick={() => onBundleClick?.(bundle.id)}
-          className={`w-full py-3 font-medium transition-all duration-300 cursor-pointer ${
-            cardRadius === "rounded-lg" ? "rounded-lg" : "rounded-full"
-          } ${
+          className={`w-full py-3 font-medium transition-all duration-300 cursor-pointer rounded-full ${
             highlighted
               ? "bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-lg hover:shadow-primary/30"
               : "border border-card-border text-foreground hover:border-primary hover:text-primary"

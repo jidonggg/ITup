@@ -32,8 +32,13 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("비밀번호는 최소 6자 이상이어야 해요.");
+    if (password.length < 8) {
+      setError("비밀번호는 최소 8자 이상이어야 해요.");
+      return;
+    }
+
+    if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
+      setError("비밀번호는 영문과 숫자를 모두 포함해야 해요.");
       return;
     }
 
@@ -182,7 +187,7 @@ export default function SignupPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="6자 이상"
+                placeholder="8자 이상, 영문+숫자 포함"
                 className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
               />
             </div>

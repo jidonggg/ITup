@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useLayout } from "@/contexts/LayoutContext";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
 
 interface HeroProps {
@@ -18,7 +17,6 @@ export default function Hero({ onConsultClick }: HeroProps) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [headlineIndex, setHeadlineIndex] = useState(0);
   const rafRef = useRef<number | null>(null);
-  const { currentLayout } = useLayout();
   const { trackClick } = useAnalytics();
 
   const handleConsultClick = () => {
@@ -80,19 +78,11 @@ export default function Hero({ onConsultClick }: HeroProps) {
         }}
       />
 
-      <div className={`relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${
-        currentLayout.heroStyle === "center" ? "text-center" :
-        currentLayout.heroStyle === "left" ? "text-left" :
-        "grid md:grid-cols-2 gap-12 items-center text-left"
-      }`}>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Content Section */}
         <div>
           {/* Badge */}
-          <div className={`inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 mb-8 animate-fade-in-up ${
-            currentLayout.cardStyle === "rounded" ? "rounded-full" :
-            currentLayout.cardStyle === "sharp" ? "rounded" :
-            "rounded-full"
-          }`}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 mb-8 animate-fade-in-up rounded-full">
             <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
             <span className="text-sm text-primary-light">
               현직자 멘토와 편하게 나누는 커피챗
@@ -116,25 +106,17 @@ export default function Hero({ onConsultClick }: HeroProps) {
           </h1>
 
           {/* Subtitle */}
-          <p className={`text-lg sm:text-xl text-muted mb-10 animate-fade-in-up [animation-delay:200ms] ${
-            currentLayout.heroStyle === "center" ? "max-w-2xl mx-auto" : "max-w-xl"
-          }`}>
+          <p className="text-lg sm:text-xl text-muted mb-10 animate-fade-in-up [animation-delay:200ms] max-w-2xl mx-auto">
             현직 게임 개발자, 기획자, 아티스트와
             <br className="hidden sm:block" />
             편하게 물어보세요.
           </p>
 
           {/* CTA Buttons */}
-          <div className={`flex flex-col sm:flex-row gap-4 animate-fade-in-up [animation-delay:300ms] ${
-            currentLayout.heroStyle === "center" ? "justify-center items-center" : "justify-start items-start"
-          }`}>
+          <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up [animation-delay:300ms] justify-center items-center">
             <button
               onClick={handleConsultClick}
-              className={`group relative px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold text-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300 animate-pulse-glow cursor-pointer ${
-                currentLayout.cardStyle === "rounded" ? "rounded-full" :
-                currentLayout.cardStyle === "sharp" ? "rounded-lg" :
-                "rounded-full"
-              }`}
+              className="group relative px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold text-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300 animate-pulse-glow cursor-pointer rounded-full"
             >
               <span className="relative z-10">무료로 시작하기</span>
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -142,9 +124,7 @@ export default function Hero({ onConsultClick }: HeroProps) {
           </div>
 
           {/* Trust Indicators */}
-          <div className={`mt-16 flex flex-wrap gap-8 text-muted animate-fade-in-up [animation-delay:400ms] ${
-            currentLayout.heroStyle === "center" ? "justify-center items-center" : "justify-start items-start"
-          }`}>
+          <div className="mt-16 flex flex-wrap gap-8 text-muted animate-fade-in-up [animation-delay:400ms] justify-center items-center">
             <div className="flex items-center gap-2">
               <div className="flex -space-x-2">
                 {[...Array(4)].map((_, i) => (
@@ -170,18 +150,6 @@ export default function Hero({ onConsultClick }: HeroProps) {
             </div>
           </div>
         </div>
-
-        {/* Split Layout: Hero Image/Illustration */}
-        {currentLayout.heroStyle === "split" && (
-          <div className="hidden md:flex items-center justify-center">
-            <div className="relative w-full max-w-md aspect-square">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/30 rounded-3xl animate-pulse" />
-              <div className="absolute inset-4 bg-card-bg rounded-2xl flex items-center justify-center">
-                <span className="text-8xl">☕</span>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Scroll Indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">

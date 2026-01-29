@@ -213,14 +213,20 @@ export async function POST(request: NextRequest) {
         }
 
         // 멘토에게 이메일 알림 발송 (비동기)
-        fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ""}/api/email/notify`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "consultation_confirmed",
-            data: { consultationId },
-          }),
-        }).catch(console.error);
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+        if (siteUrl) {
+          fetch(`${siteUrl}/api/email/notify`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-secret": process.env.INTERNAL_API_SECRET || "",
+            },
+            body: JSON.stringify({
+              type: "consultation_confirmed",
+              data: { consultationId },
+            }),
+          }).catch(console.error);
+        }
       }
 
       // 번들 결제인 경우: consultation 1건 생성 (bundle_type 기록)
