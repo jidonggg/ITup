@@ -7,9 +7,8 @@ const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY || "";
 // 가격 설정 (서버에서 검증용)
 const PRICES: Record<string, number> = {
   CONSULT: 35000, // 상담 (30% 할인 적용가)
-  BASIC: 99000,
-  STANDARD: 199000,
-  PREMIUM: 399000,
+  BASIC: 59000,
+  STANDARD: 129000,
 };
 
 // 서버사이드 Supabase 클라이언트
@@ -158,7 +157,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 구독 플랜 결제인 경우: 구독 정보 업데이트
-      if (["BASIC", "STANDARD", "PREMIUM"].includes(planType)) {
+      if (["BASIC", "STANDARD"].includes(planType)) {
         // userId는 세션에서 추출 필요 - 현재는 orderId에서 파싱 시도
         const userId = orderParts.length > 2 ? orderParts[1] : null;
 
