@@ -5,6 +5,7 @@ import { ConsultType, consultTypeLabels } from "@/data/mentors";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Review } from "@/lib/supabase/types";
+import { products } from "@/lib/payment/types";
 
 export interface MentorData {
   id?: string;
@@ -211,21 +212,31 @@ export default function MentorDetailModal({
             </div>
           </div>
 
-          {/* Price */}
-          <div className="mb-6 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl border border-primary/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-muted mb-1">상담 가격</h3>
-                <p className="text-2xl font-bold text-primary">
-                  {mentor.price ? `${mentor.price.toLocaleString()}원` : "50,000원"}
-                  <span className="text-sm font-normal text-muted ml-1">/ 30분</span>
-                </p>
-              </div>
-              <div className="text-right">
-                <span className="text-xs text-muted">첫 상담</span>
-                <p className="text-sm font-semibold text-green-500">30% 할인</p>
-              </div>
+          {/* Product Prices */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-muted mb-3">상품별 가격</h3>
+            <div className="space-y-2">
+              {products
+                .filter((p) => mentor.consultTypes.includes(p.id as ConsultType))
+                .map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/10"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{product.icon}</span>
+                      <div>
+                        <p className="text-sm font-medium">{product.name}</p>
+                        <p className="text-xs text-muted">{product.duration}</p>
+                      </div>
+                    </div>
+                    <p className="text-lg font-bold text-primary">
+                      {product.price.toLocaleString()}원
+                    </p>
+                  </div>
+                ))}
             </div>
+            <p className="text-xs text-green-500 mt-2">첫 커피챗 15분 무료!</p>
           </div>
 
           {/* Reviews Section */}
@@ -294,7 +305,7 @@ export default function MentorDetailModal({
             onClick={handleConsultClick}
             className="w-full py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 cursor-pointer"
           >
-            이 멘토에게 상담 신청
+            상품 선택 후 신청하기
           </button>
         </div>
       </div>

@@ -42,6 +42,7 @@ export interface Consultation {
   user_phone: string;
   user_email: string;
   interest: string | null;
+  product_type: ConsultType | null;
   preferred_time: string | null;
   message: string | null;
   payment_id: string | null;
@@ -59,7 +60,8 @@ export interface Payment {
   payment_key: string | null;
   amount: number;
   status: "pending" | "completed" | "failed" | "refunded";
-  plan_type: string | null;
+  product_type: string | null;
+  bundle_type: string | null;
   payment_method: string | null;
   approved_at: string | null;
   receipt_url: string | null;
@@ -72,16 +74,6 @@ export interface VerificationCode {
   email: string;
   code: string;
   expires_at: string;
-  created_at: string;
-}
-
-export interface Subscription {
-  id: string;
-  user_id: string;
-  plan_type: string;
-  status: "active" | "cancelled" | "expired";
-  current_period_start: string;
-  current_period_end: string;
   created_at: string;
 }
 
@@ -130,11 +122,6 @@ export interface Database {
         Row: Payment;
         Insert: Omit<Payment, "id" | "created_at">;
         Update: Partial<Omit<Payment, "id" | "created_at">>;
-      };
-      subscriptions: {
-        Row: Subscription;
-        Insert: Omit<Subscription, "id" | "created_at">;
-        Update: Partial<Omit<Subscription, "id" | "created_at">>;
       };
       newsletter_subscriptions: {
         Row: NewsletterSubscription;

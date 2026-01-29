@@ -17,7 +17,7 @@ import LoginModal from "@/components/auth/LoginModal";
 import SignupModal from "@/components/auth/SignupModal";
 import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 import PaymentModal from "@/components/PaymentModal";
-import { PlanInfo, plans } from "@/lib/payment/types";
+import { ProductType, BundleInfo, bundles } from "@/lib/payment/types";
 
 export default function HomeClient() {
   const router = useRouter();
@@ -30,7 +30,8 @@ export default function HomeClient() {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<PlanInfo | null>(null);
+  const [selectedBundle, setSelectedBundle] = useState<BundleInfo | null>(null);
+  const [selectedProductType, setSelectedProductType] = useState<ProductType | undefined>();
 
   // Handle auth callback code
   useEffect(() => {
@@ -41,11 +42,15 @@ export default function HomeClient() {
     }
   }, [router]);
 
-  const openConsultModal = () => setIsConsultModalOpen(true);
+  const openConsultModal = (productType?: ProductType) => {
+    setSelectedProductType(productType);
+    setIsConsultModalOpen(true);
+  };
   const closeConsultModal = () => {
     setIsConsultModalOpen(false);
     setConsultMentorId(undefined);
     setConsultMentor(null);
+    setSelectedProductType(undefined);
   };
 
   const openMentorModal = (mentor: MentorData) => {
@@ -82,28 +87,32 @@ export default function HomeClient() {
     openForgotPasswordModal();
   };
 
-  const openPaymentModal = (planId: string) => {
-    const plan = plans.find((p) => p.id === planId);
-    if (plan) {
-      setSelectedPlan(plan);
+  const openBundleModal = (bundleId: string) => {
+    const bundle = bundles.find((b) => b.id === bundleId);
+    if (bundle) {
+      setSelectedBundle(bundle);
       setIsPaymentModalOpen(true);
     }
   };
   const closePaymentModal = () => {
     setIsPaymentModalOpen(false);
-    setSelectedPlan(null);
+    setSelectedBundle(null);
   };
 
   return (
     <>
       <Header onLoginClick={openLoginModal} onSignupClick={openSignupModal} />
-      <Hero onConsultClick={openConsultModal} />
+      <Hero onConsultClick={() => openConsultModal()} />
       <Stats />
       <Features />
       <Mentors onMentorClick={openMentorModal} />
       <Testimonials />
-      <Pricing onConsultClick={openConsultModal} onPaymentClick={openPaymentModal} />
-      <CTA onConsultClick={openConsultModal} />
+      <Pricing
+        onConsultClick={() => openConsultModal()}
+        onProductClick={(productId) => openConsultModal(productId)}
+        onBundleClick={openBundleModal}
+      />
+      <CTA onConsultClick={() => openConsultModal()} />
       <Footer />
       <ConsultModal
         isOpen={isConsultModalOpen}
@@ -111,7 +120,7 @@ export default function HomeClient() {
         mentorId={consultMentorId}
         mentorName={consultMentor?.name}
         mentorAvailableTimes={consultMentor?.availableTimes}
-        mentorPrice={consultMentor?.price}
+        productType={selectedProductType}
       />
       <MentorDetailModal
         isOpen={isMentorModalOpen}
@@ -145,7 +154,7 @@ export default function HomeClient() {
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={closePaymentModal}
-        plan={selectedPlan}
+        bundle={selectedBundle}
       />
     </>
   );

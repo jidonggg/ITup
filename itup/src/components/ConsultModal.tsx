@@ -7,10 +7,16 @@ import { useAnalytics } from "@/contexts/AnalyticsContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
-import { PRICES } from "@/lib/constants";
+import { products, ProductType } from "@/lib/payment/types";
 
 // 토스페이먼츠 클라이언트 키 (환경변수 필수)
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+
+const PRODUCT_PREFIX_MAP: Record<ProductType, string> = {
+  coffee: "COFFEE",
+  resume: "RESUME",
+  interview: "INTERVIEW",
+};
 
 interface ConsultModalProps {
   isOpen: boolean;
@@ -18,7 +24,7 @@ interface ConsultModalProps {
   mentorId?: string;
   mentorName?: string;
   mentorAvailableTimes?: string[];
-  mentorPrice?: number;
+  productType?: ProductType;
 }
 
 interface FormData {
@@ -39,7 +45,7 @@ const initialFormData: FormData = {
   message: "",
 };
 
-export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, mentorAvailableTimes, mentorPrice }: ConsultModalProps) {
+export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, mentorAvailableTimes, productType: initialProductType }: ConsultModalProps) {
   const { user, profile } = useAuth();
   const { trackEvent } = useAnalytics();
   const { showToast } = useToast();
@@ -49,9 +55,10 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [step, setStep] = useState<"form" | "payment" | "success">("form");
   const [consultationId, setConsultationId] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductType>(initialProductType || "coffee");
 
-  const price = mentorPrice || PRICES.DEFAULT_CONSULT;
-  const discountedPrice = Math.floor(price * 0.7); // 첫 상담 30% 할인
+  const currentProduct = products.find((p) => p.id === selectedProduct)!;
+  const price = currentProduct.price;
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
@@ -60,13 +67,16 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   useEffect(() => {
     if (!isOpen) return;
 
+    if (initialProductType) {
+      setSelectedProduct(initialProductType);
+    }
+
     // 이벤트 추적
     trackEvent("modal", "상담모달_오픈", { mentorId: mentorId || "general" });
 
     // 멘토 시간 로드 (비동기 작업)
     const loadMentorTimes = async () => {
       if (mentorAvailableTimes && mentorAvailableTimes.length > 0) {
-        // props로 전달된 시간 사용 (비동기 콜백으로 처리)
         requestAnimationFrame(() => setAvailableTimes(mentorAvailableTimes));
       } else if (mentorId && isSupabaseConfigured()) {
         const supabase = createClient();
@@ -82,7 +92,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       }
     };
 
-    // 유저 정보로 폼 초기화 (비동기 콜백으로 처리)
+    // 유저 정보로 폼 초기화
     if (user) {
       requestAnimationFrame(() => {
         setFormData((prev) => ({
@@ -95,7 +105,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     }
 
     loadMentorTimes();
-  }, [isOpen, mentorId, mentorAvailableTimes, trackEvent, user, profile]);
+  }, [isOpen, mentorId, mentorAvailableTimes, trackEvent, user, profile, initialProductType]);
 
   const interests = [
     { value: "programming", label: "프로그래밍" },
@@ -131,6 +141,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     const consultations = JSON.parse(localStorage.getItem("consultations") || "[]");
     const newConsultation = {
       ...formData,
+      productType: selectedProduct,
       id: Date.now(),
       createdAt: new Date().toISOString(),
     };
@@ -147,7 +158,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
 
     if (!isSupabaseConfigured()) {
       saveToLocalStorage();
-      trackEvent("submit", "상담신청_폼완료", { interest: formData.interest, mentorId: mentorId || "general" });
+      trackEvent("submit", "상담신청_폼완료", { interest: formData.interest, mentorId: mentorId || "general", productType: selectedProduct });
       setStep("payment");
       setIsLoading(false);
       return;
@@ -164,9 +175,10 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
         user_phone: formData.phone,
         user_email: formData.email,
         interest: formData.interest || null,
+        product_type: selectedProduct,
         preferred_time: formData.preferredTime || null,
         message: formData.message || null,
-        expected_amount: discountedPrice,
+        expected_amount: price,
       }).select("id").single();
 
       if (error) {
@@ -176,7 +188,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
         setConsultationId(data.id);
       }
 
-      trackEvent("submit", "상담신청_폼완료", { interest: formData.interest, mentorId: mentorId || "general" });
+      trackEvent("submit", "상담신청_폼완료", { interest: formData.interest, mentorId: mentorId || "general", productType: selectedProduct });
       setStep("payment");
       setIsLoading(false);
     } catch (error) {
@@ -198,7 +210,8 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
       const customerKey = user?.id || `guest_${Date.now()}`;
       const uid = user?.id || "guest";
-      const orderId = `CONSULT_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+      const prefix = PRODUCT_PREFIX_MAP[selectedProduct];
+      const orderId = `${prefix}_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
       // 위젯 인스턴스 생성
       const widgets = tossPayments.widgets({ customerKey });
@@ -206,13 +219,13 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       // 결제 금액 설정
       await widgets.setAmount({
         currency: "KRW",
-        value: discountedPrice,
+        value: price,
       });
 
       // 결제 요청
       await widgets.requestPayment({
         orderId,
-        orderName: `커피챗 멘토링 상담 - ${mentorName || "멘토"}`,
+        orderName: `${currentProduct.name} - ${mentorName || "멘토"}`,
         successUrl: `${window.location.origin}/payment/success?consultationId=${consultationId || "local"}`,
         failUrl: `${window.location.origin}/payment/fail`,
         customerEmail: user?.email || formData.email,
@@ -220,9 +233,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       });
     } catch (error) {
       console.error("Payment error:", error);
-      // 사용자가 결제창을 닫은 경우 또는 오류 발생 시
       const errorMessage = error instanceof Error ? error.message : "";
-      // PAY_PROCESS_CANCELED는 사용자가 직접 닫은 경우이므로 Toast 표시 안함
       if (!errorMessage.includes("PAY_PROCESS_CANCELED")) {
         showToast("결제 처리 중 오류가 발생했어요. 다시 시도해주세요.", "error");
       }
@@ -235,6 +246,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     setErrors({});
     setStep("form");
     setConsultationId(null);
+    setSelectedProduct(initialProductType || "coffee");
     onClose();
   };
 
@@ -278,7 +290,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
             <div className="text-center py-4">
               <h2 className="text-2xl font-bold mb-2">결제하기</h2>
               <p className="text-muted text-sm mb-6">
-                커피챗 신청을 완료하려면 결제를 진행해주세요.
+                {currentProduct.name} 신청을 완료하려면 결제를 진행해주세요.
               </p>
 
               {/* 결제 정보 */}
@@ -288,19 +300,16 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                   <span className="font-medium">{mentorName || "멘토"}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-muted">상담 시간</span>
-                  <span className="font-medium">30분</span>
+                  <span className="text-muted">상품</span>
+                  <span className="font-medium">{currentProduct.icon} {currentProduct.name}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-muted">정가</span>
-                  <span className="text-muted line-through">{price.toLocaleString()}원</span>
+                  <span className="text-muted">시간</span>
+                  <span className="font-medium">{currentProduct.duration}</span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-card-border">
-                  <span className="font-medium">
-                    결제 금액
-                    <span className="ml-2 text-xs text-green-500 font-normal">첫 상담 30% 할인</span>
-                  </span>
-                  <span className="text-xl font-bold text-primary">{discountedPrice.toLocaleString()}원</span>
+                  <span className="font-medium">결제 금액</span>
+                  <span className="text-xl font-bold text-primary">{price.toLocaleString()}원</span>
                 </div>
               </div>
 
@@ -325,7 +334,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                   disabled={isLoading}
                   className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 cursor-pointer"
                 >
-                  {isLoading ? "처리 중..." : `${discountedPrice.toLocaleString()}원 결제할게요`}
+                  {isLoading ? "처리 중..." : `${price.toLocaleString()}원 결제할게요`}
                 </button>
               </div>
 
@@ -336,10 +345,33 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
           ) : (
             /* 폼 화면 */
             <>
-              <h2 className="text-2xl font-bold mb-2">커피챗 신청</h2>
+              <h2 className="text-2xl font-bold mb-2">상담 신청</h2>
               <p className="text-muted text-sm mb-6">
-                간단한 정보만 알려주세요.
+                상품을 선택하고 정보를 입력해주세요.
               </p>
+
+              {/* 상품 타입 선택 */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">상품 선택</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {products.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => setSelectedProduct(product.id)}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all cursor-pointer ${
+                        selectedProduct === product.id
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-card-border bg-secondary text-muted hover:border-primary/50"
+                      }`}
+                    >
+                      <span className="text-xl">{product.icon}</span>
+                      <span className="text-xs font-medium">{product.name}</span>
+                      <span className="text-xs">{product.price.toLocaleString()}원</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* 이름 */}

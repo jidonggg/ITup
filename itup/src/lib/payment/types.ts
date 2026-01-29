@@ -1,43 +1,100 @@
 import { PRICES } from "@/lib/constants";
 
-export interface PlanInfo {
-  id: string;
+export type ProductType = "coffee" | "resume" | "interview";
+export type BundleType = "starter" | "allinone" | "full";
+
+export interface ProductInfo {
+  id: ProductType;
   name: string;
   price: number;
-  period: string;
   description: string;
   features: string[];
+  icon: string;
+  duration: string;
 }
 
-export const plans: PlanInfo[] = [
+export interface BundleInfo {
+  id: BundleType;
+  name: string;
+  price: number;
+  originalPrice: number;
+  description: string;
+  includes: string[];
+  icon: string;
+}
+
+export const products: ProductInfo[] = [
   {
-    id: "basic",
-    name: "Basic",
-    price: PRICES.BASIC_PLAN,
-    period: "월",
-    description: "가볍게 시작하는 커피챗",
+    id: "coffee",
+    name: "커피챗",
+    price: PRICES.COFFEE_CHAT,
+    description: "가볍게 현직자와 이야기 나눠봐요",
     features: [
-      "월 2회 1:1 커피챗 (회당 50분)",
-      "커리어 로드맵 같이 그려봐요",
-      "이력서 첨삭 1회",
-      "이메일 질문 무제한",
-      "커뮤니티 접근 권한",
+      "1:1 화상/대면 상담 30분",
+      "커리어 방향 상담",
+      "업계 현황 이야기",
+      "자유 Q&A",
     ],
+    icon: "☕",
+    duration: "30분",
   },
   {
-    id: "pro",
-    name: "Pro",
-    price: PRICES.STANDARD_PLAN,
-    period: "월",
-    description: "본격적으로 준비하는 커피챗",
+    id: "resume",
+    name: "이력서/포폴 첨삭",
+    price: PRICES.RESUME_REVIEW,
+    description: "이력서와 포트폴리오를 꼼꼼히 봐드려요",
     features: [
-      "월 4회 1:1 커피챗 (회당 60분)",
-      "맞춤 커리어 이야기",
-      "포트폴리오 꼼꼼 리뷰",
-      "모의 면접 2회",
-      "24시간 내 질문 답변",
-      "원하는 멘토 직접 선택",
+      "이력서/포트폴리오 상세 리뷰",
+      "개선 포인트 피드백",
+      "업계 맞춤 어필 포인트",
+      "첨삭 후 1회 추가 확인",
     ],
+    icon: "📄",
+    duration: "50분",
+  },
+  {
+    id: "interview",
+    name: "모의면접",
+    price: PRICES.MOCK_INTERVIEW,
+    description: "실전처럼 면접을 연습해봐요",
+    features: [
+      "실전형 모의면접 60분",
+      "직무별 예상 질문 제공",
+      "상세 피드백 리포트",
+      "면접 태도/답변 코칭",
+    ],
+    icon: "🎤",
+    duration: "60분",
+  },
+];
+
+export const bundles: BundleInfo[] = [
+  {
+    id: "starter",
+    name: "스타터 번들",
+    price: PRICES.STARTER_BUNDLE,
+    originalPrice: PRICES.COFFEE_CHAT + PRICES.RESUME_REVIEW,
+    description: "커피챗 + 이력서 첨삭을 한 번에",
+    includes: ["커피챗 1회", "이력서/포폴 첨삭 1회"],
+    icon: "🎯",
+  },
+  {
+    id: "allinone",
+    name: "올인원 번들",
+    price: PRICES.ALLINONE_BUNDLE,
+    originalPrice: PRICES.COFFEE_CHAT + PRICES.RESUME_REVIEW + PRICES.MOCK_INTERVIEW,
+    description: "3가지 상품을 모두 포함",
+    includes: ["커피챗 1회", "이력서/포폴 첨삭 1회", "모의면접 1회"],
+    icon: "🚀",
+  },
+  {
+    id: "full",
+    name: "풀패키지 번들",
+    price: PRICES.FULL_BUNDLE,
+    originalPrice: PRICES.COFFEE_CHAT * 2 + PRICES.RESUME_REVIEW + PRICES.MOCK_INTERVIEW,
+    description: "커피챗 2회 포함 풀 코스",
+    includes: ["커피챗 2회", "이력서/포폴 첨삭 1회", "모의면접 1회"],
+    icon: "👑",
   },
 ];
 
@@ -47,7 +104,8 @@ export interface PaymentRequest {
   amount: number;
   customerEmail: string;
   customerName: string;
-  planId: string;
+  productType?: ProductType;
+  bundleType?: BundleType;
 }
 
 export interface PaymentResult {

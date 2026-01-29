@@ -4,19 +4,25 @@ import { useState, useEffect } from "react";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
-import { PlanInfo } from "@/lib/payment/types";
+import { BundleInfo, BundleType } from "@/lib/payment/types";
 import { loadTossPayments, TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 
 // 토스페이먼츠 클라이언트 키 (환경변수 필수)
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
 
+const BUNDLE_PREFIX_MAP: Record<BundleType, string> = {
+  starter: "BUNDLE_STARTER",
+  allinone: "BUNDLE_ALLINONE",
+  full: "BUNDLE_FULL",
+};
+
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  plan: PlanInfo | null;
+  bundle: BundleInfo | null;
 }
 
-export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
+export default function PaymentModal({ isOpen, onClose, bundle }: PaymentModalProps) {
   const { user, profile } = useAuth();
   const { showToast } = useToast();
   const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null);
@@ -27,7 +33,7 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
   useBodyScrollLock(isOpen);
 
   useEffect(() => {
-    if (!isOpen || !plan) return;
+    if (!isOpen || !bundle) return;
 
     const initPayment = async () => {
       try {
@@ -49,7 +55,7 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
 
         await widgetsInstance.setAmount({
           currency: "KRW",
-          value: plan.price,
+          value: bundle.price,
         });
 
         setWidgets(widgetsInstance);
@@ -78,19 +84,19 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
     return () => {
       setWidgets(null);
     };
-  }, [isOpen, plan, user]);
+  }, [isOpen, bundle, user]);
 
   const handlePayment = async () => {
-    if (!widgets || !plan) return;
+    if (!widgets || !bundle) return;
 
     try {
-      const planPrefix = plan.id === "basic" ? "BASIC" : "STANDARD";
+      const prefix = BUNDLE_PREFIX_MAP[bundle.id];
       const uid = user?.id || "guest";
-      const orderId = `${planPrefix}_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+      const orderId = `${prefix}_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
       await widgets.requestPayment({
         orderId,
-        orderName: `커피챗 ${plan.name} 플랜`,
+        orderName: `커피챗 ${bundle.name}`,
         successUrl: `${window.location.origin}/payment/success`,
         failUrl: `${window.location.origin}/payment/fail`,
         customerEmail: user?.email || undefined,
@@ -107,7 +113,9 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
     onClose();
   };
 
-  if (!isOpen || !plan) return null;
+  if (!isOpen || !bundle) return null;
+
+  const discountPercent = Math.round((1 - bundle.price / bundle.originalPrice) * 100);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -131,19 +139,29 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
         </button>
 
         <div className="p-6">
-          {/* Plan Info */}
+          {/* Bundle Info */}
           <div className="mb-6 pb-6 border-b border-card-border">
-            <h2 className="text-2xl font-bold mb-2">결제하기</h2>
+            <h2 className="text-2xl font-bold mb-2">번들 결제</h2>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-lg font-semibold">{plan.name} 플랜</p>
-                <p className="text-sm text-muted">{plan.description}</p>
+                <p className="text-lg font-semibold">{bundle.icon} {bundle.name}</p>
+                <p className="text-sm text-muted">{bundle.description}</p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {bundle.includes.map((item, i) => (
+                    <span key={i} className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
+                      {item}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="text-right">
+              <div className="text-right flex-shrink-0 ml-4">
                 <p className="text-2xl font-bold text-primary">
-                  {plan.price.toLocaleString()}원
+                  {bundle.price.toLocaleString()}원
                 </p>
-                <p className="text-sm text-muted">/{plan.period}</p>
+                <p className="text-xs text-muted line-through">
+                  {bundle.originalPrice.toLocaleString()}원
+                </p>
+                <span className="text-xs font-bold text-red-500">{discountPercent}% 할인</span>
               </div>
             </div>
           </div>
@@ -195,7 +213,7 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
                 disabled={isLoading}
                 className="w-full py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold text-lg hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                {plan.price.toLocaleString()}원 결제하기
+                {bundle.price.toLocaleString()}원 결제하기
               </button>
 
               <p className="mt-4 text-xs text-muted text-center">

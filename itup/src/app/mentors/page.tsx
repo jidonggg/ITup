@@ -389,7 +389,6 @@ export default function MentorsPage() {
         mentorId={consultMentorId}
         mentorName={selectedMentor?.name}
         mentorAvailableTimes={selectedMentor?.availableTimes}
-        mentorPrice={selectedMentor?.price}
       />
     </div>
   );

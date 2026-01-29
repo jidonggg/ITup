@@ -4,8 +4,8 @@ import { ConsultType } from "@/lib/supabase/types";
 export type { ConsultType };
 
 export const consultTypeLabels: Record<ConsultType, string> = {
-  coffee: "1:1 상담",
-  resume: "이력서/포트폴리오",
+  coffee: "커피챗",
+  resume: "이력서/포폴 첨삭",
   interview: "모의면접",
 };
 

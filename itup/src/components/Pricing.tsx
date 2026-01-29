@@ -2,33 +2,17 @@
 
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useLayout } from "@/contexts/LayoutContext";
-import { useState } from "react";
-import { plans as planData } from "@/lib/payment/types";
+import { products, bundles, ProductType, BundleType } from "@/lib/payment/types";
 
 interface PricingProps {
   onConsultClick: () => void;
-  onPaymentClick?: (planId: string) => void;
+  onProductClick?: (productId: ProductType) => void;
+  onBundleClick?: (bundleId: BundleType) => void;
 }
 
-const PLAN_EXTRAS: Record<string, { priceNote: string; highlighted: boolean; cta: string }> = {
-  basic: { priceNote: "하루 커피 한 잔 가격으로", highlighted: false, cta: "가볍게 시작하기" },
-  pro: { priceNote: "점심 한 끼 가격으로 매주 멘토를 만나요", highlighted: true, cta: "제일 인기 있어요" },
-};
-
-const plans = planData.map((p) => ({
-  id: p.id,
-  name: p.name,
-  price: p.price.toLocaleString(),
-  period: p.period,
-  description: p.description,
-  features: p.features,
-  ...PLAN_EXTRAS[p.id],
-}));
-
-export default function Pricing({ onConsultClick, onPaymentClick }: PricingProps) {
+export default function Pricing({ onConsultClick, onProductClick, onBundleClick }: PricingProps) {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
   const { currentLayout } = useLayout();
-  const [hoveredPlan, setHoveredPlan] = useState<number | null>(1);
 
   const cardRadius = currentLayout.cardStyle === "rounded" ? "rounded-2xl" :
                      currentLayout.cardStyle === "sharp" ? "rounded-lg" : "rounded-3xl";
@@ -54,22 +38,22 @@ export default function Pricing({ onConsultClick, onPaymentClick }: PricingProps
             Pricing
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            어떤 <span className="text-primary">커피챗</span>이 좋을까?
+            딱 필요한 만큼만 <span className="text-primary">골라봐요</span>
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
-            부담 없이 시작해보세요. 언제든 바꿀 수 있어요.
+            구독 없이 건당 결제. 번들로 묶으면 더 합리적이에요.
           </p>
         </div>
 
-        {/* Single Session Card */}
+        {/* Free Coffee Chat Banner */}
         <div className={`mb-10 max-w-2xl mx-auto p-6 md:p-8 ${cardRadius} ${cardEffect} border border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5`}>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg font-semibold">단건 커피챗</span>
-                <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-xs font-medium rounded-full">첫 15분 무료</span>
+                <span className="text-lg font-semibold">첫 커피챗 15분 무료</span>
+                <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-xs font-medium rounded-full">FREE</span>
               </div>
-              <p className="text-muted text-sm">구독 없이 한 번만 만나볼 수도 있어요</p>
+              <p className="text-muted text-sm">처음이라면 부담 없이 만나봐요</p>
             </div>
             <button
               onClick={onConsultClick}
@@ -82,19 +66,34 @@ export default function Pricing({ onConsultClick, onPaymentClick }: PricingProps
           </div>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
-          {plans.map((plan, index) => (
-            <PricingCard
-              key={plan.name}
-              plan={plan}
+        {/* Product Cards (3) */}
+        <h3 className="text-xl font-semibold text-center mb-6">상품</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto mb-16">
+          {products.map((product, index) => (
+            <ProductCard
+              key={product.id}
+              product={product}
               index={index}
-              isHovered={hoveredPlan === index}
-              onHover={() => setHoveredPlan(index)}
+              onProductClick={onProductClick}
               onConsultClick={onConsultClick}
-              onPaymentClick={onPaymentClick}
               cardRadius={cardRadius}
               cardEffect={cardEffect}
+            />
+          ))}
+        </div>
+
+        {/* Bundle Cards (3) */}
+        <h3 className="text-xl font-semibold text-center mb-6">번들 (더 합리적!)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
+          {bundles.map((bundle, index) => (
+            <BundleCard
+              key={bundle.id}
+              bundle={bundle}
+              index={index}
+              onBundleClick={onBundleClick}
+              cardRadius={cardRadius}
+              cardEffect={cardEffect}
+              highlighted={bundle.id === "allinone"}
             />
           ))}
         </div>
@@ -114,28 +113,16 @@ export default function Pricing({ onConsultClick, onPaymentClick }: PricingProps
   );
 }
 
-interface PricingCardProps {
-  plan: {
-    id: string;
-    name: string;
-    price: string;
-    period: string;
-    description: string;
-    priceNote?: string;
-    features: string[];
-    highlighted: boolean;
-    cta: string;
-  };
+interface ProductCardProps {
+  product: (typeof products)[number];
   index: number;
-  isHovered: boolean;
-  onHover: () => void;
+  onProductClick?: (productId: ProductType) => void;
   onConsultClick: () => void;
-  onPaymentClick?: (planId: string) => void;
   cardRadius: string;
   cardEffect: string;
 }
 
-function PricingCard({ plan, index, isHovered, onHover, onConsultClick, onPaymentClick, cardRadius, cardEffect }: PricingCardProps) {
+function ProductCard({ product, index, onProductClick, onConsultClick, cardRadius, cardEffect }: ProductCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
@@ -143,40 +130,27 @@ function PricingCard({ plan, index, isHovered, onHover, onConsultClick, onPaymen
       ref={ref}
       className={`scroll-animate ${isVisible ? "visible" : ""}`}
       style={{ transitionDelay: `${index * 100}ms` }}
-      onMouseEnter={onHover}
     >
       <div
-        className={`relative h-full p-6 md:p-8 ${cardRadius} ${cardEffect} border transition-all duration-300 ${
-          plan.highlighted
-            ? "bg-gradient-to-b from-primary/10 to-card-bg border-primary shadow-lg shadow-primary/20"
-            : "bg-card-bg border-card-border hover:border-primary/50"
-        } ${isHovered && !plan.highlighted ? "transform -translate-y-2" : ""}`}
+        className={`relative h-full p-6 md:p-8 ${cardRadius} ${cardEffect} border bg-card-bg border-card-border hover:border-primary/50 transition-all duration-300`}
       >
-        {/* Popular Badge */}
-        {plan.highlighted && (
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-primary to-accent rounded-full text-white text-sm font-medium">
-            인기
-          </div>
-        )}
-
-        {/* Header */}
+        {/* Icon + Name */}
         <div className="text-center mb-6">
-          <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
-          <p className="text-muted text-sm mb-4">{plan.description}</p>
+          <span className="text-4xl mb-3 block">{product.icon}</span>
+          <h4 className="text-xl font-semibold mb-2">{product.name}</h4>
+          <p className="text-muted text-sm mb-4">{product.description}</p>
           <div className="flex items-end justify-center gap-1">
-            <span className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {plan.price}
+            <span className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              {product.price.toLocaleString()}
             </span>
-            <span className="text-muted mb-2">원/{plan.period}</span>
+            <span className="text-muted mb-1">원</span>
           </div>
-          {plan.priceNote && (
-            <p className="text-xs text-muted mt-2">{plan.priceNote}</p>
-          )}
+          <p className="text-xs text-muted mt-1">{product.duration}</p>
         </div>
 
         {/* Features */}
-        <ul className="space-y-4 mb-8">
-          {plan.features.map((feature, i) => (
+        <ul className="space-y-3 mb-8">
+          {product.features.map((feature, i) => (
             <li key={i} className="flex items-start gap-3">
               <svg
                 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5"
@@ -196,18 +170,108 @@ function PricingCard({ plan, index, isHovered, onHover, onConsultClick, onPaymen
           ))}
         </ul>
 
-        {/* CTA Button */}
+        {/* CTA */}
         <button
-          onClick={() => onPaymentClick ? onPaymentClick(plan.id) : onConsultClick()}
+          onClick={() => onProductClick ? onProductClick(product.id) : onConsultClick()}
+          className={`w-full py-3 font-medium transition-all duration-300 cursor-pointer border border-card-border text-foreground hover:border-primary hover:text-primary ${
+            cardRadius === "rounded-lg" ? "rounded-lg" : "rounded-full"
+          }`}
+        >
+          신청하기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface BundleCardProps {
+  bundle: (typeof bundles)[number];
+  index: number;
+  onBundleClick?: (bundleId: BundleType) => void;
+  cardRadius: string;
+  cardEffect: string;
+  highlighted: boolean;
+}
+
+function BundleCard({ bundle, index, onBundleClick, cardRadius, cardEffect, highlighted }: BundleCardProps) {
+  const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
+  const discountPercent = Math.round((1 - bundle.price / bundle.originalPrice) * 100);
+
+  return (
+    <div
+      ref={ref}
+      className={`scroll-animate ${isVisible ? "visible" : ""}`}
+      style={{ transitionDelay: `${index * 100}ms` }}
+    >
+      <div
+        className={`relative h-full p-6 md:p-8 ${cardRadius} ${cardEffect} border transition-all duration-300 ${
+          highlighted
+            ? "bg-gradient-to-b from-primary/10 to-card-bg border-primary shadow-lg shadow-primary/20"
+            : "bg-card-bg border-card-border hover:border-primary/50"
+        }`}
+      >
+        {/* Discount Badge */}
+        <div className="absolute -top-3 right-4 px-3 py-1 bg-gradient-to-r from-red-500 to-orange-500 rounded-full text-white text-xs font-bold">
+          {discountPercent}% 할인
+        </div>
+
+        {/* Popular Badge */}
+        {highlighted && (
+          <div className="absolute -top-3 left-4 px-3 py-1 bg-gradient-to-r from-primary to-accent rounded-full text-white text-xs font-medium">
+            인기
+          </div>
+        )}
+
+        {/* Icon + Name */}
+        <div className="text-center mb-6 mt-2">
+          <span className="text-4xl mb-3 block">{bundle.icon}</span>
+          <h4 className="text-xl font-semibold mb-2">{bundle.name}</h4>
+          <p className="text-muted text-sm mb-4">{bundle.description}</p>
+          <div className="flex items-end justify-center gap-1">
+            <span className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              {bundle.price.toLocaleString()}
+            </span>
+            <span className="text-muted mb-1">원</span>
+          </div>
+          <p className="text-xs text-muted mt-1 line-through">
+            정가 {bundle.originalPrice.toLocaleString()}원
+          </p>
+        </div>
+
+        {/* Includes */}
+        <ul className="space-y-3 mb-8">
+          {bundle.includes.map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <svg
+                className="w-5 h-5 text-accent flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <span className="text-sm text-foreground/80">{item}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* CTA */}
+        <button
+          onClick={() => onBundleClick?.(bundle.id)}
           className={`w-full py-3 font-medium transition-all duration-300 cursor-pointer ${
             cardRadius === "rounded-lg" ? "rounded-lg" : "rounded-full"
           } ${
-            plan.highlighted
+            highlighted
               ? "bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-lg hover:shadow-primary/30"
               : "border border-card-border text-foreground hover:border-primary hover:text-primary"
           }`}
         >
-          {plan.cta}
+          번들 구매하기
         </button>
       </div>
     </div>
