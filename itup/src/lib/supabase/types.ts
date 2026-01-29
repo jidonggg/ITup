@@ -45,6 +45,7 @@ export interface Consultation {
   preferred_time: string | null;
   message: string | null;
   payment_id: string | null;
+  expected_amount: number | null;
   status: "pending" | "confirmed" | "completed" | "cancelled";
   has_review: boolean;
   created_at: string;
@@ -62,6 +63,7 @@ export interface Payment {
   payment_method: string | null;
   approved_at: string | null;
   receipt_url: string | null;
+  raw_response: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -76,8 +78,7 @@ export interface VerificationCode {
 export interface Subscription {
   id: string;
   user_id: string;
-  plan_id: string;
-  plan_name: string;
+  plan_type: string;
   status: "active" | "cancelled" | "expired";
   current_period_start: string;
   current_period_end: string;
@@ -117,7 +118,7 @@ export interface Database {
       };
       consultations: {
         Row: Consultation;
-        Insert: Omit<Consultation, "id" | "created_at" | "status" | "has_review">;
+        Insert: Omit<Consultation, "id" | "created_at" | "status" | "has_review" | "payment_id">;
         Update: Partial<Omit<Consultation, "id" | "created_at">>;
       };
       reviews: {

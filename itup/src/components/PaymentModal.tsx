@@ -85,7 +85,8 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
 
     try {
       const planPrefix = plan.id === "basic" ? "BASIC" : "STANDARD";
-      const orderId = `${planPrefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const uid = user?.id || "guest";
+      const orderId = `${planPrefix}_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
       await widgets.requestPayment({
         orderId,

@@ -48,7 +48,7 @@ export default function ForgotPasswordModal({
     setIsLoading(true);
 
     if (!isSupabaseConfigured()) {
-      setError("현재 비밀번호 재설정 기능을 사용할 수 없습니다.");
+      setError("현재 비밀번호 재설정 기능을 사용할 수 없어요.");
       setIsLoading(false);
       return;
     }
@@ -61,7 +61,7 @@ export default function ForgotPasswordModal({
 
       if (error) {
         trackEvent("auth", "비밀번호찾기_실패");
-        setError("비밀번호 재설정 이메일 전송에 실패했습니다.");
+        setError("비밀번호 재설정 이메일 전송에 실패했어요.");
         setIsLoading(false);
         return;
       }
@@ -70,7 +70,7 @@ export default function ForgotPasswordModal({
       setIsLoading(false);
       setIsSubmitted(true);
     } catch {
-      setError("오류가 발생했습니다. 다시 시도해주세요.");
+      setError("오류가 발생했어요. 다시 시도해주세요.");
       setIsLoading(false);
     }
   };
@@ -138,7 +138,7 @@ export default function ForgotPasswordModal({
               <p className="text-muted mb-6 text-sm">
                 <span className="text-primary font-medium">{email}</span>으로
                 <br />
-                비밀번호 재설정 링크를 보냈습니다.
+                비밀번호 재설정 링크를 보냈어요.
               </p>
               <p className="text-muted text-xs mb-6">
                 이메일이 도착하지 않았다면 스팸함을 확인해주세요.
@@ -155,7 +155,7 @@ export default function ForgotPasswordModal({
             <>
               <h2 className="text-2xl font-bold mb-2">비밀번호 찾기</h2>
               <p className="text-muted text-sm mb-6">
-                가입한 이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드립니다.
+                가입한 이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드려요.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">

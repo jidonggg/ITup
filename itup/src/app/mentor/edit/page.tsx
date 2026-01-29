@@ -6,8 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { skillCategories } from "@/data/mentors";
-
-type ConsultType = "coffee" | "resume" | "interview";
+import type { ConsultType } from "@/lib/supabase/types";
 
 const consultTypeOptions: { value: ConsultType; label: string }[] = [
   { value: "coffee", label: "1:1 상담" },

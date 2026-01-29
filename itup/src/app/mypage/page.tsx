@@ -480,7 +480,7 @@ export default function MyPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-sm text-muted">현재 플랜</p>
-                      <p className="text-2xl font-bold">{subscription.plan_name}</p>
+                      <p className="text-2xl font-bold">{subscription.plan_type === "basic" ? "Basic" : "Pro"}</p>
                     </div>
                     {getStatusBadge(subscription.status)}
                   </div>

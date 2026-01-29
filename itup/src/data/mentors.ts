@@ -1,6 +1,7 @@
 import { MentorData } from "@/components/MentorDetailModal";
+import { ConsultType } from "@/lib/supabase/types";
 
-export type ConsultType = "coffee" | "resume" | "interview";
+export type { ConsultType };
 
 export const consultTypeLabels: Record<ConsultType, string> = {
   coffee: "1:1 상담",

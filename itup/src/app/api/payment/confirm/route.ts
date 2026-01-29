@@ -4,9 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 // TossPayments API 시크릿 키
 const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY || "";
 
-// 가격 설정 (서버에서 검증용)
-const PRICES: Record<string, number> = {
-  CONSULT: 35000, // 상담 (30% 할인 적용가)
+// 구독 플랜 가격 (서버에서 검증용)
+const PLAN_PRICES: Record<string, number> = {
   BASIC: 59000,
   STANDARD: 129000,
 };
@@ -23,10 +22,9 @@ function getServiceSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-// orderId에서 예상 금액 계산
-function getExpectedAmount(orderId: string): number | null {
-  const prefix = orderId.split("_")[0].toUpperCase();
-  return PRICES[prefix] || null;
+// orderId 프리픽스 추출
+function getOrderPrefix(orderId: string): string {
+  return orderId.split("_")[0].toUpperCase();
 }
 
 export async function POST(request: NextRequest) {
@@ -42,16 +40,42 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getServiceSupabase();
+    const prefix = getOrderPrefix(orderId);
+
+    // consultationId 추출 (URL 쿼리에서 전달됨)
+    const url = new URL(request.url);
+    const consultationId = url.searchParams.get("consultationId");
 
     // 1. 결제 금액 서버 검증
-    const expectedAmount = getExpectedAmount(orderId);
-    if (!expectedAmount) {
+    let expectedAmount: number | null = null;
+
+    if (prefix === "CONSULT") {
+      // 상담 결제: DB에서 expected_amount 조회
+      if (supabase && consultationId && consultationId !== "local") {
+        const { data: consultation } = await supabase
+          .from("consultations")
+          .select("expected_amount")
+          .eq("id", consultationId)
+          .single();
+        expectedAmount = consultation?.expected_amount ?? null;
+      }
+      if (!expectedAmount) {
+        console.error(`Cannot verify CONSULT amount: no consultation found for ${consultationId}`);
+        return NextResponse.json(
+          { error: "상담 정보를 찾을 수 없어요." },
+          { status: 400 }
+        );
+      }
+    } else if (PLAN_PRICES[prefix]) {
+      expectedAmount = PLAN_PRICES[prefix];
+    } else {
       console.error(`Unknown order type: ${orderId}`);
       return NextResponse.json(
         { error: "알 수 없는 주문 유형이에요." },
         { status: 400 }
       );
     }
+
     if (Number(amount) !== expectedAmount) {
       console.error(`Amount mismatch: expected ${expectedAmount}, got ${amount}`);
       return NextResponse.json(
@@ -107,25 +131,22 @@ export async function POST(request: NextRequest) {
 
     // 결제 성공 - DB에 저장
     if (supabase) {
-      // orderId 파싱 (형식: TYPE_ID_timestamp 또는 TYPE_timestamp_random)
       const orderParts = orderId.split("_");
-      const planType = orderParts[0].toUpperCase();
 
-      // consultationId 추출 (URL 쿼리에서 전달됨)
-      const url = new URL(request.url);
-      const consultationId = url.searchParams.get("consultationId");
+      // userId 추출 (형식: TYPE_userId_timestamp_random)
+      const userId = orderParts.length > 3 ? orderParts[1] : null;
 
       // payments 테이블에 저장
       const { data: paymentData, error: paymentError } = await supabase
         .from("payments")
         .insert({
-          user_id: null, // 나중에 세션에서 추출 가능
+          user_id: userId,
           consultation_id: consultationId && consultationId !== "local" ? consultationId : null,
           order_id: orderId,
           payment_key: paymentKey,
           amount: Number(amount),
           status: "completed",
-          plan_type: planType.toLowerCase(),
+          plan_type: prefix.toLowerCase(),
           payment_method: tossResult.method || "card",
           approved_at: tossResult.approvedAt,
           receipt_url: tossResult.receipt?.url,
@@ -139,7 +160,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 상담 결제인 경우: 상담 상태를 confirmed로 업데이트
-      if (planType === "CONSULT" && consultationId && consultationId !== "local") {
+      if (prefix === "CONSULT" && consultationId && consultationId !== "local") {
         const { error: consultError } = await supabase
           .from("consultations")
           .update({
@@ -164,26 +185,21 @@ export async function POST(request: NextRequest) {
       }
 
       // 구독 플랜 결제인 경우: 구독 정보 업데이트
-      if (["BASIC", "STANDARD"].includes(planType)) {
-        // userId는 세션에서 추출 필요 - 현재는 orderId에서 파싱 시도
-        const userId = orderParts.length > 2 ? orderParts[1] : null;
+      if (["BASIC", "STANDARD"].includes(prefix) && userId) {
+        const subscriptionEndDate = new Date();
+        subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + 1);
 
-        if (userId) {
-          const subscriptionEndDate = new Date();
-          subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + 1);
-
-          await supabase
-            .from("subscriptions")
-            .upsert({
-              user_id: userId,
-              plan_type: planType.toLowerCase(),
-              status: "active",
-              current_period_start: new Date().toISOString(),
-              current_period_end: subscriptionEndDate.toISOString(),
-            }, {
-              onConflict: "user_id",
-            });
-        }
+        await supabase
+          .from("subscriptions")
+          .upsert({
+            user_id: userId,
+            plan_type: prefix.toLowerCase(),
+            status: "active",
+            current_period_start: new Date().toISOString(),
+            current_period_end: subscriptionEndDate.toISOString(),
+          }, {
+            onConflict: "user_id",
+          });
       }
     }
 

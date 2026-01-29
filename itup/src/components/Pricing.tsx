@@ -3,49 +3,27 @@
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useLayout } from "@/contexts/LayoutContext";
 import { useState } from "react";
+import { plans as planData } from "@/lib/payment/types";
 
 interface PricingProps {
   onConsultClick: () => void;
   onPaymentClick?: (planId: string) => void;
 }
 
-const plans = [
-  {
-    id: "basic",
-    name: "Basic",
-    price: "59,000",
-    period: "월",
-    description: "가볍게 시작하는 커피챗",
-    priceNote: "하루 커피 한 잔 가격으로",
-    features: [
-      "월 2회 1:1 커피챗 (회당 50분)",
-      "커리어 로드맵 같이 그려봐요",
-      "이력서 첨삭 1회",
-      "이메일 질문 무제한",
-      "커뮤니티 접근 권한",
-    ],
-    highlighted: false,
-    cta: "가볍게 시작하기",
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: "129,000",
-    period: "월",
-    description: "본격적으로 준비하는 커피챗",
-    priceNote: "점심 한 끼 가격으로 매주 멘토를 만나요",
-    features: [
-      "월 4회 1:1 커피챗 (회당 60분)",
-      "맞춤 커리어 이야기",
-      "포트폴리오 꼼꼼 리뷰",
-      "모의 면접 2회",
-      "24시간 내 질문 답변",
-      "원하는 멘토 직접 선택",
-    ],
-    highlighted: true,
-    cta: "제일 인기 있어요",
-  },
-];
+const PLAN_EXTRAS: Record<string, { priceNote: string; highlighted: boolean; cta: string }> = {
+  basic: { priceNote: "하루 커피 한 잔 가격으로", highlighted: false, cta: "가볍게 시작하기" },
+  pro: { priceNote: "점심 한 끼 가격으로 매주 멘토를 만나요", highlighted: true, cta: "제일 인기 있어요" },
+};
+
+const plans = planData.map((p) => ({
+  id: p.id,
+  name: p.name,
+  price: p.price.toLocaleString(),
+  period: p.period,
+  description: p.description,
+  features: p.features,
+  ...PLAN_EXTRAS[p.id],
+}));
 
 export default function Pricing({ onConsultClick, onPaymentClick }: PricingProps) {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();

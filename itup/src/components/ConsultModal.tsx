@@ -45,7 +45,6 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   const { showToast } = useToast();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<FormData>>({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [step, setStep] = useState<"form" | "payment" | "success">("form");
@@ -167,7 +166,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
         interest: formData.interest || null,
         preferred_time: formData.preferredTime || null,
         message: formData.message || null,
-        status: "pending",
+        expected_amount: discountedPrice,
       }).select("id").single();
 
       if (error) {
@@ -198,7 +197,8 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     try {
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
       const customerKey = user?.id || `guest_${Date.now()}`;
-      const orderId = `CONSULT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const uid = user?.id || "guest";
+      const orderId = `CONSULT_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
       // 위젯 인스턴스 생성
       const widgets = tossPayments.widgets({ customerKey });
@@ -233,7 +233,6 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   const handleClose = () => {
     setFormData(initialFormData);
     setErrors({});
-    setIsSubmitted(false);
     setStep("form");
     setConsultationId(null);
     onClose();
@@ -333,25 +332,6 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
               <p className="mt-4 text-xs text-muted">
                 결제는 토스페이먼츠를 통해 안전하게 처리돼요.
               </p>
-            </div>
-          ) : isSubmitted ? (
-            /* 성공 화면 */
-            <div className="text-center py-8">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">신청 완료! 곧 연락드릴게요</h3>
-              <p className="text-muted mb-6">
-                조금만 기다려주세요!
-              </p>
-              <button
-                onClick={handleClose}
-                className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium cursor-pointer"
-              >
-                확인
-              </button>
             </div>
           ) : (
             /* 폼 화면 */

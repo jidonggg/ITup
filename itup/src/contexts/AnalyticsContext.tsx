@@ -18,7 +18,7 @@ function getSessionId(): string {
 
   let sessionId = sessionStorage.getItem("analytics_session_id");
   if (!sessionId) {
-    sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     sessionStorage.setItem("analytics_session_id", sessionId);
   }
   return sessionId;

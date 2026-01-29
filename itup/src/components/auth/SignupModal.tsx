@@ -37,18 +37,18 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
     setError("");
 
     if (password !== confirmPassword) {
-      setError("비밀번호가 일치하지 않습니다.");
+      setError("비밀번호가 일치하지 않아요.");
       return;
     }
 
     if (password.length < 8) {
-      setError("비밀번호는 최소 8자 이상이어야 합니다.");
+      setError("비밀번호는 최소 8자 이상이어야 해요.");
       return;
     }
 
     // 비밀번호 복잡성 검사: 영문 + 숫자 필수
     if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
-      setError("비밀번호는 영문과 숫자를 모두 포함해야 합니다.");
+      setError("비밀번호는 영문과 숫자를 모두 포함해야 해요.");
       return;
     }
 
@@ -61,7 +61,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
       if (error.message.includes("already registered")) {
         setError("이미 등록된 이메일입니다.");
       } else {
-        setError("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.");
+        setError("회원가입 중 오류가 발생했어요. 다시 시도해주세요.");
       }
       setIsLoading(false);
       return;

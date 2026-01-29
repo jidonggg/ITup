@@ -57,10 +57,10 @@ export default function VerificationModal({
         return;
       }
 
-      showToast("인증 코드가 발송되었습니다.", "success");
+      showToast("인증 코드가 발송되었어요.", "success");
       setStep("verify");
     } catch {
-      setError("인증 코드 발송에 실패했습니다.");
+      setError("인증 코드 발송에 실패했어요.");
     } finally {
       setIsLoading(false);
     }
@@ -90,10 +90,10 @@ export default function VerificationModal({
       }
 
       setStep("success");
-      showToast("인증이 완료되었습니다!", "success");
+      showToast("인증이 완료되었어요!", "success");
       onVerified?.();
     } catch {
-      setError("인증 처리 중 오류가 발생했습니다.");
+      setError("인증 처리 중 오류가 발생했어요.");
     } finally {
       setIsLoading(false);
     }
@@ -141,8 +141,8 @@ export default function VerificationModal({
               </div>
               <h3 className="text-xl font-bold mb-2">인증 완료!</h3>
               <p className="text-muted mb-6">
-                멘토 인증이 성공적으로 완료되었습니다.<br />
-                이제 멘토 목록에서 인증 배지가 표시됩니다.
+                멘토 인증이 성공적으로 완료되었어요.<br />
+                이제 멘토 목록에서 인증 배지가 표시돼요.
               </p>
               <button
                 onClick={handleClose}
@@ -265,7 +265,7 @@ export default function VerificationModal({
                 <p className="font-medium mb-1">개인정보 보호 안내</p>
                 <p>
                   인증 코드는 검증 완료 즉시 폐기됩니다.<br />
-                  인증 완료 여부만 기록되며, 이메일 주소는 저장되지 않습니다.
+                  인증 완료 여부만 기록되며, 이메일 주소는 저장되지 않아요.
                 </p>
               </div>
             </div>

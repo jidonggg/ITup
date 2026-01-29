@@ -9,8 +9,7 @@ import { skillCategories } from "@/data/mentors";
 import LoginModal from "@/components/auth/LoginModal";
 import SignupModal from "@/components/auth/SignupModal";
 import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
-
-type ConsultType = "coffee" | "resume" | "interview";
+import type { ConsultType } from "@/lib/supabase/types";
 
 const consultTypeOptions: { value: ConsultType; label: string }[] = [
   { value: "coffee", label: "1:1 상담" },
