@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { ADMIN_EMAILS } from "@/lib/admin";
+import { getYearsFromExperience } from "@/lib/pricing/tiers";
+
+const MIN_MENTOR_EXPERIENCE_YEARS = 3;
 
 // 서버사이드 Supabase 클라이언트 (service role)
 function getServiceSupabase() {
@@ -91,6 +94,23 @@ export async function PATCH(request: NextRequest) {
   const supabase = getServiceSupabase();
 
   if (action === "approve") {
+    // 승인 전 경력 최소 조건 검증
+    const { data: mentor } = await supabase
+      .from("mentors")
+      .select("experience")
+      .eq("id", mentorId)
+      .single();
+
+    if (mentor) {
+      const years = getYearsFromExperience(mentor.experience);
+      if (years < MIN_MENTOR_EXPERIENCE_YEARS) {
+        return NextResponse.json(
+          { error: `경력 ${MIN_MENTOR_EXPERIENCE_YEARS}년 이상만 승인 가능합니다 (현재: ${mentor.experience})` },
+          { status: 400 }
+        );
+      }
+    }
+
     const { error } = await supabase
       .from("mentors")
       .update({ is_approved: true })

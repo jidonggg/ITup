@@ -18,8 +18,6 @@ const consultTypeOptions: { value: ConsultType; label: string }[] = [
 ];
 
 const experienceOptions = [
-  "1년 미만",
-  "1-3년",
   "3-5년",
   "5-7년",
   "7-10년",
@@ -267,6 +265,9 @@ export default function MentorRegisterPage() {
             <h1 className="text-3xl font-bold mb-2">멘토 등록</h1>
             <p className="text-muted">
               커피챗 멘토가 되어 주니어 개발자들의 성장을 도와주세요
+            </p>
+            <p className="text-sm text-muted mt-2">
+              * 멘토 등록은 3년차 이상 경력자만 가능해요
             </p>
           </div>
 

@@ -20,7 +20,7 @@ create table public.mentors (
   role text not null,
   company text not null,
   previous_companies text[],
-  experience text not null,
+  experience text not null check (experience not in ('1년 미만', '1-3년')),
   skills text[] not null,
   bio text,
   available_times text[],

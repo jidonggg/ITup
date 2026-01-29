@@ -15,8 +15,6 @@ const consultTypeOptions: { value: ConsultType; label: string }[] = [
 ];
 
 const experienceOptions = [
-  "1년 미만",
-  "1-3년",
   "3-5년",
   "5-7년",
   "7-10년",
