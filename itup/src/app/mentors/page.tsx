@@ -8,6 +8,7 @@ import { mentorsData as fallbackMentors, consultTypeLabels, skillCategories } fr
 import { MentorData } from "@/components/MentorDetailModal";
 import MentorDetailModal from "@/components/MentorDetailModal";
 import ConsultModal from "@/components/ConsultModal";
+import { getTierInfo } from "@/lib/pricing/tiers";
 
 function convertToMentorData(mentor: Mentor): MentorData & { id: string } {
   return {
@@ -30,8 +31,9 @@ function convertToMentorData(mentor: Mentor): MentorData & { id: string } {
 const companies = ["전체", "넥슨", "넷마블", "크래프톤", "스마일게이트", "펄어비스", "기타"];
 const consultTypes: { value: ConsultType | "all"; label: string }[] = [
   { value: "all", label: "전체" },
-  { value: "coffee", label: "1:1 상담" },
-  { value: "resume", label: "이력서/포트폴리오" },
+  { value: "text", label: "텍스트 상담" },
+  { value: "coffee", label: "커피챗" },
+  { value: "resume", label: "이력서/포폴 첨삭" },
   { value: "interview", label: "모의면접" },
 ];
 
@@ -389,6 +391,7 @@ export default function MentorsPage() {
         mentorId={consultMentorId}
         mentorName={selectedMentor?.name}
         mentorAvailableTimes={selectedMentor?.availableTimes}
+        mentorExperience={selectedMentor?.experience}
       />
     </div>
   );
@@ -446,6 +449,9 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
         <div className="flex flex-wrap gap-1.5 mb-4">
           <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-md">
             {mentor.experience} 경력
+          </span>
+          <span className="px-2 py-1 bg-accent/10 text-accent text-xs rounded-md">
+            {getTierInfo(mentor.experience).badge} {getTierInfo(mentor.experience).name}
           </span>
           {mentor.skills.slice(0, 2).map(skill => (
             <span key={skill} className="px-2 py-1 bg-secondary text-muted text-xs rounded-md">

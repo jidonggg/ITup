@@ -120,6 +120,7 @@ export default function HomeClient() {
         mentorId={consultMentorId}
         mentorName={consultMentor?.name}
         mentorAvailableTimes={consultMentor?.availableTimes}
+        mentorExperience={consultMentor?.experience}
         productType={selectedProductType}
       />
       <MentorDetailModal

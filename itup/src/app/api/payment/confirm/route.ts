@@ -6,17 +6,22 @@ const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY || "";
 
 // 상품 가격 (서버에서 검증용)
 const PRODUCT_PRICES: Record<string, number> = {
-  COFFEE: 19000,
-  RESUME: 49000,
-  INTERVIEW: 79000,
+  TEXT: 5000,
+  COFFEE: 15000,
+  RESUME: 39000,
+  INTERVIEW: 59000,
 };
 
 // 번들 가격 (서버에서 검증용)
 const BUNDLE_PRICES: Record<string, number> = {
-  BUNDLE_STARTER: 59000,
-  BUNDLE_ALLINONE: 109000,
-  BUNDLE_FULL: 119000,
+  BUNDLE_STARTER: 39000,
+  BUNDLE_ALLINONE: 79000,
+  BUNDLE_FULL: 99000,
 };
+
+// 플랫폼 수수료율 (단계별: 0%→15%→20%→25%)
+// 현재 런칭 초기 → 15%
+const PLATFORM_COMMISSION_RATE = 0.15;
 
 // 서버사이드 Supabase 클라이언트
 function getServiceSupabase() {
@@ -164,6 +169,10 @@ export async function POST(request: NextRequest) {
       const productType = isProductOrder ? prefix.toLowerCase() : null;
       const bundleType = isBundleOrder ? prefix.replace("BUNDLE_", "").toLowerCase() : null;
 
+      // 수수료 계산 (런칭 초기 15%)
+      const platformFee = Math.round(Number(amount) * PLATFORM_COMMISSION_RATE);
+      const mentorAmount = Number(amount) - platformFee;
+
       // payments 테이블에 저장
       const { data: paymentData, error: paymentError } = await supabase
         .from("payments")
@@ -173,6 +182,8 @@ export async function POST(request: NextRequest) {
           order_id: orderId,
           payment_key: paymentKey,
           amount: Number(amount),
+          platform_fee: platformFee,
+          mentor_amount: mentorAmount,
           status: "completed",
           product_type: productType,
           bundle_type: bundleType,

@@ -1,12 +1,17 @@
 // 상품 가격 상수
 export const PRICES = {
-  COFFEE_CHAT: 19000,
-  RESUME_REVIEW: 49000,
-  MOCK_INTERVIEW: 79000,
-  STARTER_BUNDLE: 59000,
-  ALLINONE_BUNDLE: 109000,
-  FULL_BUNDLE: 119000,
+  TEXT_CHAT: 5000,
+  COFFEE_CHAT: 15000,
+  RESUME_REVIEW: 39000,
+  MOCK_INTERVIEW: 59000,
+  STARTER_BUNDLE: 39000,
+  ALLINONE_BUNDLE: 79000,
+  FULL_BUNDLE: 99000,
 } as const;
+
+// 플랫폼 수수료율 (단계별: 0%→15%→20%→25%)
+// 현재 런칭 초기 → 15%
+export const COMMISSION_RATE = 0.15;
 
 // 타임아웃 상수 (ms)
 export const TIMEOUTS = {

@@ -8,11 +8,13 @@ import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { products, ProductType } from "@/lib/payment/types";
+import { getTieredPrice } from "@/lib/pricing/tiers";
 
 // 토스페이먼츠 클라이언트 키 (환경변수 필수)
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
 
 const PRODUCT_PREFIX_MAP: Record<ProductType, string> = {
+  text: "TEXT",
   coffee: "COFFEE",
   resume: "RESUME",
   interview: "INTERVIEW",
@@ -24,6 +26,7 @@ interface ConsultModalProps {
   mentorId?: string;
   mentorName?: string;
   mentorAvailableTimes?: string[];
+  mentorExperience?: string;
   productType?: ProductType;
 }
 
@@ -45,7 +48,7 @@ const initialFormData: FormData = {
   message: "",
 };
 
-export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, mentorAvailableTimes, productType: initialProductType }: ConsultModalProps) {
+export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, mentorAvailableTimes, mentorExperience, productType: initialProductType }: ConsultModalProps) {
   const { user, profile } = useAuth();
   const { trackEvent } = useAnalytics();
   const { showToast } = useToast();
@@ -58,7 +61,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   const [selectedProduct, setSelectedProduct] = useState<ProductType>(initialProductType || "coffee");
 
   const currentProduct = products.find((p) => p.id === selectedProduct)!;
-  const price = currentProduct.price;
+  const price = getTieredPrice(selectedProduct, mentorExperience);
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
@@ -353,7 +356,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
               {/* 상품 타입 선택 */}
               <div className="mb-6">
                 <label className="block text-sm font-medium mb-2">상품 선택</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {products.map((product) => (
                     <button
                       key={product.id}
@@ -367,7 +370,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                     >
                       <span className="text-xl">{product.icon}</span>
                       <span className="text-xs font-medium">{product.name}</span>
-                      <span className="text-xs">{product.price.toLocaleString()}원</span>
+                      <span className="text-xs">{getTieredPrice(product.id, mentorExperience).toLocaleString()}원</span>
                     </button>
                   ))}
                 </div>

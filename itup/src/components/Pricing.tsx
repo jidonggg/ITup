@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useLayout } from "@/contexts/LayoutContext";
 import { products, bundles, ProductType, BundleType } from "@/lib/payment/types";
+import { MENTOR_TIERS, MentorTier, getTieredPrice } from "@/lib/pricing/tiers";
 
 interface PricingProps {
   onConsultClick: () => void;
@@ -10,9 +12,23 @@ interface PricingProps {
   onBundleClick?: (bundleId: BundleType) => void;
 }
 
+const tierOptions: { id: MentorTier; label: string }[] = [
+  { id: "junior", label: `${MENTOR_TIERS.junior.badge} 주니어` },
+  { id: "senior", label: `${MENTOR_TIERS.senior.badge} 시니어 (1.3x)` },
+  { id: "lead", label: `${MENTOR_TIERS.lead.badge} 리드 (1.6x)` },
+];
+
+// 티어에 해당하는 experience 문자열
+const TIER_EXPERIENCE: Record<MentorTier, string> = {
+  junior: "1-3년",
+  senior: "5-7년",
+  lead: "10년 이상",
+};
+
 export default function Pricing({ onConsultClick, onProductClick, onBundleClick }: PricingProps) {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
   const { currentLayout } = useLayout();
+  const [selectedTier, setSelectedTier] = useState<MentorTier>("junior");
 
   const cardRadius = currentLayout.cardStyle === "rounded" ? "rounded-2xl" :
                      currentLayout.cardStyle === "sharp" ? "rounded-lg" : "rounded-3xl";
@@ -66,9 +82,26 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
           </div>
         </div>
 
-        {/* Product Cards (3) */}
+        {/* Tier Selector */}
+        <div className="flex justify-center gap-2 mb-8">
+          {tierOptions.map((tier) => (
+            <button
+              key={tier.id}
+              onClick={() => setSelectedTier(tier.id)}
+              className={`px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer ${
+                selectedTier === tier.id
+                  ? "bg-primary text-white"
+                  : "bg-card-bg border border-card-border text-muted hover:text-foreground hover:border-primary"
+              }`}
+            >
+              {tier.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Product Cards (4) */}
         <h3 className="text-xl font-semibold text-center mb-6">상품</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8 max-w-6xl mx-auto mb-16">
           {products.map((product, index) => (
             <ProductCard
               key={product.id}
@@ -78,6 +111,7 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
               onConsultClick={onConsultClick}
               cardRadius={cardRadius}
               cardEffect={cardEffect}
+              tierExperience={TIER_EXPERIENCE[selectedTier]}
             />
           ))}
         </div>
@@ -120,10 +154,12 @@ interface ProductCardProps {
   onConsultClick: () => void;
   cardRadius: string;
   cardEffect: string;
+  tierExperience: string;
 }
 
-function ProductCard({ product, index, onProductClick, onConsultClick, cardRadius, cardEffect }: ProductCardProps) {
+function ProductCard({ product, index, onProductClick, onConsultClick, cardRadius, cardEffect, tierExperience }: ProductCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
+  const tieredPrice = getTieredPrice(product.id, tierExperience);
 
   return (
     <div
@@ -141,7 +177,7 @@ function ProductCard({ product, index, onProductClick, onConsultClick, cardRadiu
           <p className="text-muted text-sm mb-4">{product.description}</p>
           <div className="flex items-end justify-center gap-1">
             <span className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {product.price.toLocaleString()}
+              {tieredPrice.toLocaleString()}
             </span>
             <span className="text-muted mb-1">원</span>
           </div>

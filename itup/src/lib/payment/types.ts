@@ -1,6 +1,6 @@
 import { PRICES } from "@/lib/constants";
 
-export type ProductType = "coffee" | "resume" | "interview";
+export type ProductType = "text" | "coffee" | "resume" | "interview";
 export type BundleType = "starter" | "allinone" | "full";
 
 export interface ProductInfo {
@@ -20,10 +20,25 @@ export interface BundleInfo {
   originalPrice: number;
   description: string;
   includes: string[];
+  includedProducts: { productType: ProductType; quantity: number }[];
   icon: string;
 }
 
 export const products: ProductInfo[] = [
+  {
+    id: "text",
+    name: "텍스트 상담",
+    price: PRICES.TEXT_CHAT,
+    description: "카카오톡 오픈채팅으로 가볍게 질문해봐요",
+    features: [
+      "카카오톡 오픈채팅 3일 이용",
+      "텍스트 기반 Q&A",
+      "멘토 24시간 내 답변",
+      "간단한 커리어 질문에 딱",
+    ],
+    icon: "💬",
+    duration: "3일간 (카카오톡)",
+  },
   {
     id: "coffee",
     name: "커피챗",
@@ -76,6 +91,10 @@ export const bundles: BundleInfo[] = [
     originalPrice: PRICES.COFFEE_CHAT + PRICES.RESUME_REVIEW,
     description: "커피챗 + 이력서 첨삭을 한 번에",
     includes: ["커피챗 1회", "이력서/포폴 첨삭 1회"],
+    includedProducts: [
+      { productType: "coffee", quantity: 1 },
+      { productType: "resume", quantity: 1 },
+    ],
     icon: "🎯",
   },
   {
@@ -85,6 +104,11 @@ export const bundles: BundleInfo[] = [
     originalPrice: PRICES.COFFEE_CHAT + PRICES.RESUME_REVIEW + PRICES.MOCK_INTERVIEW,
     description: "3가지 상품을 모두 포함",
     includes: ["커피챗 1회", "이력서/포폴 첨삭 1회", "모의면접 1회"],
+    includedProducts: [
+      { productType: "coffee", quantity: 1 },
+      { productType: "resume", quantity: 1 },
+      { productType: "interview", quantity: 1 },
+    ],
     icon: "🚀",
   },
   {
@@ -94,6 +118,11 @@ export const bundles: BundleInfo[] = [
     originalPrice: PRICES.COFFEE_CHAT * 2 + PRICES.RESUME_REVIEW + PRICES.MOCK_INTERVIEW,
     description: "커피챗 2회 포함 풀 코스",
     includes: ["커피챗 2회", "이력서/포폴 첨삭 1회", "모의면접 1회"],
+    includedProducts: [
+      { productType: "coffee", quantity: 2 },
+      { productType: "resume", quantity: 1 },
+      { productType: "interview", quantity: 1 },
+    ],
     icon: "👑",
   },
 ];

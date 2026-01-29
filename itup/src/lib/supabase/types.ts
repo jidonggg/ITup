@@ -1,4 +1,4 @@
-export type ConsultType = "coffee" | "resume" | "interview";
+export type ConsultType = "text" | "coffee" | "resume" | "interview";
 
 export interface Profile {
   id: string;

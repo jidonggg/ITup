@@ -6,6 +6,7 @@ import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Review } from "@/lib/supabase/types";
 import { products } from "@/lib/payment/types";
+import { getTierInfo, getTieredPrice } from "@/lib/pricing/tiers";
 
 export interface MentorData {
   id?: string;
@@ -122,6 +123,9 @@ export default function MentorDetailModal({
               <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-medium rounded-full">
                 {mentor.company}
               </span>
+              <span className="px-2 py-0.5 bg-accent/20 text-accent text-xs font-medium rounded-full">
+                {getTierInfo(mentor.experience).badge} {getTierInfo(mentor.experience).name}
+              </span>
             </div>
             <p className="text-muted">{mentor.role}</p>
             {/* Previous Companies */}
@@ -231,7 +235,7 @@ export default function MentorDetailModal({
                       </div>
                     </div>
                     <p className="text-lg font-bold text-primary">
-                      {product.price.toLocaleString()}원
+                      {getTieredPrice(product.id, mentor.experience).toLocaleString()}원
                     </p>
                   </div>
                 ))}
