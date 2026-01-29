@@ -36,11 +36,16 @@ create table public.mentors (
 create table public.consultations (
   id uuid default gen_random_uuid() primary key,
   mentor_id uuid references public.mentors(id),
+  user_id uuid references auth.users(id),
   user_name text not null,
   user_phone text not null,
   user_email text not null,
   interest text,
+  product_type text,
+  preferred_time text,
   message text,
+  expected_amount integer,
+  payment_key text,
   status text default 'pending' check (status in ('pending', 'confirmed', 'completed', 'cancelled')),
   created_at timestamptz default now()
 );
@@ -101,6 +106,11 @@ create policy "Mentors can view their consultations"
       select id from public.mentors where user_id = auth.uid()
     )
   );
+
+-- 본인이 신청한 상담 조회 가능
+create policy "Users can view own consultations"
+  on public.consultations for select
+  using (auth.uid() = user_id);
 
 -- 8. 새 사용자 가입 시 자동으로 프로필 생성하는 함수
 create or replace function public.handle_new_user()

@@ -202,6 +202,11 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   };
 
   const handlePayment = async () => {
+    if (!user) {
+      showToast("결제하려면 로그인이 필요해요.", "error");
+      return;
+    }
+
     if (!TOSS_CLIENT_KEY) {
       showToast("결제 시스템이 설정되지 않았어요. 관리자에게 문의해주세요.", "error");
       return;
@@ -210,8 +215,8 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     setIsLoading(true);
     try {
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
-      const customerKey = user?.id || `guest_${Date.now()}`;
-      const uid = user?.id || "guest";
+      const customerKey = user.id;
+      const uid = user.id;
       const prefix = PRODUCT_PREFIX_MAP[selectedProduct];
       const orderId = `${prefix}_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
