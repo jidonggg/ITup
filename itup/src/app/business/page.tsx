@@ -23,25 +23,25 @@ export default function BusinessPage() {
     {
       icon: "🎓",
       title: "기업 맞춤 멘토링",
-      description: "임직원 대상 1:1 또는 그룹 멘토링 프로그램을 구성해드립니다.",
+      description: "임직원 대상 1:1 또는 그룹 멘토링 프로그램을 구성해드려요.",
       features: ["맞춤형 멘토 매칭", "정기 멘토링 세션", "성과 리포트 제공"],
     },
     {
       icon: "💼",
       title: "채용 연계 서비스",
-      description: "커피챗 멘티 풀에서 우수 인재를 발굴하고 채용 연계해드립니다.",
+      description: "커피챗 멘티 풀에서 우수 인재를 발굴하고 채용 연계해드려요.",
       features: ["인재 풀 접근", "채용 브랜딩", "온보딩 멘토링"],
     },
     {
       icon: "📚",
       title: "사내 교육 프로그램",
-      description: "게임 업계 전문가가 진행하는 사내 교육 및 워크샵을 제공합니다.",
+      description: "게임 업계 전문가가 진행하는 사내 교육 및 워크샵을 제공해요.",
       features: ["기술 세미나", "커리어 워크샵", "리더십 교육"],
     },
     {
       icon: "🤝",
       title: "파트너십 프로그램",
-      description: "게임 스타트업과 대기업 간의 연결을 통해 시너지를 창출합니다.",
+      description: "게임 스타트업과 대기업 간의 연결을 통해 시너지를 만들어요.",
       features: ["네트워킹 이벤트", "협업 기회 발굴", "인사이트 공유"],
     },
   ];
@@ -116,7 +116,7 @@ export default function BusinessPage() {
             <p className="text-lg md:text-xl text-muted max-w-2xl mx-auto mb-8">
               게임 업계 최고의 멘토 네트워크를 활용하여
               <br className="hidden md:block" />
-              조직의 역량 강화와 인재 육성을 지원합니다.
+              조직의 역량 강화와 인재 육성을 지원해요.
             </p>
             <a
               href="#contact"
@@ -148,7 +148,7 @@ export default function BusinessPage() {
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">기업 서비스</h2>
-              <p className="text-muted">조직의 니즈에 맞는 다양한 프로그램을 제공합니다</p>
+              <p className="text-muted">조직의 니즈에 맞는 다양한 프로그램을 제공해요</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -187,9 +187,9 @@ export default function BusinessPage() {
             <div className="grid md:grid-cols-4 gap-8">
               {[
                 { step: 1, title: "문의 접수", desc: "필요한 서비스에 대해 알려주세요" },
-                { step: 2, title: "니즈 분석", desc: "담당자가 연락드려 상세 논의합니다" },
-                { step: 3, title: "프로그램 설계", desc: "맞춤형 프로그램을 설계합니다" },
-                { step: 4, title: "서비스 시작", desc: "멘토링 프로그램을 시작합니다" },
+                { step: 2, title: "니즈 분석", desc: "담당자가 연락드려 상세하게 이야기해요" },
+                { step: 3, title: "프로그램 설계", desc: "맞춤형 프로그램을 설계해요" },
+                { step: 4, title: "서비스 시작", desc: "멘토링 프로그램을 시작해요" },
               ].map((item) => (
                 <div key={item.step} className="text-center">
                   <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center">
@@ -239,7 +239,7 @@ export default function BusinessPage() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">도입 문의</h2>
               <p className="text-muted">
-                아래 양식을 작성해주시면 담당자가 빠르게 연락드리겠습니다.
+                아래 양식을 작성해주시면 담당자가 빠르게 연락드릴게요.
               </p>
             </div>
 
@@ -250,9 +250,9 @@ export default function BusinessPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">문의가 접수되었습니다!</h3>
+                <h3 className="text-xl font-semibold mb-2">문의가 접수되었어요!</h3>
                 <p className="text-muted mb-6">
-                  담당자가 영업일 기준 1-2일 내에 연락드리겠습니다.
+                  담당자가 영업일 기준 1-2일 내에 연락드릴게요.
                 </p>
                 <Link
                   href="/"

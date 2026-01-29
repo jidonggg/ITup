@@ -45,10 +45,17 @@ export async function POST(request: NextRequest) {
 
     // 1. 결제 금액 서버 검증
     const expectedAmount = getExpectedAmount(orderId);
-    if (expectedAmount && Number(amount) !== expectedAmount) {
+    if (!expectedAmount) {
+      console.error(`Unknown order type: ${orderId}`);
+      return NextResponse.json(
+        { error: "알 수 없는 주문 유형이에요." },
+        { status: 400 }
+      );
+    }
+    if (Number(amount) !== expectedAmount) {
       console.error(`Amount mismatch: expected ${expectedAmount}, got ${amount}`);
       return NextResponse.json(
-        { error: "결제 금액이 일치하지 않습니다." },
+        { error: "결제 금액이 일치하지 않아요." },
         { status: 400 }
       );
     }

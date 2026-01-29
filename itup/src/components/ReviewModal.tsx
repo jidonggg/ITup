@@ -67,7 +67,7 @@ export default function ReviewModal({
 
       if (reviewError) {
         if (reviewError.code === "23505") {
-          showToast("이미 이 상담에 대한 리뷰를 작성했습니다.", "error");
+          showToast("이미 이 커피챗에 대한 리뷰를 작성했어요.", "error");
         } else {
           throw reviewError;
         }
@@ -81,12 +81,12 @@ export default function ReviewModal({
         .update({ has_review: true })
         .eq("id", consultationId);
 
-      showToast("리뷰가 등록되었습니다.", "success");
+      showToast("리뷰가 등록되었어요.", "success");
       onSuccess?.();
       handleClose();
     } catch (error) {
       console.error("Review submit error:", error);
-      showToast("리뷰 등록 중 오류가 발생했습니다.", "error");
+      showToast("리뷰 등록 중 오류가 발생했어요.", "error");
     } finally {
       setIsSubmitting(false);
     }

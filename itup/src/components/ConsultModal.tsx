@@ -160,6 +160,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       // 상담 신청 저장 (결제 대기 상태)
       const { data, error } = await supabase.from("consultations").insert({
         mentor_id: mentorId || null,
+        user_id: user?.id || null,
         user_name: formData.name,
         user_phone: formData.phone,
         user_email: formData.email,

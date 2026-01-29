@@ -21,7 +21,7 @@ export default function AboutPage() {
     {
       name: "박지민",
       role: "Head of Operations",
-      description: "멘토링 플랫폼 운영 전문가",
+      description: "커피챗 운영 전문가",
       image: "/team/coo.jpg",
     },
   ];
@@ -30,22 +30,22 @@ export default function AboutPage() {
     {
       icon: "🎯",
       title: "실전 중심",
-      description: "현업에서 바로 적용할 수 있는 실질적인 조언을 제공합니다.",
+      description: "현업에서 바로 적용할 수 있는 실질적인 조언을 제공해요.",
     },
     {
       icon: "🤝",
       title: "신뢰와 연결",
-      description: "검증된 멘토와 멘티 간의 진정한 연결을 만들어갑니다.",
+      description: "검증된 멘토와 멘티 간의 진정한 연결을 만들어가요.",
     },
     {
       icon: "🚀",
       title: "성장 지원",
-      description: "개인의 커리어 성장을 위한 최적의 환경을 제공합니다.",
+      description: "개인의 커리어 성장을 위한 최적의 환경을 제공해요.",
     },
     {
       icon: "💡",
       title: "업계 인사이트",
-      description: "게임 업계의 최신 트렌드와 인사이트를 공유합니다.",
+      description: "게임 업계의 최신 트렌드와 인사이트를 공유해요.",
     },
   ];
 
@@ -79,7 +79,7 @@ export default function AboutPage() {
             <p className="text-lg md:text-xl text-muted max-w-2xl mx-auto">
               커피챗은 게임 업계 현직자와 예비 개발자를 연결하여
               <br className="hidden md:block" />
-              실질적인 커리어 성장을 돕는 멘토링 플랫폼입니다.
+              실질적인 커리어 성장을 돕는 커피챗이에요.
             </p>
           </div>
         </section>
@@ -91,16 +91,16 @@ export default function AboutPage() {
               <div>
                 <h2 className="text-3xl font-bold mb-6">우리의 미션</h2>
                 <p className="text-muted leading-relaxed mb-6">
-                  게임 업계 취업과 커리어 성장은 혼자 준비하기 어렵습니다.
-                  인터넷에 있는 정보는 오래되었거나 실무와 동떨어진 경우가 많습니다.
+                  게임 업계 취업과 커리어 성장은 혼자 준비하기 어려워요.
+                  인터넷에 있는 정보는 오래되었거나 실무와 동떨어진 경우가 많아요.
                 </p>
                 <p className="text-muted leading-relaxed mb-6">
                   커피챗은 현업에서 직접 일하고 있는 게임 개발자, 기획자, 아티스트들과
-                  1:1 대화를 통해 실질적인 조언을 받을 수 있는 기회를 제공합니다.
+                  1:1 대화를 통해 실질적인 조언을 받을 수 있는 기회를 제공해요.
                 </p>
                 <p className="text-foreground font-medium">
                   한 잔의 커피처럼 가볍게, 하지만 진정성 있는 대화를 통해
-                  여러분의 꿈에 한 걸음 더 다가갈 수 있도록 돕겠습니다.
+                  여러분의 꿈에 한 걸음 더 다가갈 수 있도록 도울게요.
                 </p>
               </div>
               <div className="relative">

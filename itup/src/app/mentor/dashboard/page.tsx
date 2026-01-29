@@ -51,7 +51,7 @@ export default function MentorDashboardPage() {
 
     const fetchMentorData = async () => {
       if (!isSupabaseConfigured()) {
-        setError("데이터베이스 연결이 필요합니다.");
+        setError("데이터베이스 연결이 필요해요.");
         setIsLoading(false);
         return;
       }
@@ -67,7 +67,7 @@ export default function MentorDashboardPage() {
           .single();
 
       if (mentorError || !mentorData) {
-        setError("멘토 정보를 찾을 수 없습니다.");
+        setError("멘토 정보를 찾을 수 없어요.");
         setIsLoading(false);
         return;
       }
@@ -88,7 +88,7 @@ export default function MentorDashboardPage() {
       }
     } catch (err) {
       console.error("Error:", err);
-      setError("데이터를 불러오는 중 오류가 발생했습니다.");
+      setError("데이터를 불러오는 중 오류가 발생했어요.");
     } finally {
       setIsLoading(false);
     }
@@ -111,10 +111,10 @@ export default function MentorDashboardPage() {
 
       if (error) {
         console.error("Error updating status:", error);
-        showToast("상태 변경에 실패했습니다.", "error");
+        showToast("상태 변경에 실패했어요.", "error");
         return;
       }
-      showToast("상태가 변경되었습니다.", "success");
+      showToast("상태가 변경되었어요.", "success");
 
       // 로컬 상태 업데이트
       setConsultations((prev) =>
@@ -136,7 +136,7 @@ export default function MentorDashboardPage() {
       }
     } catch (err) {
       console.error("Error:", err);
-      showToast("오류가 발생했습니다.", "error");
+      showToast("오류가 발생했어요.", "error");
     } finally {
       setUpdatingId(null);
     }
@@ -165,8 +165,8 @@ export default function MentorDashboardPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">로그인이 필요합니다</h1>
-          <p className="text-muted mb-6">멘토 대시보드는 로그인 후 이용 가능합니다.</p>
+          <h1 className="text-2xl font-bold mb-4">로그인이 필요해요</h1>
+          <p className="text-muted mb-6">멘토 대시보드는 로그인 후 이용할 수 있어요.</p>
           <Link
             href="/"
             className="px-6 py-3 bg-primary text-white rounded-full font-medium"
@@ -261,7 +261,7 @@ export default function MentorDashboardPage() {
         {mentor && !mentor.is_approved && (
           <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
             <p className="text-yellow-500 text-sm">
-              멘토 승인 대기 중입니다. 승인 후 멘토 목록에 노출됩니다.
+              멘토 승인 대기 중이에요. 승인 후 멘토 목록에 노출돼요.
             </p>
           </div>
         )}
@@ -283,7 +283,7 @@ export default function MentorDashboardPage() {
                   </div>
                   <div>
                     <p className="font-medium text-green-500">인증 완료</p>
-                    <p className="text-sm text-green-400/70">회사 이메일로 인증되었습니다</p>
+                    <p className="text-sm text-green-400/70">회사 이메일로 인증되었어요</p>
                   </div>
                 </>
               ) : (
@@ -342,9 +342,9 @@ export default function MentorDashboardPage() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold mb-2">
-              {selectedStatus === "all" ? "받은 상담 신청이 없습니다" : `${statusLabels[selectedStatus as ConsultationStatus]} 상태의 신청이 없습니다`}
+              {selectedStatus === "all" ? "받은 커피챗 신청이 없어요" : `${statusLabels[selectedStatus as ConsultationStatus]} 상태의 신청이 없어요`}
             </h3>
-            <p className="text-muted">새로운 상담 신청이 오면 여기에 표시됩니다.</p>
+            <p className="text-muted">새로운 커피챗 신청이 오면 여기에 표시돼요.</p>
           </div>
         ) : (
           <div className="space-y-4">

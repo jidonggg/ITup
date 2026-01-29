@@ -13,18 +13,23 @@ function PaymentSuccessContent() {
   const paymentKey = searchParams.get("paymentKey");
   const orderId = searchParams.get("orderId");
   const amount = searchParams.get("amount");
+  const consultationId = searchParams.get("consultationId");
 
   useEffect(() => {
     const verifyPayment = async () => {
       if (!paymentKey || !orderId || !amount) {
-        setError("결제 정보가 올바르지 않습니다.");
+        setError("결제 정보가 올바르지 않아요.");
         setIsVerifying(false);
         return;
       }
 
       try {
-        // 서버 API 호출하여 결제 검증 및 승인
-        const response = await fetch("/api/payment/confirm", {
+        // 서버 API 호출하여 결제 검증 및 승인 (consultationId 전달)
+        const confirmUrl = consultationId
+          ? `/api/payment/confirm?consultationId=${consultationId}`
+          : "/api/payment/confirm";
+
+        const response = await fetch(confirmUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -35,7 +40,7 @@ function PaymentSuccessContent() {
         const result = await response.json();
 
         if (!response.ok) {
-          setError(result.error || "결제 검증에 실패했습니다.");
+          setError(result.error || "결제 검증에 실패했어요.");
           setIsVerifying(false);
           return;
         }
@@ -43,13 +48,13 @@ function PaymentSuccessContent() {
         setIsVerified(true);
         setIsVerifying(false);
       } catch {
-        setError("결제 검증 중 오류가 발생했습니다.");
+        setError("결제 검증 중 오류가 발생했어요.");
         setIsVerifying(false);
       }
     };
 
     verifyPayment();
-  }, [paymentKey, orderId, amount]);
+  }, [paymentKey, orderId, amount, consultationId]);
 
   if (isVerifying) {
     return (
@@ -94,11 +99,11 @@ function PaymentSuccessContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold mb-2">결제가 완료되었습니다!</h1>
+          <h1 className="text-2xl font-bold mb-2">결제가 완료되었어요!</h1>
           <p className="text-muted mb-6">
-            커피챗 멘토링 서비스를 이용해 주셔서 감사합니다.
+            커피챗을 이용해 주셔서 감사해요.
             <br />
-            결제 확인 이메일이 발송되었습니다.
+            곧 확인 이메일을 보내드릴게요.
           </p>
 
           <div className="bg-card-bg border border-card-border rounded-xl p-4 mb-6 text-left">

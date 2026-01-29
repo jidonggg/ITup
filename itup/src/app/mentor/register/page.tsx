@@ -106,7 +106,7 @@ export default function MentorRegisterPage() {
     if (!validateForm()) return;
 
     if (!isSupabaseConfigured()) {
-      showToast("Supabase가 설정되지 않았습니다. 환경 변수를 확인해주세요.", "error");
+      showToast("Supabase가 설정되지 않았어요. 환경 변수를 확인해주세요.", "error");
       return;
     }
 
@@ -123,7 +123,7 @@ export default function MentorRegisterPage() {
         .single();
 
       if (existingMentor) {
-        showToast("이미 멘토로 등록되어 있습니다.", "error");
+        showToast("이미 멘토로 등록되어 있어요.", "error");
         setIsSubmitting(false);
         return;
       }
@@ -153,7 +153,7 @@ export default function MentorRegisterPage() {
 
       if (error) {
         console.error("Error registering mentor:", error);
-        showToast("멘토 등록 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
+        showToast("멘토 등록 중 오류가 발생했어요. 다시 시도해주세요.", "error");
         setIsSubmitting(false);
         return;
       }
@@ -161,7 +161,7 @@ export default function MentorRegisterPage() {
       setIsSuccess(true);
     } catch (error) {
       console.error("Error registering mentor:", error);
-      showToast("멘토 등록 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
+      showToast("멘토 등록 중 오류가 발생했어요. 다시 시도해주세요.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -236,8 +236,8 @@ export default function MentorRegisterPage() {
           </div>
           <h2 className="text-2xl font-bold mb-2">멘토 등록 완료!</h2>
           <p className="text-muted mb-6">
-            관리자 승인 후 멘토 목록에 표시됩니다.<br />
-            승인 완료 시 이메일로 안내드리겠습니다.
+            관리자 승인 후 멘토 목록에 표시돼요.<br />
+            승인 완료 시 이메일로 안내드릴게요.
           </p>
           <button
             onClick={() => router.push("/")}
@@ -267,7 +267,7 @@ export default function MentorRegisterPage() {
             </button>
             <h1 className="text-3xl font-bold mb-2">멘토 등록</h1>
             <p className="text-muted">
-              커피챗 멘토가 되어 후배 개발자들의 성장을 도와주세요
+              커피챗 멘토가 되어 주니어 개발자들의 성장을 도와주세요
             </p>
           </div>
 

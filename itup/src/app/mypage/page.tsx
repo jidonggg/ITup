@@ -166,11 +166,11 @@ export default function MyPage() {
 
       if (error) {
         console.error("Error updating profile:", error);
-        showToast("프로필 수정에 실패했습니다.", "error");
+        showToast("프로필 수정에 실패했어요.", "error");
       } else {
         await refreshProfile();
         setIsEditing(false);
-        showToast("프로필이 수정되었습니다.", "success");
+        showToast("프로필이 수정되었어요.", "success");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -393,7 +393,7 @@ export default function MyPage() {
             ) : consultations.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-4xl mb-4">☕</div>
-                <p className="text-muted mb-4">아직 신청한 상담이 없습니다.</p>
+                <p className="text-muted mb-4">아직 신청한 커피챗이 없어요.</p>
                 <Link
                   href="/mentors"
                   className="inline-flex items-center gap-2 text-primary hover:underline"
@@ -503,7 +503,7 @@ export default function MyPage() {
               ) : (
                 <div className="text-center py-8">
                   <div className="text-4xl mb-4">💳</div>
-                  <p className="text-muted mb-4">현재 활성화된 구독이 없습니다.</p>
+                  <p className="text-muted mb-4">현재 활성화된 구독이 없어요.</p>
                   <Link
                     href="/#pricing"
                     className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary-dark transition-colors"
@@ -550,7 +550,7 @@ export default function MyPage() {
                 </div>
               ) : payments.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-muted">결제 내역이 없습니다.</p>
+                  <p className="text-muted">결제 내역이 없어요.</p>
                 </div>
               ) : (
                 <div className="space-y-3">

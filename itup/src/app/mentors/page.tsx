@@ -207,7 +207,7 @@ export default function MentorsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">멘토 찾기</h1>
           <p className="text-muted">
-            {filteredMentors.length}명의 현직자 멘토가 당신을 기다리고 있습니다
+            {filteredMentors.length}명의 현직자 멘토가 기다리고 있어요
           </p>
         </div>
 
@@ -311,7 +311,7 @@ export default function MentorsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">검색 결과가 없습니다</h3>
+                <h3 className="text-lg font-semibold mb-2">검색 결과가 없어요</h3>
                 <p className="text-muted mb-4">다른 필터 조건을 시도해보세요</p>
                 <button
                   onClick={clearFilters}

@@ -33,17 +33,17 @@ export default function SignupPage() {
     }
 
     if (password.length < 6) {
-      setError("비밀번호는 최소 6자 이상이어야 합니다.");
+      setError("비밀번호는 최소 6자 이상이어야 해요.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("비밀번호가 일치하지 않습니다.");
+      setError("비밀번호가 일치하지 않아요.");
       return;
     }
 
     if (!isSupabaseConfigured()) {
-      setError("서비스 연결에 문제가 있습니다.");
+      setError("서비스 연결에 문제가 있어요.");
       return;
     }
 
@@ -71,7 +71,7 @@ export default function SignupPage() {
 
       setIsSuccess(true);
     } catch {
-      setError("회원가입 중 오류가 발생했습니다.");
+      setError("회원가입 중 오류가 발생했어요.");
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +79,7 @@ export default function SignupPage() {
 
   const handleGoogleLogin = async () => {
     if (!isSupabaseConfigured()) {
-      setError("서비스 연결에 문제가 있습니다.");
+      setError("서비스 연결에 문제가 있어요.");
       return;
     }
 
@@ -92,7 +92,7 @@ export default function SignupPage() {
         },
       });
     } catch {
-      setError("Google 로그인 중 오류가 발생했습니다.");
+      setError("Google 로그인 중 오류가 발생했어요.");
     }
   };
 
@@ -115,7 +115,7 @@ export default function SignupPage() {
           </div>
           <h2 className="text-2xl font-bold mb-2">이메일을 확인해주세요</h2>
           <p className="text-muted mb-6">
-            {email}로 인증 메일을 발송했습니다.<br />
+            {email}로 인증 메일을 발송했어요.<br />
             메일의 링크를 클릭하여 가입을 완료해주세요.
           </p>
           <Link
@@ -268,7 +268,7 @@ export default function SignupPage() {
           <Link href="/privacy" className="underline">
             개인정보처리방침
           </Link>
-          에 동의하는 것으로 간주됩니다.
+          에 동의하는 것으로 간주돼요.
         </p>
       </div>
     </div>

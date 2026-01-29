@@ -30,7 +30,7 @@ export default function LoginPage() {
     }
 
     if (!isSupabaseConfigured()) {
-      setError("서비스 연결에 문제가 있습니다.");
+      setError("서비스 연결에 문제가 있어요.");
       return;
     }
 
@@ -45,7 +45,7 @@ export default function LoginPage() {
 
       if (signInError) {
         if (signInError.message.includes("Invalid login")) {
-          setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+          setError("이메일 또는 비밀번호가 올바르지 않아요.");
         } else {
           setError(signInError.message);
         }
@@ -54,7 +54,7 @@ export default function LoginPage() {
 
       router.push("/");
     } catch {
-      setError("로그인 중 오류가 발생했습니다.");
+      setError("로그인 중 오류가 발생했어요.");
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +62,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     if (!isSupabaseConfigured()) {
-      setError("서비스 연결에 문제가 있습니다.");
+      setError("서비스 연결에 문제가 있어요.");
       return;
     }
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
         },
       });
     } catch {
-      setError("Google 로그인 중 오류가 발생했습니다.");
+      setError("Google 로그인 중 오류가 발생했어요.");
     }
   };
 
@@ -213,7 +213,7 @@ export default function LoginPage() {
           <Link href="/privacy" className="underline">
             개인정보처리방침
           </Link>
-          에 동의하는 것으로 간주됩니다.
+          에 동의하는 것으로 간주돼요.
         </p>
       </div>
     </div>

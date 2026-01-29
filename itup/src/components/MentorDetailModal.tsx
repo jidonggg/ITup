@@ -240,7 +240,7 @@ export default function MentorDetailModal({
                 </div>
               ) : reviewsError ? (
                 <p className="text-sm text-red-400 text-center py-4">
-                  리뷰를 불러오지 못했습니다.
+                  리뷰를 불러오지 못했어요.
                 </p>
               ) : reviews.length > 0 ? (
                 <div className="space-y-3">
@@ -283,7 +283,7 @@ export default function MentorDetailModal({
                 </div>
               ) : (
                 <p className="text-sm text-muted text-center py-4">
-                  아직 작성된 리뷰가 없습니다.
+                  아직 작성된 리뷰가 없어요.
                 </p>
               )}
             </div>

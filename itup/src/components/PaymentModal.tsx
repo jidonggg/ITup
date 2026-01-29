@@ -35,7 +35,7 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
         setError(null);
 
         if (!TOSS_CLIENT_KEY) {
-          setError("결제 시스템이 설정되지 않았습니다.");
+          setError("결제 시스템이 설정되지 않았어요.");
           setIsLoading(false);
           return;
         }
@@ -68,7 +68,7 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
 
       } catch (err) {
         console.error("Payment init error:", err);
-        setError("결제 시스템을 불러오는데 실패했습니다.");
+        setError("결제 시스템을 불러오는데 실패했어요.");
         setIsLoading(false);
       }
     };
@@ -97,7 +97,7 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
       });
     } catch (err) {
       console.error("Payment error:", err);
-      showToast("결제 요청 중 오류가 발생했습니다.", "error");
+      showToast("결제 요청 중 오류가 발생했어요.", "error");
     }
   };
 
@@ -185,20 +185,20 @@ export default function PaymentModal({ isOpen, onClose, plan }: PaymentModalProp
                 <a href="/privacy" target="_blank" className="text-primary hover:underline">
                   개인정보처리방침
                 </a>
-                에 동의한 것으로 간주됩니다.
+                에 동의한 것으로 간주돼요.
               </p>
 
               {/* 결제 버튼 */}
               <button
                 onClick={handlePayment}
-                disabled={false}
+                disabled={isLoading}
                 className="w-full py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold text-lg hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {plan.price.toLocaleString()}원 결제하기
               </button>
 
               <p className="mt-4 text-xs text-muted text-center">
-                결제는 토스페이먼츠를 통해 안전하게 처리됩니다.
+                결제는 토스페이먼츠를 통해 안전하게 처리돼요.
               </p>
             </>
           )}
