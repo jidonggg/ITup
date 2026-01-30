@@ -46,39 +46,36 @@ export default function BusinessPage() {
     },
   ];
 
-  const benefits = [
-    { number: "100+", label: "검증된 멘토" },
-    { number: "500+", label: "누적 상담" },
-    { number: "95%", label: "만족도" },
-    { number: "30+", label: "파트너사" },
-  ];
-
-  const testimonials = [
-    {
-      company: "넥슨",
-      role: "HR 팀장",
-      name: "김OO",
-      content: "신입 개발자 온보딩에 커피챗 멘토링을 도입한 후, 적응 기간이 크게 단축되었습니다.",
-    },
-    {
-      company: "크래프톤",
-      role: "기획실장",
-      name: "이OO",
-      content: "주니어 기획자들의 성장에 실질적인 도움이 되었습니다. 정기 프로그램으로 확대 예정입니다.",
-    },
-  ];
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setSubmitError(null);
 
     trackEvent("submit", "기업문의_제출", { company: formData.companyName });
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const response = await fetch("/api/business/inquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    setIsLoading(false);
-    setIsSubmitted(true);
+      const result = await response.json();
+
+      if (!response.ok) {
+        setSubmitError(result.error || "문의 제출에 실패했습니다.");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(false);
+      setIsSubmitted(true);
+    } catch {
+      setSubmitError("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (
@@ -124,19 +121,12 @@ export default function BusinessPage() {
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="py-12 bg-card-bg border-y border-card-border">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {benefits.map((benefit, index) => (
-                <div key={index} className="text-center">
-                  <p className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                    {benefit.number}
-                  </p>
-                  <p className="text-muted mt-1">{benefit.label}</p>
-                </div>
-              ))}
-            </div>
+        {/* Trust Banner */}
+        <section className="py-8 bg-card-bg border-y border-card-border">
+          <div className="max-w-6xl mx-auto px-4 text-center">
+            <p className="text-muted">
+              게임 업계 현직자 멘토 네트워크 · 맞춤형 프로그램 설계 · 토스페이먼츠 안전 결제
+            </p>
           </div>
         </section>
 
@@ -194,36 +184,6 @@ export default function BusinessPage() {
                   </div>
                   <h3 className="font-semibold mb-2">{item.title}</h3>
                   <p className="text-sm text-muted">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials Section */}
-        <section className="py-16 md:py-24">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">파트너사 후기</h2>
-              <p className="text-muted">기업 고객들의 실제 경험을 들어보세요</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {testimonials.map((testimonial, index) => (
-                <div
-                  key={index}
-                  className="bg-card-bg border border-card-border rounded-xl p-8"
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center">
-                      <span className="font-bold text-accent">{testimonial.company[0]}</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold">{testimonial.name}</p>
-                      <p className="text-sm text-muted">{testimonial.company} | {testimonial.role}</p>
-                    </div>
-                  </div>
-                  <p className="text-muted italic">&ldquo;{testimonial.content}&rdquo;</p>
                 </div>
               ))}
             </div>
@@ -347,6 +307,12 @@ export default function BusinessPage() {
                     placeholder="도입하고 싶은 서비스나 궁금한 점을 자유롭게 적어주세요"
                   />
                 </div>
+
+                {submitError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-500">
+                    {submitError}
+                  </div>
+                )}
 
                 <button
                   type="submit"

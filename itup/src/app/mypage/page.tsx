@@ -468,6 +468,18 @@ export default function MyPage() {
                         {consultation.message}
                       </p>
                     )}
+                    {(consultation.status === "confirmed" || consultation.status === "completed") &&
+                      consultation.mentor?.contact_method && (
+                      <div className="mb-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                        <p className="text-xs text-muted mb-1 flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                          멘토 연락 방법
+                        </p>
+                        <p className="text-sm text-foreground">{consultation.mentor.contact_method}</p>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted">
                         신청일: {new Date(consultation.created_at).toLocaleDateString("ko-KR", {

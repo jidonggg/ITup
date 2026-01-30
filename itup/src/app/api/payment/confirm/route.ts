@@ -213,20 +213,49 @@ export async function POST(request: NextRequest) {
           console.error("Consultation update error:", consultError);
         }
 
-        // 멘토에게 이메일 알림 발송 (비동기)
+        // 이메일 알림 발송 (비동기)
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
         if (siteUrl) {
+          const notifyHeaders = {
+            "Content-Type": "application/json",
+            "x-api-secret": process.env.INTERNAL_API_SECRET || "",
+          };
+
+          // 1. 멘티에게 상담 확정 알림
           fetch(`${siteUrl}/api/email/notify`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-api-secret": process.env.INTERNAL_API_SECRET || "",
-            },
+            headers: notifyHeaders,
             body: JSON.stringify({
               type: "consultation_confirmed",
               data: { consultationId },
             }),
           }).catch(console.error);
+
+          // 2. 멘토에게 새 상담 신청 알림
+          const { data: consultInfo } = await supabase
+            .from("consultations")
+            .select("mentor_id, user_name, user_email, user_phone, interest, preferred_time, message")
+            .eq("id", consultationId)
+            .single();
+
+          if (consultInfo?.mentor_id) {
+            fetch(`${siteUrl}/api/email/notify`, {
+              method: "POST",
+              headers: notifyHeaders,
+              body: JSON.stringify({
+                type: "consultation_request",
+                data: {
+                  mentorId: consultInfo.mentor_id,
+                  menteeName: consultInfo.user_name,
+                  menteeEmail: consultInfo.user_email,
+                  menteePhone: consultInfo.user_phone,
+                  interest: consultInfo.interest,
+                  preferredTime: consultInfo.preferred_time,
+                  message: consultInfo.message,
+                },
+              }),
+            }).catch(console.error);
+          }
         }
       }
 

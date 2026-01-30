@@ -47,25 +47,6 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
           </p>
         </div>
 
-        {/* Free Coffee Chat Banner */}
-        <div className="mb-10 max-w-2xl mx-auto p-6 md:p-8 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg font-semibold">첫 커피챗 15분 무료</span>
-                <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-xs font-medium rounded-full">FREE</span>
-              </div>
-              <p className="text-muted text-sm">처음이라면 부담 없이 만나봐요</p>
-            </div>
-            <button
-              onClick={onConsultClick}
-              className="px-6 py-3 border border-primary text-primary font-medium hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer whitespace-nowrap rounded-full"
-            >
-              무료로 시작하기
-            </button>
-          </div>
-        </div>
-
         {/* Tier Selector */}
         <div className="flex justify-center gap-2 mb-8">
           {tierOptions.map((tier) => (

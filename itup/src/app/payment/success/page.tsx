@@ -3,12 +3,14 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const [isVerifying, setIsVerifying] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mentorContact, setMentorContact] = useState<{ name: string; contactMethod: string } | null>(null);
 
   const paymentKey = searchParams.get("paymentKey");
   const orderId = searchParams.get("orderId");
@@ -46,6 +48,36 @@ function PaymentSuccessContent() {
         }
 
         setIsVerified(true);
+
+        // Fetch mentor contact method if consultationId exists
+        if (consultationId && isSupabaseConfigured()) {
+          try {
+            const supabase = createClient();
+            const { data: consultation } = await supabase
+              .from("consultations")
+              .select("mentor_id")
+              .eq("id", consultationId)
+              .single();
+
+            if (consultation?.mentor_id) {
+              const { data: mentor } = await supabase
+                .from("mentors")
+                .select("name, contact_method")
+                .eq("id", consultation.mentor_id)
+                .single();
+
+              if (mentor?.contact_method) {
+                setMentorContact({
+                  name: mentor.name,
+                  contactMethod: mentor.contact_method,
+                });
+              }
+            }
+          } catch {
+            // Non-critical: mentor contact fetch failure doesn't block success
+          }
+        }
+
         setIsVerifying(false);
       } catch {
         setError("결제 검증 중 오류가 발생했어요.");
@@ -121,6 +153,19 @@ function PaymentSuccessContent() {
               </div>
             </div>
           </div>
+
+          {mentorContact && (
+            <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-xl p-4 mb-6 text-left">
+              <h3 className="font-medium mb-2 flex items-center gap-2">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                멘토 연락 방법
+              </h3>
+              <p className="text-sm text-muted mb-1">{mentorContact.name} 멘토님</p>
+              <p className="text-sm text-foreground">{mentorContact.contactMethod}</p>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link

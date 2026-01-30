@@ -1,52 +1,34 @@
 "use client";
 
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { useCountUp } from "@/hooks/useCountUp";
-import { useEffect } from "react";
 
-interface StatItemProps {
-  value: number;
-  suffix: string;
-  label: string;
-  delay: number;
-  isVisible: boolean;
-}
-
-function StatItem({ value, suffix, label, delay, isVisible }: StatItemProps) {
-  const { count, startCounting } = useCountUp({
-    end: value,
-    duration: 2000,
-    delay,
-  });
-
-  useEffect(() => {
-    if (isVisible) {
-      startCounting();
-    }
-  }, [isVisible, startCounting]);
-
-  return (
-    <div className="text-center group">
-      <div className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2 transform group-hover:scale-110 transition-transform duration-300">
-        {count}
-        {suffix}
-      </div>
-      <div className="text-muted text-sm sm:text-base">{label}</div>
-    </div>
-  );
-}
+const values = [
+  {
+    icon: "🎮",
+    title: "게임 업계 현직자",
+    description: "실제 게임사에서 일하는 멘토",
+  },
+  {
+    icon: "☕",
+    title: "1:1 맞춤 상담",
+    description: "나에게 딱 맞는 커리어 조언",
+  },
+  {
+    icon: "📄",
+    title: "포트폴리오 피드백",
+    description: "현업 기준의 실전 리뷰",
+  },
+  {
+    icon: "🔒",
+    title: "안전한 결제",
+    description: "토스페이먼츠 · 환불 정책 보장",
+  },
+];
 
 export default function Stats() {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>({
     threshold: 0.3,
   });
-
-  const stats = [
-    { value: 500, suffix: "+", label: "누적 멘티" },
-    { value: 50, suffix: "+", label: "현직 멘토" },
-    { value: 98, suffix: "%", label: "만족도" },
-    { value: 85, suffix: "%", label: "취업 성공률" },
-  ];
 
   return (
     <section className="py-20 relative">
@@ -61,15 +43,16 @@ export default function Stats() {
       >
         <div className="bg-card-bg/50 backdrop-blur-sm border border-card-border rounded-3xl p-8 md:p-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
-            {stats.map((stat, index) => (
-              <StatItem
-                key={stat.label}
-                value={stat.value}
-                suffix={stat.suffix}
-                label={stat.label}
-                delay={index * 100}
-                isVisible={isVisible}
-              />
+            {values.map((item) => (
+              <div key={item.title} className="text-center group">
+                <div className="text-4xl sm:text-5xl mb-3 transform group-hover:scale-110 transition-transform duration-300">
+                  {item.icon}
+                </div>
+                <div className="font-semibold text-foreground mb-1">
+                  {item.title}
+                </div>
+                <div className="text-muted text-sm">{item.description}</div>
+              </div>
             ))}
           </div>
         </div>

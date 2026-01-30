@@ -133,6 +133,52 @@ export function consultationConfirmedTemplate(data: {
   };
 }
 
+// 기업 문의 알림 (관리자에게)
+export function businessInquiryTemplate(data: {
+  companyName: string;
+  contactName: string;
+  email: string;
+  phone?: string;
+  employeeCount?: string;
+  message?: string;
+}): EmailTemplate {
+  return {
+    subject: `[커피챗] 새로운 기업 문의 - ${data.companyName}`,
+    html: `
+      <div style="font-family: 'Apple SD Gothic Neo', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #A0714F, #7D5636); padding: 30px; border-radius: 16px 16px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">새로운 기업 문의</h1>
+        </div>
+        <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E8DED4; border-top: none;">
+          <p style="margin-bottom: 20px;">새로운 기업 도입 문의가 접수되었습니다.</p>
+          <div style="background: #F0E8E0; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h3 style="color: #A0714F; margin-top: 0;">문의 정보</h3>
+            <p><strong>회사명:</strong> ${data.companyName}</p>
+            <p><strong>담당자:</strong> ${data.contactName}</p>
+            <p><strong>이메일:</strong> ${data.email}</p>
+            ${data.phone ? `<p><strong>연락처:</strong> ${data.phone}</p>` : ""}
+            ${data.employeeCount ? `<p><strong>임직원 규모:</strong> ${data.employeeCount}</p>` : ""}
+            ${data.message ? `<p><strong>문의 내용:</strong> ${data.message}</p>` : ""}
+          </div>
+          <p style="margin-top: 30px; color: #9CA3AF; font-size: 12px;">
+            이 이메일은 커피챗 기업 문의 시스템에서 발송되었습니다.
+          </p>
+        </div>
+      </div>
+    `,
+    text: `
+커피챗 - 새로운 기업 문의
+
+회사명: ${data.companyName}
+담당자: ${data.contactName}
+이메일: ${data.email}
+${data.phone ? `연락처: ${data.phone}` : ""}
+${data.employeeCount ? `임직원 규모: ${data.employeeCount}` : ""}
+${data.message ? `문의 내용: ${data.message}` : ""}
+    `.trim(),
+  };
+}
+
 // 멘토 승인 알림
 export function mentorApprovedTemplate(data: {
   mentorName: string;

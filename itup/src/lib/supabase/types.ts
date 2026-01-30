@@ -31,6 +31,7 @@ export interface Mentor {
   verified_at: string | null;
   verification_method: "email" | "document" | null;
   verified_company: string | null;
+  contact_method: string | null;
   created_at: string;
 }
 
@@ -95,6 +96,18 @@ export interface Review {
   created_at: string;
 }
 
+export interface BusinessInquiry {
+  id: string;
+  company_name: string;
+  contact_name: string;
+  email: string;
+  phone: string | null;
+  employee_count: string | null;
+  message: string | null;
+  status: string;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -127,6 +140,11 @@ export interface Database {
         Row: NewsletterSubscription;
         Insert: Omit<NewsletterSubscription, "id" | "created_at">;
         Update: Partial<Omit<NewsletterSubscription, "id" | "created_at">>;
+      };
+      business_inquiries: {
+        Row: BusinessInquiry;
+        Insert: Omit<BusinessInquiry, "id" | "created_at" | "status">;
+        Update: Partial<Omit<BusinessInquiry, "id" | "created_at">>;
       };
     };
     Views: Record<string, never>;

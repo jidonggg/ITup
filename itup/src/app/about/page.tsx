@@ -5,27 +5,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export default function AboutPage() {
-  const teamMembers = [
-    {
-      name: "김철수",
-      role: "CEO / Co-founder",
-      description: "게임 업계 15년 경력. 전 넥슨 프로듀서",
-      image: "/team/ceo.jpg",
-    },
-    {
-      name: "이영희",
-      role: "CTO / Co-founder",
-      description: "개발 리드 10년. 전 크래프톤 테크 리드",
-      image: "/team/cto.jpg",
-    },
-    {
-      name: "박지민",
-      role: "Head of Operations",
-      description: "커피챗 운영 전문가",
-      image: "/team/coo.jpg",
-    },
-  ];
-
   const values = [
     {
       icon: "🎯",
@@ -50,11 +29,8 @@ export default function AboutPage() {
   ];
 
   const milestones = [
-    { year: "2023", event: "커피챗 서비스 런칭" },
-    { year: "2023", event: "멘토 50명 돌파" },
-    { year: "2024", event: "누적 상담 500건 달성" },
-    { year: "2024", event: "기업 파트너십 프로그램 시작" },
-    { year: "2025", event: "멘토 100명 돌파" },
+    { year: "2025", event: "커피챗 서비스 구상 시작" },
+    { year: "2026", event: "베타 서비스 오픈" },
   ];
 
   return (
@@ -172,34 +148,6 @@ export default function AboutPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Team Section */}
-        <section className="py-16 md:py-24">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">팀 소개</h2>
-              <p className="text-muted">커피챗을 만들어가는 사람들</p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {teamMembers.map((member, index) => (
-                <div
-                  key={index}
-                  className="bg-card-bg border border-card-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors"
-                >
-                  <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                    <span className="text-3xl font-bold text-white">
-                      {member.name[0]}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-semibold mb-1">{member.name}</h3>
-                  <p className="text-primary text-sm mb-3">{member.role}</p>
-                  <p className="text-sm text-muted">{member.description}</p>
-                </div>
-              ))}
             </div>
           </div>
         </section>
