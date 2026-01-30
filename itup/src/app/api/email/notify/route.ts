@@ -6,10 +6,11 @@ import {
   consultationConfirmedTemplate,
   mentorApprovedTemplate,
 } from "@/lib/email/templates";
-import { isAdmin } from "@/lib/admin";
 
 // 내부 API 시크릿 (서버-서버 통신용)
 const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://itup.vercel.app";
 
 // 서버사이드 Supabase 클라이언트
 function getServiceSupabase() {
@@ -104,6 +105,7 @@ export async function POST(request: NextRequest) {
                 interest,
                 preferredTime,
                 message,
+                siteUrl: SITE_URL,
               });
 
               const result = await sendEmail({ to: profile.email, template });
@@ -143,6 +145,7 @@ export async function POST(request: NextRequest) {
               menteeName: consultation.user_name,
               mentorName: mentor.name,
               mentorCompany: mentor.company,
+              siteUrl: SITE_URL,
             });
 
             const result = await sendEmail({ to: consultation.user_email, template });
@@ -179,6 +182,7 @@ export async function POST(request: NextRequest) {
           if (profile?.email) {
             const template = mentorApprovedTemplate({
               mentorName: mentor.name,
+              siteUrl: SITE_URL,
             });
 
             const result = await sendEmail({ to: profile.email, template });

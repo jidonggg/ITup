@@ -8,7 +8,7 @@ const footerLinks = {
   서비스: [
     { label: "멘토 찾기", href: "/mentors" },
     { label: "멘토 등록", href: "/mentor/register" },
-    { label: "멘토링 소개", href: "#features" },
+    { label: "멘토링 소개", href: "/#features" },
     { label: "기업 서비스", href: "/business" },
   ],
   회사: [
@@ -26,9 +26,6 @@ const footerLinks = {
     { label: "마이페이지", href: "/mypage" },
   ],
 };
-
-// 소셜 미디어 링크는 실제 계정 생성 후 추가 예정
-// const socialLinks = [...];
 
 export default function Footer() {
   const [email, setEmail] = useState("");

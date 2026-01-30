@@ -124,9 +124,6 @@ export async function POST(request: NextRequest) {
           </div>
         `,
       });
-    } else {
-      // 개발 환경: 콘솔에 코드 출력
-      console.log(`[DEV] Verification code for ${email}: ${code}`);
     }
 
     return NextResponse.json({

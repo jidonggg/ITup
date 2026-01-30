@@ -17,7 +17,7 @@ export default function Image() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)",
+          background: "linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 50%, #FFFFFF 100%)",
           position: "relative",
           overflow: "hidden",
         }}
@@ -31,7 +31,7 @@ export default function Image() {
             width: 400,
             height: 400,
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(37,99,235,0.1) 0%, transparent 70%)",
             display: "flex",
           }}
         />
@@ -43,7 +43,7 @@ export default function Image() {
             width: 500,
             height: 500,
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(147,51,234,0.12) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%)",
             display: "flex",
           }}
         />
@@ -64,7 +64,7 @@ export default function Image() {
           style={{
             fontSize: 64,
             fontWeight: 800,
-            color: "#FFFFFF",
+            color: "#111827",
             letterSpacing: "-0.02em",
             display: "flex",
             marginBottom: 8,
@@ -78,7 +78,7 @@ export default function Image() {
           style={{
             fontSize: 28,
             fontWeight: 500,
-            background: "linear-gradient(90deg, #3B82F6, #9333EA)",
+            background: "linear-gradient(90deg, #2563EB, #7C3AED)",
             backgroundClip: "text",
             color: "transparent",
             display: "flex",
@@ -92,7 +92,7 @@ export default function Image() {
         <div
           style={{
             fontSize: 22,
-            color: "#94A3B8",
+            color: "#6B7280",
             textAlign: "center",
             maxWidth: 700,
             lineHeight: 1.5,
@@ -116,8 +116,8 @@ export default function Image() {
               style={{
                 padding: "10px 24px",
                 borderRadius: 999,
-                border: "1px solid rgba(59,130,246,0.3)",
-                color: "#60A5FA",
+                border: "1px solid rgba(37,99,235,0.3)",
+                color: "#2563EB",
                 fontSize: 18,
                 display: "flex",
               }}
@@ -132,7 +132,7 @@ export default function Image() {
           style={{
             position: "absolute",
             bottom: 32,
-            color: "#475569",
+            color: "#9CA3AF",
             fontSize: 16,
             display: "flex",
           }}

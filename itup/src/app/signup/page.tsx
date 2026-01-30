@@ -16,6 +16,8 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -82,6 +84,34 @@ export default function SignupPage() {
     }
   };
 
+  const handleResendEmail = async () => {
+    if (!isSupabaseConfigured() || !email) return;
+
+    setIsResending(true);
+    setResendMessage("");
+
+    try {
+      const supabase = createClient();
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (resendError) {
+        setResendMessage("재발송에 실패했어요. 잠시 후 다시 시도해주세요.");
+      } else {
+        setResendMessage("인증 메일을 다시 발송했어요!");
+      }
+    } catch {
+      setResendMessage("재발송 중 오류가 발생했어요.");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     if (!isSupabaseConfigured()) {
       setError("서비스 연결에 문제가 있어요.");
@@ -123,12 +153,24 @@ export default function SignupPage() {
             {email}로 인증 메일을 발송했어요.<br />
             메일의 링크를 클릭하여 가입을 완료해주세요.
           </p>
-          <Link
-            href="/login"
-            className="inline-block px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
-          >
-            로그인 페이지로
-          </Link>
+          <div className="flex flex-col items-center gap-3">
+            <Link
+              href="/login"
+              className="inline-block px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
+            >
+              로그인 페이지로
+            </Link>
+            <button
+              onClick={handleResendEmail}
+              disabled={isResending}
+              className="text-sm text-muted hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {isResending ? "발송 중..." : "인증 메일 재발송"}
+            </button>
+            {resendMessage && (
+              <p className="text-sm text-muted">{resendMessage}</p>
+            )}
+          </div>
         </div>
       </div>
     );

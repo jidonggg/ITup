@@ -14,6 +14,7 @@ export default function ResetPasswordPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isValidSession, setIsValidSession] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [redirectTimer, setRedirectTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -36,6 +37,15 @@ export default function ResetPasswordPage() {
 
     checkSession();
   }, []);
+
+  // Cleanup redirect timer on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+      }
+    };
+  }, [redirectTimer]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,9 +84,10 @@ export default function ResetPasswordPage() {
       setIsLoading(false);
 
       // 3초 후 홈으로 이동
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         router.push("/");
       }, 3000);
+      setRedirectTimer(timer);
     } catch {
       setError("오류가 발생했습니다. 다시 시도해주세요.");
       setIsLoading(false);

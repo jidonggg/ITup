@@ -240,7 +240,6 @@ export default function MentorDetailModal({
                   </div>
                 ))}
             </div>
-            <p className="text-xs text-green-500 mt-2">첫 커피챗 15분 무료!</p>
           </div>
 
           {/* Reviews Section */}

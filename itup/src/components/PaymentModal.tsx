@@ -180,10 +180,10 @@ export default function PaymentModal({ isOpen, onClose, bundle }: PaymentModalPr
               </div>
               <p className="text-red-500 mb-4">{error}</p>
               <button
-                onClick={() => window.location.reload()}
+                onClick={handleClose}
                 className="px-4 py-2 bg-primary text-white rounded-lg text-sm cursor-pointer"
               >
-                다시 시도
+                닫기
               </button>
             </div>
           ) : (

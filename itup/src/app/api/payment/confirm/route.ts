@@ -121,7 +121,8 @@ export async function POST(request: NextRequest) {
         .from("payments")
         .select("id")
         .eq("payment_key", paymentKey)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (existingPayment) {
         return NextResponse.json(

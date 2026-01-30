@@ -57,11 +57,6 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
     return sendWithResend(params);
   }
 
-  // API 키가 없으면 로그만 남기고 성공 처리 (개발 모드)
-  console.log("=== Email would be sent ===");
-  console.log("To:", params.to);
-  console.log("Subject:", params.template.subject);
-  console.log("===========================");
-
+  // API 키가 없으면 조용히 성공 처리 (개발 모드)
   return { success: true, messageId: "dev-mode-" + Date.now() };
 }

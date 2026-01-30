@@ -116,8 +116,9 @@ export default function MentorRegisterPage() {
         .single();
 
       if (existingMentor) {
-        showToast("이미 멘토로 등록되어 있어요.", "error");
+        showToast("이미 멘토로 등록되어 있어요. 대시보드로 이동합니다.", "error");
         setIsSubmitting(false);
+        router.push("/mentor/dashboard");
         return;
       }
 
