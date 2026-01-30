@@ -72,8 +72,8 @@ export default function Hero({ onConsultClick }: HeroProps) {
       <div
         className="absolute inset-0 opacity-10"
         style={{
-          backgroundImage: `linear-gradient(rgba(139, 92, 246, 0.3) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(139, 92, 246, 0.3) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(rgba(160, 113, 79, 0.15) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(160, 113, 79, 0.15) 1px, transparent 1px)`,
           backgroundSize: "50px 50px",
         }}
       />

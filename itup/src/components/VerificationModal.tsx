@@ -118,7 +118,7 @@ export default function VerificationModal({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(139,92,246,0.4)]">
+      <div className="relative w-full max-w-md bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(160,113,79,0.25)]">
         {/* Close Button */}
         <button
           onClick={handleClose}

@@ -106,10 +106,10 @@ export async function POST(request: NextRequest) {
         subject: "[커피챗] 멘토 인증 코드",
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #8B5CF6;">커피챗 멘토 인증</h2>
+            <h2 style="color: #A0714F;">커피챗 멘토 인증</h2>
             <p>안녕하세요, 커피챗 멘토 인증을 위한 코드입니다.</p>
             <div style="background: #F3F4F6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #8B5CF6;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #A0714F;">
                 ${code}
               </span>
             </div>

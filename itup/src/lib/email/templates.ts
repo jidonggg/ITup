@@ -28,15 +28,15 @@ export function consultationRequestTemplate(data: {
     subject: `[커피챗] 새로운 상담 신청이 도착했습니다`,
     html: `
       <div style="font-family: 'Apple SD Gothic Neo', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #8B5CF6, #6366F1); padding: 30px; border-radius: 16px 16px 0 0;">
+        <div style="background: linear-gradient(135deg, #A0714F, #7D5636); padding: 30px; border-radius: 16px 16px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 24px;">새로운 상담 신청</h1>
         </div>
-        <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E5E7EB; border-top: none;">
+        <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E8DED4; border-top: none;">
           <p style="margin-bottom: 20px;">안녕하세요, <strong>${data.mentorName}</strong> 멘토님!</p>
           <p style="margin-bottom: 20px;">새로운 상담 신청이 도착했습니다.</p>
 
-          <div style="background: #F3F4F6; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-            <h3 style="color: #8B5CF6; margin-top: 0;">신청자 정보</h3>
+          <div style="background: #F0E8E0; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h3 style="color: #A0714F; margin-top: 0;">신청자 정보</h3>
             <p><strong>이름:</strong> ${data.menteeName}</p>
             <p><strong>이메일:</strong> ${data.menteeEmail}</p>
             <p><strong>연락처:</strong> ${data.menteePhone}</p>
@@ -46,7 +46,7 @@ export function consultationRequestTemplate(data: {
           </div>
 
           <a href="${data.siteUrl}/mentor/dashboard"
-             style="display: inline-block; background: linear-gradient(135deg, #8B5CF6, #6366F1); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+             style="display: inline-block; background: linear-gradient(135deg, #A0714F, #7D5636); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
             대시보드에서 확인하기
           </a>
 
@@ -90,11 +90,11 @@ export function consultationConfirmedTemplate(data: {
         <div style="background: linear-gradient(135deg, #10B981, #059669); padding: 30px; border-radius: 16px 16px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 24px;">상담 확정!</h1>
         </div>
-        <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E5E7EB; border-top: none;">
+        <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E8DED4; border-top: none;">
           <p style="margin-bottom: 20px;">안녕하세요, <strong>${data.menteeName}</strong>님!</p>
           <p style="margin-bottom: 20px;">축하합니다! 멘토링 상담이 확정되었습니다.</p>
 
-          <div style="background: #F3F4F6; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+          <div style="background: #F0E8E0; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
             <h3 style="color: #10B981; margin-top: 0;">멘토 정보</h3>
             <p><strong>멘토:</strong> ${data.mentorName}</p>
             <p><strong>소속:</strong> ${data.mentorCompany}</p>
@@ -142,10 +142,10 @@ export function mentorApprovedTemplate(data: {
     subject: `[커피챗] 멘토 등록이 승인되었습니다!`,
     html: `
       <div style="font-family: 'Apple SD Gothic Neo', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #8B5CF6, #6366F1); padding: 30px; border-radius: 16px 16px 0 0;">
+        <div style="background: linear-gradient(135deg, #A0714F, #7D5636); padding: 30px; border-radius: 16px 16px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 24px;">멘토 승인 완료!</h1>
         </div>
-        <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E5E7EB; border-top: none;">
+        <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E8DED4; border-top: none;">
           <p style="margin-bottom: 20px;">안녕하세요, <strong>${data.mentorName}</strong>님!</p>
           <p style="margin-bottom: 20px;">
             축하합니다! 커피챗 멘토 등록이 승인되었습니다.<br/>
@@ -153,7 +153,7 @@ export function mentorApprovedTemplate(data: {
           </p>
 
           <a href="${data.siteUrl}/mentor/dashboard"
-             style="display: inline-block; background: linear-gradient(135deg, #8B5CF6, #6366F1); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+             style="display: inline-block; background: linear-gradient(135deg, #A0714F, #7D5636); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
             멘토 대시보드로 이동
           </a>
 

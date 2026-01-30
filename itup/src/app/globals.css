@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  /* ITup 라이트 테마 */
-  --background: #FFFFFF;        /* white */
-  --foreground: #111827;        /* gray-900 */
-  --primary: #2563EB;           /* blue-600 */
-  --primary-light: #3B82F6;     /* blue-500 */
-  --primary-dark: #1D4ED8;      /* blue-700 */
-  --secondary: #F3F4F6;         /* gray-100 */
-  --accent: #7C3AED;            /* violet-600 */
-  --muted: #6B7280;             /* gray-500 */
-  --card-bg: #FFFFFF;           /* white */
-  --card-border: #E5E7EB;       /* gray-200 */
+  /* ITup 커피/카푸치노 테마 */
+  --background: #FAF7F5;        /* warm off-white */
+  --foreground: #1A1209;        /* espresso */
+  --primary: #A0714F;           /* coffee brown */
+  --primary-light: #B8886A;     /* latte */
+  --primary-dark: #7D5636;      /* dark roast */
+  --secondary: #F0E8E0;         /* cream foam */
+  --accent: #D4A574;            /* caramel */
+  --muted: #8C7E72;             /* warm gray-brown */
+  --card-bg: #FFFFFF;           /* clean white */
+  --card-border: #E8DED4;       /* warm beige */
 
   /* Layout variables */
   --card-radius: 1rem;
@@ -131,10 +131,10 @@ body {
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+    box-shadow: 0 0 20px rgba(160, 113, 79, 0.2);
   }
   50% {
-    box-shadow: 0 0 40px rgba(124, 58, 237, 0.4);
+    box-shadow: 0 0 40px rgba(160, 113, 79, 0.35);
   }
 }
 

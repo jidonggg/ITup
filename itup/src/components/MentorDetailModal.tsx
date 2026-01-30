@@ -94,7 +94,7 @@ export default function MentorDetailModal({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(139,92,246,0.4)] animate-[modalIn_0.3s_ease-out] max-h-[85vh] overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(160,113,79,0.25)] animate-[modalIn_0.3s_ease-out] max-h-[85vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
