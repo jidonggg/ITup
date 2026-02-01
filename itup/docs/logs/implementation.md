@@ -6,6 +6,62 @@
 
 ---
 
+## [2026-02-01] Soft Launch — 정직한 콘텐츠 정리 + 핵심 기능 보완
+
+### 작업자
+코더2 (Claude Code)
+
+### 개요
+허위/가짜 데이터 전면 제거, 멘토-멘티 연결 메커니즘 추가, B2B 폼 실제 동작, 멘토 알림 버그 수정
+
+### Phase 1 — 프론트엔드 정직성 정리 (8개 파일)
+
+#### 1. 가짜 "무료" 문구 제거
+- `Pricing.tsx`: "첫 커피챗 15분 무료" 배너 전체 삭제
+- `CTA.tsx`: "첫 커피챗은 무료예요" → "현직자 멘토와 커피 한 잔의 가격으로", "무료로 시작하기" → "커피챗 시작하기"
+- `Hero.tsx`: "무료로 시작하기" → "커피챗 시작하기"
+
+#### 2. 가짜 수치/후기 제거
+- `Hero.tsx`: 가짜 지표(500+ 멘티, 4.9점) → 정성적 신뢰 지표 (현직자 멘토 / 안전한 결제 / 1:1 맞춤 상담)
+- `Stats.tsx`: 전체 교체 — 가짜 카운터(500+/50+/98%/85%) → 정성적 가치 카드 4개
+- `Testimonials.tsx`: `return null` — 가짜 후기 4건(넷마블/크래프톤/스마일게이트/넥슨) 비노출
+
+#### 3. 가짜 팀/연혁/파트너 제거
+- `about/page.tsx`: 가짜 팀원(김철수/이영희/박지민) 섹션 삭제, 가짜 연혁 → 실제 마일스톤 2건
+- `business/page.tsx`: 가짜 통계(100+ 멘토 등) + 가짜 파트너 후기(넥슨/크래프톤) 제거
+- `faq/page.tsx`: "첫 커피챗이 무료라고요?" FAQ → "가장 저렴한 상품은 뭔가요?"
+
+### Phase 2 — 멘토-멘티 연결 메커니즘 (3개 파일 + SQL)
+
+- `types.ts`: Mentor 인터페이스에 `contact_method: string | null` 추가
+- `payment/success/page.tsx`: 결제 확인 후 멘토 연락 방법 카드 표시
+- `mypage/page.tsx`: confirmed/completed 상담 카드에 멘토 연락처 표시
+- **SQL**: `mentors` 테이블에 `contact_method` 컬럼 추가 (⚠️ 미실행)
+
+### Phase 3 — B2B 폼 실제 동작 (2개 파일 + SQL)
+
+- `api/business/inquiry/route.ts` (신규): POST → Supabase 저장 + 관리자 이메일 알림
+- `business/page.tsx`: setTimeout 시뮬레이션 → 실제 API 호출 + 에러 처리
+- `email/templates.ts`: `businessInquiryTemplate` 추가
+- **SQL**: `business_inquiries` 테이블 생성 + RLS 정책 (⚠️ 미실행)
+
+### 버그 수정
+
+- `api/payment/confirm/route.ts`: 결제 완료 시 멘토에게도 `consultation_request` 이메일 발송 (기존: 멘티에게만 발송)
+
+### 인프라
+
+- Vercel 환경변수 6개 추가 (TOSS_PAYMENTS_SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY, NEXT_PUBLIC_SITE_URL, INTERNAL_API_SECRET, ADMIN_EMAIL)
+- NEXT_PUBLIC_ADMIN_EMAILS에 jee599@naver.com 추가
+- Vercel 프로덕션 재배포 완료
+
+### 빌드 검증
+- `tsc --noEmit` ✅
+- `next build` ✅
+- Vercel 배포 ✅ (https://itup.vercel.app)
+
+---
+
 ## [2025-01-28] 기획 기반 기능 보완
 
 ### 작업자
