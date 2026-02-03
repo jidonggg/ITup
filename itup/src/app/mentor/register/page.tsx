@@ -146,7 +146,6 @@ export default function MentorRegisterPage() {
       });
 
       if (error) {
-        console.error("Error registering mentor:", error);
         showToast("멘토 등록 중 오류가 발생했어요. 다시 시도해주세요.", "error");
         setIsSubmitting(false);
         return;
@@ -154,7 +153,6 @@ export default function MentorRegisterPage() {
 
       setIsSuccess(true);
     } catch (error) {
-      console.error("Error registering mentor:", error);
       showToast("멘토 등록 중 오류가 발생했어요. 다시 시도해주세요.", "error");
     } finally {
       setIsSubmitting(false);

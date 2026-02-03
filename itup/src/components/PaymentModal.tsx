@@ -73,7 +73,6 @@ export default function PaymentModal({ isOpen, onClose, bundle }: PaymentModalPr
         });
 
       } catch (err) {
-        console.error("Payment init error:", err);
         setError("결제 시스템을 불러오는데 실패했어요.");
         setIsLoading(false);
       }
@@ -103,7 +102,6 @@ export default function PaymentModal({ isOpen, onClose, bundle }: PaymentModalPr
         customerName: profile?.name || undefined,
       });
     } catch (err) {
-      console.error("Payment error:", err);
       showToast("결제 요청 중 오류가 발생했어요.", "error");
     }
   };

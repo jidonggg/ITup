@@ -62,7 +62,6 @@ export default function MyPage() {
           .order("created_at", { ascending: false });
 
         if (error) {
-          console.error("Error fetching consultations:", error);
           return;
         }
 
@@ -89,7 +88,6 @@ export default function MyPage() {
           setConsultations(consultationsWithMentor);
         }
       } catch (error) {
-        console.error("Error:", error);
       } finally {
         setIsLoadingConsultations(false);
       }
@@ -121,7 +119,6 @@ export default function MyPage() {
           setPayments(paymentData);
         }
       } catch (error) {
-        console.error("Error fetching payments:", error);
       } finally {
         setIsLoadingPayments(false);
       }
@@ -156,7 +153,6 @@ export default function MyPage() {
         .eq("id", user.id);
 
       if (error) {
-        console.error("Error updating profile:", error);
         showToast("프로필 수정에 실패했어요.", "error");
       } else {
         await refreshProfile();
@@ -164,7 +160,6 @@ export default function MyPage() {
         showToast("프로필이 수정되었어요.", "success");
       }
     } catch (error) {
-      console.error("Error:", error);
     } finally {
       setIsSaving(false);
     }

@@ -45,7 +45,6 @@ export async function saveVerificationCode(email: string, code: string, ttlMs: n
           expires_at: new Date(expires).toISOString(),
         });
     } catch (error) {
-      console.error("Supabase save error, falling back to memory:", error);
       memoryStore.set(email, { code, expires, email });
     }
   } else {
@@ -79,7 +78,6 @@ export async function getVerificationCode(email: string): Promise<VerificationCo
         email: data.email,
       };
     } catch (error) {
-      console.error("Supabase get error, falling back to memory:", error);
       return memoryStore.get(email) || null;
     }
   } else {
@@ -98,7 +96,6 @@ export async function deleteVerificationCode(email: string): Promise<void> {
         .delete()
         .eq("email", email);
     } catch (error) {
-      console.error("Supabase delete error:", error);
     }
   }
 

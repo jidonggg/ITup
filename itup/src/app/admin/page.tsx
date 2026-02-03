@@ -276,7 +276,6 @@ export default function AdminPage() {
         setClickStats(clickStatsList);
       }
     } catch (error) {
-      console.error("Admin fetch error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -339,10 +338,9 @@ export default function AdminPage() {
             type: "mentor_approved",
             data: { mentorId },
           }),
-        }).catch(console.error);
+        }).catch(() => {});
       }
     } catch (error) {
-      console.error("Error:", error);
       showToast("오류가 발생했습니다.", "error");
     } finally {
       setUpdatingMentorId(null);
@@ -380,7 +378,6 @@ export default function AdminPage() {
         totalMentors: prev.totalMentors - 1,
       }));
     } catch (error) {
-      console.error("Error:", error);
       showToast("오류가 발생했습니다.", "error");
     }
   };
@@ -434,7 +431,6 @@ export default function AdminPage() {
       setRefundTarget(null);
       setRefundReason("");
     } catch (error) {
-      console.error("Refund error:", error);
       showToast("환불 처리 중 오류가 발생했어요.", "error");
     } finally {
       setRefundLoading(false);

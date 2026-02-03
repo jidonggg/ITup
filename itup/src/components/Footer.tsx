@@ -84,7 +84,6 @@ export default function Footer() {
         setEmail("");
       }
     } catch (error) {
-      console.error("Newsletter subscription error:", error);
       setMessage({ type: "error", text: "구독 처리 중 오류가 발생했어요." });
     } finally {
       setIsSubmitting(false);

@@ -112,7 +112,6 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
 
         sessionInitialized.current = true;
       } catch (error) {
-        console.error("Session init error:", error);
       }
     };
 
@@ -152,7 +151,6 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
           // RPC가 없으면 무시
         }
       } catch (error) {
-        console.error("Page view tracking error:", error);
       }
 
       lastPath.current = pathname;
@@ -200,7 +198,6 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         path: pathname,
       });
     } catch (error) {
-      console.error("Event tracking error:", error);
     }
   };
 

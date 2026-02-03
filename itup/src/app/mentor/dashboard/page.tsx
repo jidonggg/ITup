@@ -82,12 +82,10 @@ export default function MentorDashboardPage() {
         .order("created_at", { ascending: false });
 
       if (consultError) {
-        console.error("Error fetching consultations:", consultError);
       } else {
         setConsultations(consultData || []);
       }
     } catch (err) {
-      console.error("Error:", err);
       setError("데이터를 불러오는 중 오류가 발생했어요.");
     } finally {
       setIsLoading(false);
@@ -110,7 +108,6 @@ export default function MentorDashboardPage() {
         .eq("id", consultationId);
 
       if (error) {
-        console.error("Error updating status:", error);
         showToast("상태 변경에 실패했어요.", "error");
         return;
       }
@@ -136,10 +133,9 @@ export default function MentorDashboardPage() {
             type: "consultation_confirmed",
             data: { consultationId },
           }),
-        }).catch(console.error);
+        }).catch(() => {});
       }
     } catch (err) {
-      console.error("Error:", err);
       showToast("오류가 발생했어요.", "error");
     } finally {
       setUpdatingId(null);

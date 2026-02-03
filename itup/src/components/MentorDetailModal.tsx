@@ -68,7 +68,6 @@ export default function MentorDetailModal({
           setTotalReviewCount(count ?? data.length);
         }
       } catch (error) {
-        console.error("Error fetching reviews:", error);
         setReviewsError(true);
       } finally {
         setIsLoadingReviews(false);

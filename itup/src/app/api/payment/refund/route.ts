@@ -122,7 +122,6 @@ export async function POST(request: NextRequest) {
 
     if (!tossResponse.ok) {
       const tossError = await tossResponse.json();
-      console.error("TossPayments refund error:", tossError);
       return NextResponse.json(
         { error: `환불 처리 실패: ${tossError.message || "알 수 없는 오류"}` },
         { status: 500 }
@@ -143,7 +142,6 @@ export async function POST(request: NextRequest) {
       .eq("id", paymentId);
 
     if (updateError) {
-      console.error("Error updating payment:", updateError);
       return NextResponse.json(
         { error: "환불은 완료되었으나 기록 업데이트에 실패했어요. 수동 확인이 필요합니다." },
         { status: 500 }
@@ -158,7 +156,6 @@ export async function POST(request: NextRequest) {
         .eq("id", payment.consultation_id);
 
       if (consultError) {
-        console.error("Error updating consultation:", consultError);
       }
     }
 
@@ -168,7 +165,6 @@ export async function POST(request: NextRequest) {
       refundAmount,
     });
   } catch (error) {
-    console.error("Refund error:", error);
     return NextResponse.json(
       { error: "환불 처리 중 오류가 발생했어요." },
       { status: 500 }

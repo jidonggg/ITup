@@ -1,28 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getVerificationCode, deleteVerificationCode } from "@/lib/verification-store";
-
-// Rate limiting (메모리 기반, 프로덕션에서는 Redis 권장)
-const verifyRateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const VERIFY_RATE_LIMIT = 10; // 5분당 최대 10회 시도
-const VERIFY_RATE_LIMIT_WINDOW = 5 * 60 * 1000;
-
-function checkVerifyRateLimit(email: string): boolean {
-  const now = Date.now();
-  const record = verifyRateLimitMap.get(email);
-
-  if (!record || now > record.resetAt) {
-    verifyRateLimitMap.set(email, { count: 1, resetAt: now + VERIFY_RATE_LIMIT_WINDOW });
-    return true;
-  }
-
-  if (record.count >= VERIFY_RATE_LIMIT) {
-    return false;
-  }
-
-  record.count++;
-  return true;
-}
+import { verifyCodeLimiter } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,11 +14,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting 체크
-    if (!checkVerifyRateLimit(email)) {
+    // Rate limit — 5 req / 5min per email
+    const { success: allowed, retryAfterMs } = verifyCodeLimiter.check(email.toLowerCase());
+    if (!allowed) {
       return NextResponse.json(
         { error: "너무 많은 시도입니다. 5분 후에 다시 시도해주세요." },
-        { status: 429 }
+        { status: 429, headers: { "Retry-After": String(Math.ceil(retryAfterMs / 1000)) } }
       );
     }
 
@@ -96,7 +76,6 @@ export async function POST(request: NextRequest) {
       message: "인증이 완료되었습니다.",
     });
   } catch (error) {
-    console.error("Verify code error:", error);
     return NextResponse.json(
       { error: "인증 처리 중 오류가 발생했습니다." },
       { status: 500 }

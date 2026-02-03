@@ -51,7 +51,6 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
           .order("rating", { ascending: false });
 
         if (error) {
-          console.error("Error fetching mentors:", error);
           return;
         }
 
@@ -59,7 +58,6 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
           setMentors(data.map(convertToMentorData));
         }
       } catch (error) {
-        console.error("Error fetching mentors:", error);
       } finally {
         setIsLoading(false);
       }

@@ -59,12 +59,38 @@ function getUserIdFromOrder(orderId: string): string | null {
   return null;
 }
 
+// 사용자 인증 검증
+async function verifyUser(request: NextRequest) {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.split(" ")[1];
+  const serviceSupabase = getServiceSupabase();
+  if (!serviceSupabase) return null;
+
+  const { data: { user }, error } = await serviceSupabase.auth.getUser(token);
+  if (error || !user) return null;
+
+  return user;
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!TOSS_SECRET_KEY) {
       return NextResponse.json(
         { error: "결제 시스템이 설정되지 않았어요." },
         { status: 503 }
+      );
+    }
+
+    // 사용자 인증 검증
+    const user = await verifyUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: "로그인이 필요해요." },
+        { status: 401 }
       );
     }
 
@@ -80,6 +106,15 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceSupabase();
     const prefix = getOrderPrefix(orderId);
+
+    // orderId의 userId와 인증된 사용자 일치 검증
+    const orderUserId = getUserIdFromOrder(orderId);
+    if (orderUserId && orderUserId !== user.id) {
+      return NextResponse.json(
+        { error: "결제 요청자와 로그인 사용자가 일치하지 않아요." },
+        { status: 403 }
+      );
+    }
 
     // consultationId 추출 (URL 쿼리에서 전달됨)
     const url = new URL(request.url);
@@ -107,7 +142,6 @@ export async function POST(request: NextRequest) {
     } else if (isBundleOrder) {
       expectedAmount = BUNDLE_PRICES[prefix];
     } else {
-      console.error(`Unknown order type: ${orderId}`);
       return NextResponse.json(
         { error: "알 수 없는 주문 유형이에요." },
         { status: 400 }
@@ -115,7 +149,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (Number(amount) !== expectedAmount) {
-      console.error(`Amount mismatch: expected ${expectedAmount}, got ${amount}`);
       return NextResponse.json(
         { error: "결제 금액이 일치하지 않아요." },
         { status: 400 }
@@ -158,7 +191,6 @@ export async function POST(request: NextRequest) {
     const tossResult = await tossResponse.json();
 
     if (!tossResponse.ok) {
-      console.error("TossPayments error:", tossResult);
       return NextResponse.json(
         {
           error: tossResult.message || "Payment confirmation failed",
@@ -203,7 +235,6 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (paymentError) {
-        console.error("Payment save error:", paymentError);
         return NextResponse.json(
           { error: "결제는 완료되었으나 기록 저장에 실패했어요. 고객센터에 문의해주세요." },
           { status: 500 }
@@ -221,7 +252,6 @@ export async function POST(request: NextRequest) {
           .eq("id", consultationId);
 
         if (consultError) {
-          console.error("Consultation update error:", consultError);
         }
 
         // 이메일 알림 발송 (비동기)
@@ -240,7 +270,7 @@ export async function POST(request: NextRequest) {
               type: "consultation_confirmed",
               data: { consultationId },
             }),
-          }).catch(console.error);
+          }).catch(() => {});
 
           // 2. 멘토에게 새 상담 신청 알림
           const { data: consultInfo } = await supabase
@@ -265,7 +295,7 @@ export async function POST(request: NextRequest) {
                   message: consultInfo.message,
                 },
               }),
-            }).catch(console.error);
+            }).catch(() => {});
           }
         }
       }
@@ -296,7 +326,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Payment confirmation error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

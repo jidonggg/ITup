@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { saveVerificationCode } from "@/lib/verification-store";
+import { verificationLimiter } from "@/lib/rate-limit";
 
 // 게임 회사 도메인 목록
 const GAME_COMPANY_DOMAINS = [
@@ -32,28 +33,6 @@ const GAME_COMPANY_DOMAINS = [
   "lineplus.com", "linecorp.com",
 ];
 
-// Rate limiting (메모리 기반, 프로덕션에서는 Redis 권장)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 3; // 5분당 최대 3회
-const RATE_LIMIT_WINDOW = 5 * 60 * 1000;
-
-function checkRateLimit(email: string): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(email);
-
-  if (!record || now > record.resetAt) {
-    rateLimitMap.set(email, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-
-  if (record.count >= RATE_LIMIT) {
-    return false;
-  }
-
-  record.count++;
-  return true;
-}
-
 function isValidCompanyEmail(email: string): boolean {
   const domain = email.split("@")[1]?.toLowerCase();
   if (!domain) return false;
@@ -75,11 +54,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "이메일이 필요합니다." }, { status: 400 });
     }
 
-    // Rate limiting 체크
-    if (!checkRateLimit(email)) {
+    // Rate limit — 3 req / 5min per email
+    const { success: allowed, retryAfterMs } = verificationLimiter.check(email.toLowerCase());
+    if (!allowed) {
       return NextResponse.json(
         { error: "너무 많은 요청입니다. 5분 후에 다시 시도해주세요." },
-        { status: 429 }
+        { status: 429, headers: { "Retry-After": String(Math.ceil(retryAfterMs / 1000)) } }
       );
     }
 
@@ -131,7 +111,6 @@ export async function POST(request: NextRequest) {
       message: "인증 코드가 발송되었습니다.",
     });
   } catch (error) {
-    console.error("Send verification code error:", error);
     return NextResponse.json(
       { error: "인증 코드 발송에 실패했습니다." },
       { status: 500 }

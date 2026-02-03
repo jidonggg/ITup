@@ -79,11 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             await fetchProfile(session.user.id);
           } catch (e) {
-            console.error("Profile fetch error:", e);
           }
         }
       } catch (error) {
-        console.error("Auth initialization error:", error);
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
@@ -102,7 +100,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           await fetchProfile(session.user.id);
         } catch (e) {
-          console.error("Profile fetch error:", e);
         }
       } else {
         setProfile(null);

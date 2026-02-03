@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/sender";
 import { businessInquiryTemplate } from "@/lib/email/templates";
+import { inquiryLimiter, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit — 5 req / 60s per IP
+    const ip = getClientIp(request);
+    const { success: allowed, retryAfterMs } = inquiryLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "너무 많은 요청입니다. 잠시 후 다시 시도해주세요." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(retryAfterMs / 1000)) } }
+      );
+    }
+
     const body = await request.json();
     const { companyName, contactName, email, phone, employeeCount, message } = body;
 
@@ -38,7 +49,6 @@ export async function POST(request: NextRequest) {
       });
 
     if (dbError) {
-      console.error("Business inquiry DB error:", dbError);
       return NextResponse.json(
         { error: "문의 저장에 실패했습니다. 잠시 후 다시 시도해주세요." },
         { status: 500 }
@@ -61,7 +71,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Business inquiry error:", error);
     return NextResponse.json(
       { error: "서버 오류가 발생했습니다." },
       { status: 500 }

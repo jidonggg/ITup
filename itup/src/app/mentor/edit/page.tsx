@@ -164,7 +164,6 @@ export default function MentorEditPage() {
         .eq("id", mentorId);
 
       if (error) {
-        console.error("Error updating mentor:", error);
         showToast("프로필 수정 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
         setIsSubmitting(false);
         return;
@@ -172,7 +171,6 @@ export default function MentorEditPage() {
 
       setIsSuccess(true);
     } catch (error) {
-      console.error("Error updating mentor:", error);
       showToast("프로필 수정 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
     } finally {
       setIsSubmitting(false);

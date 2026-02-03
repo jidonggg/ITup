@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { analyticsLimiter } from "@/lib/rate-limit";
 
 function getServiceSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -19,6 +20,12 @@ export async function POST(request: NextRequest) {
 
     if (!path || !session_id || typeof duration !== "number" || duration < 1) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    }
+
+    // Rate limit — 30 req / 60s per session
+    const { success: allowed } = analyticsLimiter.check(session_id);
+    if (!allowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const supabase = getServiceSupabase();

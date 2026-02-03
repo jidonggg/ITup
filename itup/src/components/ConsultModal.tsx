@@ -184,7 +184,6 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       }).select("id").single();
 
       if (error) {
-        console.error("Error saving consultation:", error);
         saveToLocalStorage();
       } else if (data) {
         setConsultationId(data.id);
@@ -194,7 +193,6 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       setStep("payment");
       setIsLoading(false);
     } catch (error) {
-      console.error("Error saving consultation:", error);
       saveToLocalStorage();
       setStep("payment");
       setIsLoading(false);
@@ -239,7 +237,6 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
         customerName: profile?.name || formData.name,
       });
     } catch (error) {
-      console.error("Payment error:", error);
       const errorMessage = error instanceof Error ? error.message : "";
       if (!errorMessage.includes("PAY_PROCESS_CANCELED")) {
         showToast("결제 처리 중 오류가 발생했어요. 다시 시도해주세요.", "error");

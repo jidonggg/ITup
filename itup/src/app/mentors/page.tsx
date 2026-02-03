@@ -74,7 +74,6 @@ export default function MentorsPage() {
           .order("rating", { ascending: false });
 
         if (error) {
-          console.error("Error fetching mentors:", error);
           // Keep initial fallback data
           return;
         }
@@ -86,7 +85,6 @@ export default function MentorsPage() {
         }
         // If no data, keep the initial fallback data
       } catch (error) {
-        console.error("Error fetching mentors:", error);
         // Keep initial fallback data
       } finally {
         setIsLoading(false);

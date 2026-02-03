@@ -85,7 +85,6 @@ export default function ReviewModal({
       onSuccess?.();
       handleClose();
     } catch (error) {
-      console.error("Review submit error:", error);
       showToast("리뷰 등록 중 오류가 발생했어요.", "error");
     } finally {
       setIsSubmitting(false);

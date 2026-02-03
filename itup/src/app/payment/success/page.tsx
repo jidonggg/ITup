@@ -26,6 +26,14 @@ function PaymentSuccessContent() {
       }
 
       try {
+        // Supabase 세션에서 JWT 토큰 가져오기
+        let accessToken = "";
+        if (isSupabaseConfigured()) {
+          const supabase = createClient();
+          const { data: { session } } = await supabase.auth.getSession();
+          accessToken = session?.access_token || "";
+        }
+
         // 서버 API 호출하여 결제 검증 및 승인 (consultationId 전달)
         const confirmUrl = consultationId
           ? `/api/payment/confirm?consultationId=${consultationId}`
@@ -35,6 +43,7 @@ function PaymentSuccessContent() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({ paymentKey, orderId, amount }),
         });
