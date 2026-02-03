@@ -6,9 +6,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { isAdmin } from "@/lib/admin";
-import { Mentor, Consultation } from "@/lib/supabase/types";
+import { Mentor, Consultation, Booking, SessionConfirmation, ProductType } from "@/lib/supabase/types";
+import { PRODUCT_INFO, PAGINATION } from "@/lib/constants";
 
-type TabType = "overview" | "mentors" | "consultations" | "analytics";
+type TabType = "overview" | "mentors" | "consultations" | "analytics" | "verification" | "bookings" | "disputes";
 
 interface MentorWithEmail extends Mentor {
   user_email?: string;
@@ -30,6 +31,26 @@ interface ClickStats {
   clicks: number;
 }
 
+interface BookingWithNames extends Booking {
+  mentee_name?: string;
+  mentor_name?: string;
+  product_type?: ProductType;
+}
+
+interface DisputeItem {
+  confirmation: SessionConfirmation;
+  booking: Booking;
+  mentee_name?: string;
+  mentor_name?: string;
+  product_type?: ProductType;
+}
+
+interface BookingStats {
+  totalBookings: number;
+  totalRevenue: number;
+  pendingCount: number;
+}
+
 interface Stats {
   totalMentors: number;
   pendingMentors: number;
@@ -37,6 +58,8 @@ interface Stats {
   pendingConsultations: number;
   totalPageViews: number;
   totalSessions: number;
+  pendingVerifications: number;
+  disputeCount: number;
 }
 
 export default function AdminPage() {
@@ -53,6 +76,8 @@ export default function AdminPage() {
     pendingConsultations: 0,
     totalPageViews: 0,
     totalSessions: 0,
+    pendingVerifications: 0,
+    disputeCount: 0,
   });
 
   // Mentors
@@ -83,6 +108,24 @@ export default function AdminPage() {
   // Analytics data
   const [pageStats, setPageStats] = useState<PageStats[]>([]);
   const [clickStats, setClickStats] = useState<ClickStats[]>([]);
+
+  // v2: Mentor Verification
+  const [pendingVerifications, setPendingVerifications] = useState<MentorWithEmail[]>([]);
+  const [verifyingMentorId, setVerifyingMentorId] = useState<string | null>(null);
+
+  // v2: Bookings
+  const [bookings, setBookings] = useState<BookingWithNames[]>([]);
+  const [bookingFilter, setBookingFilter] = useState<"all" | "pending" | "paid" | "confirmed" | "completed" | "cancelled" | "refunded">("all");
+  const [bookingPage, setBookingPage] = useState(1);
+  const [bookingStats, setBookingStats] = useState<BookingStats>({ totalBookings: 0, totalRevenue: 0, pendingCount: 0 });
+
+  // v2: Disputes
+  const [disputes, setDisputes] = useState<DisputeItem[]>([]);
+  const [resolvingDisputeId, setResolvingDisputeId] = useState<string | null>(null);
+  const [disputeResolution, setDisputeResolution] = useState<{
+    confirmationId: string;
+    finalStatus: "completed" | "mentee_noshow" | "mentor_noshow" | "disputed";
+  } | null>(null);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -275,6 +318,185 @@ export default function AdminPage() {
 
         setClickStats(clickStatsList);
       }
+
+      // =============================================
+      // v2: Mentor Verification Queue
+      // =============================================
+      const { data: pendingMentorsData } = await supabase
+        .from("mentors")
+        .select("*")
+        .eq("verification_status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (pendingMentorsData) {
+        const userIdsForVerify = pendingMentorsData.map(m => m.user_id).filter(Boolean);
+        let verifyEmailMap: Record<string, string> = {};
+
+        if (userIdsForVerify.length > 0) {
+          const { data: verifyProfiles } = await supabase
+            .from("profiles")
+            .select("id, email")
+            .in("id", userIdsForVerify);
+
+          if (verifyProfiles) {
+            verifyEmailMap = Object.fromEntries(verifyProfiles.map(p => [p.id, p.email || ""]));
+          }
+        }
+
+        const pendingWithEmail = pendingMentorsData.map(m => ({
+          ...m,
+          user_email: m.user_id ? verifyEmailMap[m.user_id] : undefined,
+        }));
+
+        setPendingVerifications(pendingWithEmail);
+        setStats(prev => ({
+          ...prev,
+          pendingVerifications: pendingMentorsData.length,
+        }));
+      }
+
+      // =============================================
+      // v2: Bookings
+      // =============================================
+      const { data: bookingsData } = await supabase
+        .from("bookings")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (bookingsData) {
+        // Get mentee names
+        const menteeIds = [...new Set(bookingsData.map(b => b.mentee_id).filter(Boolean))] as string[];
+        let menteeNameMap: Record<string, string> = {};
+        if (menteeIds.length > 0) {
+          const { data: menteeProfiles } = await supabase
+            .from("profiles")
+            .select("id, name")
+            .in("id", menteeIds);
+          if (menteeProfiles) {
+            menteeNameMap = Object.fromEntries(menteeProfiles.map(p => [p.id, p.name || "알 수 없음"]));
+          }
+        }
+
+        // Get mentor names for bookings
+        const bookingMentorIds = [...new Set(bookingsData.map(b => b.mentor_id).filter(Boolean))];
+        let bookingMentorNameMap: Record<string, string> = {};
+        if (bookingMentorIds.length > 0) {
+          const { data: bMentorNames } = await supabase
+            .from("mentors")
+            .select("id, name")
+            .in("id", bookingMentorIds);
+          if (bMentorNames) {
+            bookingMentorNameMap = Object.fromEntries(bMentorNames.map(m => [m.id, m.name]));
+          }
+        }
+
+        // Get product types
+        const productIds = [...new Set(bookingsData.map(b => b.product_id).filter(Boolean))] as string[];
+        let productTypeMap: Record<string, ProductType> = {};
+        if (productIds.length > 0) {
+          const { data: productsData } = await supabase
+            .from("products")
+            .select("id, type")
+            .in("id", productIds);
+          if (productsData) {
+            productTypeMap = Object.fromEntries(productsData.map(p => [p.id, p.type as ProductType]));
+          }
+        }
+
+        const bookingsWithNames: BookingWithNames[] = bookingsData.map(b => ({
+          ...b,
+          mentee_name: b.mentee_id ? menteeNameMap[b.mentee_id] : "알 수 없음",
+          mentor_name: bookingMentorNameMap[b.mentor_id] || "알 수 없음",
+          product_type: b.product_id ? productTypeMap[b.product_id] : undefined,
+        }));
+
+        setBookings(bookingsWithNames);
+
+        const totalRevenue = bookingsData
+          .filter(b => b.status === "completed" || b.status === "confirmed" || b.status === "paid")
+          .reduce((sum, b) => sum + (b.amount || 0), 0);
+        const pendingBookings = bookingsData.filter(b => b.status === "pending").length;
+
+        setBookingStats({
+          totalBookings: bookingsData.length,
+          totalRevenue,
+          pendingCount: pendingBookings,
+        });
+      }
+
+      // =============================================
+      // v2: Disputes (session_confirmations with mismatches)
+      // =============================================
+      const { data: confirmationsData } = await supabase
+        .from("session_confirmations")
+        .select("*")
+        .eq("final_status", "disputed")
+        .is("resolved_by", null)
+        .order("created_at", { ascending: false });
+
+      if (confirmationsData) {
+        // Filter for mismatches: both sides confirmed but disagree
+        const disputeConfirmations = confirmationsData.filter(sc => {
+          if (!sc.mentor_confirmed || !sc.mentee_confirmed) return false;
+          return sc.mentor_confirmed !== sc.mentee_confirmed;
+        });
+
+        if (disputeConfirmations.length > 0) {
+          const disputeBookingIds = disputeConfirmations.map(sc => sc.booking_id);
+          const { data: disputeBookings } = await supabase
+            .from("bookings")
+            .select("*")
+            .in("id", disputeBookingIds);
+
+          if (disputeBookings) {
+            const disputeBookingMap: Record<string, Booking> = {};
+            disputeBookings.forEach(b => { disputeBookingMap[b.id] = b; });
+
+            // Get names for dispute parties
+            const dMenteeIds = [...new Set(disputeBookings.map(b => b.mentee_id).filter(Boolean))] as string[];
+            const dMentorIds = [...new Set(disputeBookings.map(b => b.mentor_id).filter(Boolean))];
+            let dMenteeNameMap: Record<string, string> = {};
+            let dMentorNameMap: Record<string, string> = {};
+            let dProductTypeMap: Record<string, ProductType> = {};
+
+            if (dMenteeIds.length > 0) {
+              const { data: dMenteeProfiles } = await supabase.from("profiles").select("id, name").in("id", dMenteeIds);
+              if (dMenteeProfiles) dMenteeNameMap = Object.fromEntries(dMenteeProfiles.map(p => [p.id, p.name || "알 수 없음"]));
+            }
+            if (dMentorIds.length > 0) {
+              const { data: dMentorNames } = await supabase.from("mentors").select("id, name").in("id", dMentorIds);
+              if (dMentorNames) dMentorNameMap = Object.fromEntries(dMentorNames.map(m => [m.id, m.name]));
+            }
+            const dProductIds = [...new Set(disputeBookings.map(b => b.product_id).filter(Boolean))] as string[];
+            if (dProductIds.length > 0) {
+              const { data: dProducts } = await supabase.from("products").select("id, type").in("id", dProductIds);
+              if (dProducts) dProductTypeMap = Object.fromEntries(dProducts.map(p => [p.id, p.type as ProductType]));
+            }
+
+            const disputeItems: DisputeItem[] = disputeConfirmations
+              .filter(sc => disputeBookingMap[sc.booking_id])
+              .map(sc => {
+                const booking = disputeBookingMap[sc.booking_id];
+                return {
+                  confirmation: sc,
+                  booking,
+                  mentee_name: booking.mentee_id ? dMenteeNameMap[booking.mentee_id] : "알 수 없음",
+                  mentor_name: dMentorNameMap[booking.mentor_id] || "알 수 없음",
+                  product_type: booking.product_id ? dProductTypeMap[booking.product_id] : undefined,
+                };
+              });
+
+            setDisputes(disputeItems);
+            setStats(prev => ({
+              ...prev,
+              disputeCount: disputeItems.length,
+            }));
+          }
+        } else {
+          setDisputes([]);
+          setStats(prev => ({ ...prev, disputeCount: 0 }));
+        }
+      }
     } catch (error) {
     } finally {
       setIsLoading(false);
@@ -437,6 +659,190 @@ export default function AdminPage() {
     }
   };
 
+  // =============================================
+  // v2: Mentor Verification Handlers
+  // =============================================
+  const handleVerifyMentor = async (mentorId: string, action: "approve" | "reject") => {
+    setVerifyingMentorId(mentorId);
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        showToast("인증이 필요합니다.", "error");
+        return;
+      }
+
+      const supabase = createClient();
+
+      if (action === "approve") {
+        const { error } = await supabase
+          .from("mentors")
+          .update({
+            verification_status: "verified" as const,
+            is_approved: true,
+            verified_at: new Date().toISOString(),
+          })
+          .eq("id", mentorId);
+
+        if (error) {
+          showToast("멘토 검증 승인 중 오류가 발생했습니다.", "error");
+          return;
+        }
+
+        showToast("멘토가 검증 승인되었습니다.", "success");
+      } else {
+        const { error } = await supabase
+          .from("mentors")
+          .update({
+            verification_status: "rejected" as const,
+          })
+          .eq("id", mentorId);
+
+        if (error) {
+          showToast("멘토 검증 거절 중 오류가 발생했습니다.", "error");
+          return;
+        }
+
+        showToast("멘토 검증이 거절되었습니다.", "success");
+      }
+
+      // Update local state
+      setPendingVerifications(prev => prev.filter(m => m.id !== mentorId));
+      setStats(prev => ({
+        ...prev,
+        pendingVerifications: Math.max(0, prev.pendingVerifications - 1),
+      }));
+
+      // Also update the mentors list
+      if (action === "approve") {
+        setMentors(prev => prev.map(m =>
+          m.id === mentorId ? { ...m, verification_status: "verified" as const, is_approved: true } : m
+        ));
+      }
+    } catch (error) {
+      showToast("오류가 발생했습니다.", "error");
+    } finally {
+      setVerifyingMentorId(null);
+    }
+  };
+
+  // =============================================
+  // v2: Dispute Resolution Handler
+  // =============================================
+  const handleResolveDispute = async (confirmationId: string, finalStatus: "completed" | "mentee_noshow" | "mentor_noshow" | "disputed") => {
+    setResolvingDisputeId(confirmationId);
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        showToast("인증이 필요합니다.", "error");
+        return;
+      }
+
+      const supabase = createClient();
+
+      const { error } = await supabase
+        .from("session_confirmations")
+        .update({
+          final_status: finalStatus,
+          resolved_at: new Date().toISOString(),
+          resolved_by: user?.id || "admin",
+        })
+        .eq("id", confirmationId);
+
+      if (error) {
+        showToast("분쟁 해결 중 오류가 발생했습니다.", "error");
+        return;
+      }
+
+      // If mentor_noshow, update the booking status and optionally refund
+      const dispute = disputes.find(d => d.confirmation.id === confirmationId);
+      if (dispute && (finalStatus === "mentor_noshow" || finalStatus === "mentee_noshow")) {
+        await supabase
+          .from("bookings")
+          .update({ status: "completed" as const })
+          .eq("id", dispute.booking.id);
+      }
+
+      showToast("분쟁이 해결되었습니다.", "success");
+
+      // Update local state
+      setDisputes(prev => prev.filter(d => d.confirmation.id !== confirmationId));
+      setStats(prev => ({
+        ...prev,
+        disputeCount: Math.max(0, prev.disputeCount - 1),
+      }));
+      setDisputeResolution(null);
+    } catch (error) {
+      showToast("오류가 발생했습니다.", "error");
+    } finally {
+      setResolvingDisputeId(null);
+    }
+  };
+
+  // =============================================
+  // v2: Booking helpers
+  // =============================================
+  const filteredBookings = bookings.filter(b => {
+    if (bookingFilter === "all") return true;
+    return b.status === bookingFilter;
+  });
+
+  const bookingsPerPage = PAGINATION.ADMIN_PAGE_SIZE;
+  const totalBookingPages = Math.max(1, Math.ceil(filteredBookings.length / bookingsPerPage));
+  const paginatedBookings = filteredBookings.slice(
+    (bookingPage - 1) * bookingsPerPage,
+    bookingPage * bookingsPerPage
+  );
+
+  const getProductLabel = (type?: ProductType) => {
+    if (!type) return "-";
+    const info = PRODUCT_INFO[type];
+    return info ? `${info.icon} ${info.name}` : type;
+  };
+
+  const getBookingStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      pending: "bg-yellow-500/20 text-yellow-500",
+      paid: "bg-blue-500/20 text-blue-500",
+      confirmed: "bg-indigo-500/20 text-indigo-500",
+      completed: "bg-green-500/20 text-green-500",
+      cancelled: "bg-red-500/20 text-red-500",
+      refunded: "bg-orange-500/20 text-orange-500",
+    };
+    const labels: Record<string, string> = {
+      pending: "대기중",
+      paid: "결제완료",
+      confirmed: "확정",
+      completed: "완료",
+      cancelled: "취소",
+      refunded: "환불",
+    };
+    return (
+      <span className={`px-2 py-1 text-xs rounded-full ${styles[status] || ""}`}>
+        {labels[status] || status}
+      </span>
+    );
+  };
+
+  const getConfirmationLabel = (value: string | null) => {
+    if (!value) return "미확인";
+    const labels: Record<string, string> = {
+      completed: "완료 확인",
+      mentee_noshow: "멘티 노쇼",
+      mentor_noshow: "멘토 노쇼",
+      issue: "문제 발생",
+    };
+    return labels[value] || value;
+  };
+
+  const getVerificationMethodLabel = (method: string | null) => {
+    if (!method) return "-";
+    const labels: Record<string, string> = {
+      email: "이메일 인증",
+      document: "서류 인증",
+    };
+    return labels[method] || method;
+  };
+
   const filteredMentors = mentors.filter(m => {
     if (mentorFilter === "pending") return !m.is_approved;
     if (mentorFilter === "approved") return m.is_approved;
@@ -459,17 +865,17 @@ export default function AdminPage() {
 
     const styles: Record<string, string> = {
       pending: "bg-yellow-500/20 text-yellow-500",
-      confirmed: "bg-blue-500/20 text-blue-500",
+      confirmed: "bg-indigo-500/20 text-indigo-500",
       completed: "bg-green-500/20 text-green-500",
       cancelled: "bg-red-500/20 text-red-500",
-      refunded: "bg-purple-500/20 text-purple-500",
+      refunded: "bg-orange-500/20 text-orange-500",
     };
     const labels: Record<string, string> = {
       pending: "대기중",
       confirmed: "확정",
       completed: "완료",
       cancelled: "취소",
-      refunded: "환불됨",
+      refunded: "환불",
     };
 
     return (
@@ -536,7 +942,7 @@ export default function AdminPage() {
         <h1 className="text-3xl font-bold mb-8">관리자 대시보드</h1>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
           <div className="bg-card-bg border border-card-border rounded-xl p-4">
             <p className="text-xs text-muted mb-1">총 멘토</p>
             <p className="text-2xl font-bold text-primary">{stats.totalMentors}</p>
@@ -561,20 +967,31 @@ export default function AdminPage() {
             <p className="text-xs text-muted mb-1">세션</p>
             <p className="text-2xl font-bold text-blue-500">{stats.totalSessions}</p>
           </div>
+          <div className="bg-card-bg border border-card-border rounded-xl p-4">
+            <p className="text-xs text-muted mb-1">검증 대기</p>
+            <p className="text-2xl font-bold text-indigo-500">{stats.pendingVerifications}</p>
+          </div>
+          <div className="bg-card-bg border border-card-border rounded-xl p-4">
+            <p className="text-xs text-muted mb-1">분쟁</p>
+            <p className="text-2xl font-bold text-red-500">{stats.disputeCount}</p>
+          </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-card-border">
+        <div className="flex gap-2 mb-6 border-b border-card-border overflow-x-auto">
           {[
             { id: "overview" as TabType, label: "개요" },
             { id: "mentors" as TabType, label: `멘토 관리 ${stats.pendingMentors > 0 ? `(${stats.pendingMentors})` : ""}` },
             { id: "consultations" as TabType, label: "상담 관리" },
             { id: "analytics" as TabType, label: "분석" },
+            { id: "verification" as TabType, label: `멘토 검증 ${stats.pendingVerifications > 0 ? `(${stats.pendingVerifications})` : ""}` },
+            { id: "bookings" as TabType, label: "예약 관리" },
+            { id: "disputes" as TabType, label: `분쟁 관리 ${stats.disputeCount > 0 ? `(${stats.disputeCount})` : ""}` },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-sm font-medium transition-colors cursor-pointer ${
+              className={`px-4 py-3 text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 activeTab === tab.id
                   ? "text-primary border-b-2 border-primary"
                   : "text-muted hover:text-foreground"
@@ -602,6 +1019,46 @@ export default function AdminPage() {
                   <button
                     onClick={() => setActiveTab("mentors")}
                     className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium cursor-pointer hover:bg-yellow-600"
+                  >
+                    확인하기
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {stats.pendingVerifications > 0 && (
+              <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🔍</span>
+                    <div>
+                      <p className="font-medium">검증 대기중인 멘토가 있습니다</p>
+                      <p className="text-sm text-muted">{stats.pendingVerifications}명의 멘토가 검증을 기다리고 있습니다</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("verification")}
+                    className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-medium cursor-pointer hover:bg-indigo-600"
+                  >
+                    확인하기
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {stats.disputeCount > 0 && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🚨</span>
+                    <div>
+                      <p className="font-medium">해결 대기중인 분쟁이 있습니다</p>
+                      <p className="text-sm text-muted">{stats.disputeCount}건의 분쟁이 관리자 결정을 기다리고 있습니다</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("disputes")}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium cursor-pointer hover:bg-red-600"
                   >
                     확인하기
                   </button>
@@ -945,6 +1402,348 @@ export default function AdminPage() {
                 <p className="text-muted text-center py-8">데이터가 없습니다.</p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* =============================================
+            v2: Mentor Verification Tab
+            ============================================= */}
+        {activeTab === "verification" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">멘토 검증 대기 목록</h2>
+              <span className="text-sm text-muted">
+                {pendingVerifications.length}건 대기중
+              </span>
+            </div>
+
+            <div className="bg-card-bg border border-card-border rounded-xl overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-secondary">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium">멘토</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">회사</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">인증 이메일</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium">인증 방법</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium">검증 상태</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">신청일</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium">액션</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingVerifications.map((mentor) => (
+                    <tr key={mentor.id} className="border-t border-card-border">
+                      <td className="px-4 py-3">
+                        <div>
+                          <p className="font-medium">{mentor.name}</p>
+                          <p className="text-xs text-muted">{mentor.user_email || "이메일 없음"}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-sm">{mentor.company}</p>
+                        <p className="text-xs text-muted">{mentor.role}</p>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {mentor.verified_email || <span className="text-muted">-</span>}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-500">
+                          {getVerificationMethodLabel(mentor.verification_method)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-500">
+                          대기중
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted">
+                        {new Date(mentor.created_at).toLocaleDateString("ko-KR")}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleVerifyMentor(mentor.id, "approve")}
+                            disabled={verifyingMentorId === mentor.id}
+                            className="px-3 py-1 bg-green-500 text-white rounded text-xs cursor-pointer hover:bg-green-600 disabled:opacity-50 transition-colors"
+                          >
+                            {verifyingMentorId === mentor.id ? "..." : "승인"}
+                          </button>
+                          <button
+                            onClick={() => handleVerifyMentor(mentor.id, "reject")}
+                            disabled={verifyingMentorId === mentor.id}
+                            className="px-3 py-1 bg-red-500 text-white rounded text-xs cursor-pointer hover:bg-red-600 disabled:opacity-50 transition-colors"
+                          >
+                            {verifyingMentorId === mentor.id ? "..." : "거절"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {pendingVerifications.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-muted">
+                        검증 대기중인 멘토가 없습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* =============================================
+            v2: Bookings Tab
+            ============================================= */}
+        {activeTab === "bookings" && (
+          <div className="space-y-4">
+            {/* Booking Stats Summary */}
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">총 예약</p>
+                <p className="text-2xl font-bold text-primary">{bookingStats.totalBookings.toLocaleString()}</p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">총 매출</p>
+                <p className="text-2xl font-bold text-green-500">{bookingStats.totalRevenue.toLocaleString()}원</p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">대기중</p>
+                <p className="text-2xl font-bold text-yellow-500">{bookingStats.pendingCount}</p>
+              </div>
+            </div>
+
+            {/* Filter */}
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { value: "all" as const, label: "전체" },
+                { value: "pending" as const, label: "대기중" },
+                { value: "paid" as const, label: "결제완료" },
+                { value: "confirmed" as const, label: "확정" },
+                { value: "completed" as const, label: "완료" },
+                { value: "cancelled" as const, label: "취소" },
+                { value: "refunded" as const, label: "환불됨" },
+              ].map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => { setBookingFilter(f.value); setBookingPage(1); }}
+                  className={`px-4 py-2 rounded-full text-sm cursor-pointer transition-colors ${
+                    bookingFilter === f.value
+                      ? "bg-primary text-white"
+                      : "bg-card-bg border border-card-border text-muted hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Booking List */}
+            <div className="bg-card-bg border border-card-border rounded-xl overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-secondary">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium">멘티</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">멘토</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium">상품</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">예약일시</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium">금액</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium">상태</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedBookings.map((booking) => (
+                    <tr key={booking.id} className="border-t border-card-border">
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-medium">{booking.mentee_name || "알 수 없음"}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-sm">{booking.mentor_name || "알 수 없음"}</p>
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {getProductLabel(booking.product_type)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted">
+                        {booking.scheduled_at
+                          ? new Date(booking.scheduled_at).toLocaleString("ko-KR", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">
+                        {(booking.amount || 0).toLocaleString()}원
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {getBookingStatusBadge(booking.status)}
+                      </td>
+                    </tr>
+                  ))}
+                  {paginatedBookings.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                        예약이 없습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalBookingPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <button
+                  onClick={() => setBookingPage(p => Math.max(1, p - 1))}
+                  disabled={bookingPage === 1}
+                  className="px-3 py-1 border border-card-border rounded text-sm cursor-pointer hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  이전
+                </button>
+                <span className="text-sm text-muted">
+                  {bookingPage} / {totalBookingPages}
+                </span>
+                <button
+                  onClick={() => setBookingPage(p => Math.min(totalBookingPages, p + 1))}
+                  disabled={bookingPage === totalBookingPages}
+                  className="px-3 py-1 border border-card-border rounded text-sm cursor-pointer hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  다음
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* =============================================
+            v2: Disputes Tab
+            ============================================= */}
+        {activeTab === "disputes" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">분쟁 관리</h2>
+              <span className="text-sm text-muted">
+                {disputes.length}건의 분쟁
+              </span>
+            </div>
+
+            {disputes.length === 0 ? (
+              <div className="bg-card-bg border border-card-border rounded-xl p-8 text-center">
+                <p className="text-muted">현재 해결 대기중인 분쟁이 없습니다.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {disputes.map((dispute) => (
+                  <div key={dispute.confirmation.id} className="bg-card-bg border border-card-border rounded-xl p-6">
+                    {/* Dispute Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <p className="font-semibold text-lg">
+                          {dispute.mentor_name} &harr; {dispute.mentee_name}
+                        </p>
+                        <p className="text-sm text-muted mt-1">
+                          {getProductLabel(dispute.product_type)} &middot;{" "}
+                          {dispute.booking.scheduled_at
+                            ? new Date(dispute.booking.scheduled_at).toLocaleString("ko-KR", {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "일시 미정"}
+                          {" "}&middot; {(dispute.booking.amount || 0).toLocaleString()}원
+                        </p>
+                      </div>
+                      <span className="px-3 py-1 text-xs rounded-full bg-red-500/20 text-red-500 font-medium">
+                        분쟁
+                      </span>
+                    </div>
+
+                    {/* Both parties' confirmations */}
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-secondary rounded-lg p-4">
+                        <p className="text-xs text-muted mb-1 font-medium">멘토 확인</p>
+                        <p className="text-sm font-medium">
+                          {getConfirmationLabel(dispute.confirmation.mentor_confirmed)}
+                        </p>
+                        {dispute.confirmation.mentor_note && (
+                          <p className="text-xs text-muted mt-2">
+                            &ldquo;{dispute.confirmation.mentor_note}&rdquo;
+                          </p>
+                        )}
+                        {dispute.confirmation.mentor_confirmed_at && (
+                          <p className="text-xs text-muted mt-1">
+                            {new Date(dispute.confirmation.mentor_confirmed_at).toLocaleString("ko-KR")}
+                          </p>
+                        )}
+                      </div>
+                      <div className="bg-secondary rounded-lg p-4">
+                        <p className="text-xs text-muted mb-1 font-medium">멘티 확인</p>
+                        <p className="text-sm font-medium">
+                          {getConfirmationLabel(dispute.confirmation.mentee_confirmed)}
+                        </p>
+                        {dispute.confirmation.mentee_note && (
+                          <p className="text-xs text-muted mt-2">
+                            &ldquo;{dispute.confirmation.mentee_note}&rdquo;
+                          </p>
+                        )}
+                        {dispute.confirmation.mentee_confirmed_at && (
+                          <p className="text-xs text-muted mt-1">
+                            {new Date(dispute.confirmation.mentee_confirmed_at).toLocaleString("ko-KR")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Resolution Actions */}
+                    {disputeResolution?.confirmationId === dispute.confirmation.id ? (
+                      <div className="border-t border-card-border pt-4">
+                        <p className="text-sm font-medium mb-3">최종 상태를 선택하세요:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { value: "completed" as const, label: "정상 완료", style: "bg-green-500 hover:bg-green-600" },
+                            { value: "mentee_noshow" as const, label: "멘티 노쇼", style: "bg-orange-500 hover:bg-orange-600" },
+                            { value: "mentor_noshow" as const, label: "멘토 노쇼", style: "bg-red-500 hover:bg-red-600" },
+                            { value: "disputed" as const, label: "분쟁 유지", style: "bg-gray-500 hover:bg-gray-600" },
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => handleResolveDispute(dispute.confirmation.id, option.value)}
+                              disabled={resolvingDisputeId === dispute.confirmation.id}
+                              className={`px-4 py-2 ${option.style} text-white rounded-lg text-sm cursor-pointer disabled:opacity-50 transition-colors`}
+                            >
+                              {resolvingDisputeId === dispute.confirmation.id ? "처리중..." : option.label}
+                            </button>
+                          ))}
+                          <button
+                            onClick={() => setDisputeResolution(null)}
+                            className="px-4 py-2 border border-card-border rounded-lg text-sm cursor-pointer hover:border-primary transition-colors"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border-t border-card-border pt-4">
+                        <button
+                          onClick={() => setDisputeResolution({
+                            confirmationId: dispute.confirmation.id,
+                            finalStatus: "completed",
+                          })}
+                          className="px-4 py-2 bg-primary text-white rounded-lg text-sm cursor-pointer hover:bg-primary-dark transition-colors"
+                        >
+                          분쟁 해결하기
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

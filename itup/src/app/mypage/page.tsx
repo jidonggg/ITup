@@ -6,14 +6,21 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { Consultation, Mentor, Payment } from "@/lib/supabase/types";
+import { Consultation, Mentor, Payment, Booking, Product } from "@/lib/supabase/types";
+import { PRODUCT_INFO } from "@/lib/constants";
 import ReviewModal from "@/components/ReviewModal";
 
 interface ConsultationWithMentor extends Consultation {
   mentor?: Mentor | null;
 }
 
-type TabType = "profile" | "consultations" | "payments";
+interface BookingWithDetails extends Booking {
+  mentor?: Mentor | null;
+  product?: Product | null;
+  has_review?: boolean;
+}
+
+type TabType = "profile" | "consultations" | "payments" | "bookings";
 
 const PRODUCT_TYPE_LABELS: Record<string, { icon: string; label: string }> = {
   coffee: { icon: "☕", label: "커피챗" },
@@ -40,6 +47,8 @@ export default function MyPage() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(true);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedConsultation, setSelectedConsultation] = useState<ConsultationWithMentor | null>(null);
 
@@ -126,6 +135,93 @@ export default function MyPage() {
 
     if (user) {
       fetchPayments();
+    }
+  }, [user]);
+
+  // Fetch bookings (v2)
+  useEffect(() => {
+    const fetchBookings = async () => {
+      if (!user || !isSupabaseConfigured()) {
+        setIsLoadingBookings(false);
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { data: bookingData, error } = await supabase
+          .from("bookings")
+          .select("*")
+          .eq("mentee_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          setIsLoadingBookings(false);
+          return;
+        }
+
+        if (bookingData && bookingData.length > 0) {
+          // Fetch related mentors
+          const mentorIds = [...new Set(bookingData.map(b => b.mentor_id).filter(Boolean))];
+          let mentorsMap: Record<string, Mentor> = {};
+
+          if (mentorIds.length > 0) {
+            const { data: mentorData } = await supabase
+              .from("mentors")
+              .select("*")
+              .in("id", mentorIds);
+
+            if (mentorData) {
+              mentorsMap = Object.fromEntries(mentorData.map(m => [m.id, m]));
+            }
+          }
+
+          // Fetch related products
+          const productIds = [...new Set(bookingData.map(b => b.product_id).filter(Boolean))] as string[];
+          let productsMap: Record<string, Product> = {};
+
+          if (productIds.length > 0) {
+            const { data: productData } = await supabase
+              .from("products")
+              .select("*")
+              .in("id", productIds);
+
+            if (productData) {
+              productsMap = Object.fromEntries(productData.map(p => [p.id, p]));
+            }
+          }
+
+          // Fetch reviews to check has_review
+          const bookingIds = bookingData.map(b => b.id);
+          let reviewedBookingIds = new Set<string>();
+
+          if (bookingIds.length > 0) {
+            const { data: reviewData } = await supabase
+              .from("reviews")
+              .select("booking_id")
+              .in("booking_id", bookingIds);
+
+            if (reviewData) {
+              reviewedBookingIds = new Set(reviewData.map(r => r.booking_id).filter(Boolean) as string[]);
+            }
+          }
+
+          const bookingsWithDetails: BookingWithDetails[] = bookingData.map(b => ({
+            ...b,
+            mentor: b.mentor_id ? mentorsMap[b.mentor_id] : null,
+            product: b.product_id ? productsMap[b.product_id] : null,
+            has_review: reviewedBookingIds.has(b.id),
+          }));
+
+          setBookings(bookingsWithDetails);
+        }
+      } catch (error) {
+      } finally {
+        setIsLoadingBookings(false);
+      }
+    };
+
+    if (user) {
+      fetchBookings();
     }
   }, [user]);
 
@@ -238,8 +334,76 @@ export default function MyPage() {
     return null;
   };
 
+  const getBookingStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      pending: "bg-yellow-500/20 text-yellow-500",
+      paid: "bg-blue-500/20 text-blue-500",
+      confirmed: "bg-indigo-500/20 text-indigo-500",
+      completed: "bg-green-500/20 text-green-500",
+      cancelled: "bg-red-500/20 text-red-500",
+      refunded: "bg-orange-500/20 text-orange-500",
+    };
+    const labels: Record<string, string> = {
+      pending: "대기중",
+      paid: "결제완료",
+      confirmed: "확정",
+      completed: "완료",
+      cancelled: "취소",
+      refunded: "환불",
+    };
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || "bg-gray-500/20 text-gray-500"}`}>
+        {labels[status] || status}
+      </span>
+    );
+  };
+
+  const getBookingProductBadge = (booking: BookingWithDetails) => {
+    const product = booking.product;
+    if (product && PRODUCT_INFO[product.type]) {
+      const info = PRODUCT_INFO[product.type];
+      return (
+        <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
+          {info.icon} {info.name}
+        </span>
+      );
+    }
+    return null;
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!user) return;
+    if (!confirm("정말 예약을 취소하시겠어요?\n\n환불 규정:\n• 48시간 전: 전액 환불\n• 24~48시간: 50% 환불\n• 24시간 이내: 환불 불가")) return;
+
+    try {
+      const res = await fetch("/api/booking/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.error || "취소에 실패했어요. 다시 시도해 주세요.", "error");
+      } else {
+        setBookings((prev) =>
+          prev.map((b) =>
+            b.id === bookingId ? { ...b, status: "cancelled" as const, cancelled_at: new Date().toISOString(), cancelled_by: "mentee" as const } : b
+          )
+        );
+        const refundMsg = data.refund_amount > 0
+          ? `예약이 취소되었어요. 환불 금액: ${data.refund_amount.toLocaleString()}원 (${data.refund_rate}%)`
+          : "예약이 취소되었어요. 환불 규정에 따라 환불이 불가합니다.";
+        showToast(refundMsg, "success");
+      }
+    } catch (error) {
+      showToast("취소에 실패했어요.", "error");
+    }
+  };
+
   const tabs = [
     { id: "profile" as TabType, label: "프로필", icon: "👤" },
+    { id: "bookings" as TabType, label: "예약 내역", icon: "📅" },
     { id: "consultations" as TabType, label: "상담 내역", icon: "☕" },
     { id: "payments" as TabType, label: "결제 내역", icon: "💳" },
   ];
@@ -404,6 +568,131 @@ export default function MyPage() {
                   <p className="text-sm text-muted">가입일</p>
                   <p>{new Date(profile?.created_at || user.created_at).toLocaleDateString("ko-KR")}</p>
                 </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Bookings Tab (v2) */}
+        {activeTab === "bookings" && (
+          <section className="bg-card-bg border border-card-border rounded-2xl p-6">
+            <h2 className="text-xl font-semibold mb-6">예약 내역</h2>
+
+            {isLoadingBookings ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : bookings.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-4xl mb-4">📅</div>
+                <p className="text-muted mb-4">아직 예약 내역이 없어요.</p>
+                <Link
+                  href="/mentors"
+                  className="inline-flex items-center gap-2 text-primary hover:underline"
+                >
+                  멘토 둘러보기
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {bookings.map((booking) => (
+                  <div
+                    key={booking.id}
+                    className="p-4 bg-background border border-card-border rounded-xl"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium">
+                            {booking.mentor?.name || "멘토"} 멘토님
+                          </p>
+                          {getBookingProductBadge(booking)}
+                        </div>
+                        <p className="text-sm text-muted">
+                          {booking.mentor?.company}
+                          {booking.product?.title ? ` · ${booking.product.title}` : ""}
+                        </p>
+                      </div>
+                      {getBookingStatusBadge(booking.status)}
+                    </div>
+
+                    {/* Scheduled date/time */}
+                    <div className="mb-3 flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-foreground">
+                        {new Date(booking.scheduled_at).toLocaleDateString("ko-KR", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          weekday: "short",
+                        })}{" "}
+                        {new Date(booking.scheduled_at).toLocaleTimeString("ko-KR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Amount */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <p className="text-sm font-semibold">
+                          {booking.amount.toLocaleString()}원
+                        </p>
+                        <p className="text-xs text-muted">
+                          신청일: {new Date(booking.created_at).toLocaleDateString("ko-KR", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </div>
+
+                      {/* Action buttons based on status */}
+                      <div className="flex items-center gap-2">
+                        {booking.status === "confirmed" && (
+                          <Link
+                            href={`/session/confirm/${booking.id}`}
+                            className="px-3 py-1.5 text-xs font-medium bg-indigo-500/10 text-indigo-500 rounded-lg hover:bg-indigo-500/20 transition-colors"
+                          >
+                            상담 완료 확인
+                          </Link>
+                        )}
+                        {booking.status === "completed" && !booking.has_review && booking.mentor_id && (
+                          <button
+                            onClick={() => {
+                              setSelectedConsultation(null);
+                              setReviewModalOpen(false);
+                              // Navigate to review or open modal for booking
+                              router.push(`/review/write?bookingId=${booking.id}&mentorId=${booking.mentor_id}`);
+                            }}
+                            className="px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors cursor-pointer"
+                          >
+                            리뷰 작성
+                          </button>
+                        )}
+                        {booking.status === "completed" && booking.has_review && (
+                          <span className="px-3 py-1.5 text-xs font-medium bg-green-500/10 text-green-500 rounded-lg">
+                            리뷰 완료
+                          </span>
+                        )}
+                        {(booking.status === "pending" || booking.status === "paid") && (
+                          <button
+                            onClick={() => handleCancelBooking(booking.id)}
+                            className="px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors cursor-pointer"
+                          >
+                            취소하기
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </section>
