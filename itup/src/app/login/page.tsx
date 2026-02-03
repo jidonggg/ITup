@@ -44,10 +44,15 @@ export default function LoginPage() {
       });
 
       if (signInError) {
-        if (signInError.message.includes("Invalid login")) {
+        const msg = signInError.message;
+        if (msg.includes("Invalid login")) {
           setError("이메일 또는 비밀번호가 올바르지 않아요.");
+        } else if (msg.includes("Email not confirmed")) {
+          setError("이메일 인증이 완료되지 않았어요. 메일함을 확인해주세요.");
+        } else if (msg.includes("rate limit") || msg.includes("too many")) {
+          setError("잠시 후 다시 시도해주세요.");
         } else {
-          setError(signInError.message);
+          setError("로그인에 실패했어요. 다시 시도해주세요.");
         }
         return;
       }

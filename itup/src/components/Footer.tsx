@@ -35,7 +35,7 @@ export default function Footer() {
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !email.includes("@")) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setMessage({ type: "error", text: "올바른 이메일을 입력해주세요." });
       return;
     }
@@ -126,12 +126,21 @@ export default function Footer() {
               <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-muted text-sm hover:text-primary transition-colors duration-300"
-                    >
-                      {link.label}
-                    </a>
+                    {link.href.startsWith("mailto:") || link.href.startsWith("http") ? (
+                      <a
+                        href={link.href}
+                        className="text-muted text-sm hover:text-primary transition-colors duration-300"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-muted text-sm hover:text-primary transition-colors duration-300"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -174,14 +183,14 @@ export default function Footer() {
         {/* Copyright */}
         <div className="pt-8 border-t border-card-border text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-muted text-sm">
-            <p>&copy; 2026 커피챗. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} 커피챗. All rights reserved.</p>
             <div className="flex gap-6">
-              <a href="/terms" className="hover:text-primary transition-colors">
+              <Link href="/terms" className="hover:text-primary transition-colors">
                 이용약관
-              </a>
-              <a href="/privacy" className="hover:text-primary transition-colors">
+              </Link>
+              <Link href="/privacy" className="hover:text-primary transition-colors">
                 개인정보처리방침
-              </a>
+              </Link>
             </div>
           </div>
         </div>

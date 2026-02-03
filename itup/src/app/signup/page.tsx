@@ -68,10 +68,17 @@ export default function SignupPage() {
       });
 
       if (signUpError) {
-        if (signUpError.message.includes("already registered")) {
+        const msg = signUpError.message;
+        if (msg.includes("already registered")) {
           setError("이미 가입된 이메일입니다.");
+        } else if (msg.includes("rate limit") || msg.includes("too many")) {
+          setError("잠시 후 다시 시도해주세요.");
+        } else if (msg.includes("valid email")) {
+          setError("올바른 이메일 형식이 아니에요.");
+        } else if (msg.includes("password")) {
+          setError("비밀번호 조건을 확인해주세요.");
         } else {
-          setError(signUpError.message);
+          setError("회원가입에 실패했어요. 다시 시도해주세요.");
         }
         return;
       }

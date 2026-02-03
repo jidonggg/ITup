@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// TossPayments API 시크릿 키
-const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY || "";
+// TossPayments API 시크릿 키 (미설정 시 결제 처리 차단)
+const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY;
 
 // 상품 가격 (서버에서 검증용)
 const PRODUCT_PRICES: Record<string, number> = {
@@ -61,6 +61,13 @@ function getUserIdFromOrder(orderId: string): string | null {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!TOSS_SECRET_KEY) {
+      return NextResponse.json(
+        { error: "결제 시스템이 설정되지 않았어요." },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { paymentKey, orderId, amount } = body;
 
@@ -197,6 +204,10 @@ export async function POST(request: NextRequest) {
 
       if (paymentError) {
         console.error("Payment save error:", paymentError);
+        return NextResponse.json(
+          { error: "결제는 완료되었으나 기록 저장에 실패했어요. 고객센터에 문의해주세요." },
+          { status: 500 }
+        );
       }
 
       // 상품 결제인 경우: 상담 상태를 confirmed로 업데이트

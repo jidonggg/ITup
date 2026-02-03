@@ -101,14 +101,19 @@ export async function PATCH(request: NextRequest) {
       .eq("id", mentorId)
       .single();
 
-    if (mentor) {
-      const years = getYearsFromExperience(mentor.experience);
-      if (years < MIN_MENTOR_EXPERIENCE_YEARS) {
-        return NextResponse.json(
-          { error: `경력 ${MIN_MENTOR_EXPERIENCE_YEARS}년 이상만 승인 가능합니다 (현재: ${mentor.experience})` },
-          { status: 400 }
-        );
-      }
+    if (!mentor) {
+      return NextResponse.json(
+        { error: "멘토를 찾을 수 없습니다." },
+        { status: 404 }
+      );
+    }
+
+    const years = getYearsFromExperience(mentor.experience);
+    if (years < MIN_MENTOR_EXPERIENCE_YEARS) {
+      return NextResponse.json(
+        { error: `경력 ${MIN_MENTOR_EXPERIENCE_YEARS}년 이상만 승인 가능합니다 (현재: ${mentor.experience})` },
+        { status: 400 }
+      );
     }
 
     const { error } = await supabase

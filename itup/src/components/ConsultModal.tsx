@@ -59,7 +59,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   const [consultationId, setConsultationId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductType>(initialProductType || "coffee");
 
-  const currentProduct = products.find((p) => p.id === selectedProduct)!;
+  const currentProduct = products.find((p) => p.id === selectedProduct) ?? products[0];
   const price = getTieredPrice(selectedProduct, mentorExperience);
 
   useModalClose(isOpen, onClose);

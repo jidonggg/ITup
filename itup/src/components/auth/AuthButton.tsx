@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface AuthButtonProps {
@@ -9,11 +10,12 @@ interface AuthButtonProps {
 }
 
 export default function AuthButton({ onLoginClick, onSignupClick, variant = "desktop" }: AuthButtonProps) {
+  const router = useRouter();
   const handleLogin = () => {
     if (onLoginClick) {
       onLoginClick();
     } else {
-      window.location.href = "/login";
+      router.push("/login");
     }
   };
 
@@ -21,7 +23,7 @@ export default function AuthButton({ onLoginClick, onSignupClick, variant = "des
     if (onSignupClick) {
       onSignupClick();
     } else {
-      window.location.href = "/signup";
+      router.push("/signup");
     }
   };
   const { user, profile, signOut, isLoading } = useAuth();

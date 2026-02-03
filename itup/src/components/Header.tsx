@@ -86,14 +86,14 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.href}
                 href={link.href}
                 className="relative text-foreground/80 hover:text-primary transition-colors duration-300 py-2 group"
               >
                 {link.label}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -146,14 +146,14 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
         >
           <div className="flex flex-col gap-4 pt-4 border-t border-card-border">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.href}
                 href={link.href}
                 className="text-foreground/80 hover:text-primary transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
             <AuthButton
               onLoginClick={onLoginClick ? () => {

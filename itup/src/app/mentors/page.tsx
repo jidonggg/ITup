@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mentor, ConsultType } from "@/lib/supabase/types";
-import { mentorsData as fallbackMentors, consultTypeLabels, skillCategories } from "@/data/mentors";
+import { consultTypeLabels, skillCategories } from "@/data/mentors";
 import { MentorData } from "@/components/MentorDetailModal";
 import MentorDetailModal from "@/components/MentorDetailModal";
 import ConsultModal from "@/components/ConsultModal";
@@ -36,17 +36,11 @@ const consultTypes: { value: ConsultType | "all"; label: string }[] = [
   { value: "interview", label: "모의면접" },
 ];
 
-// Initial fallback data with IDs
-const initialMentors = fallbackMentors.map((m, i) => ({
-  ...m,
-  id: `fallback-${i}`,
-}));
-
 const MENTORS_PER_PAGE = 9;
 
 export default function MentorsPage() {
-  const [mentors, setMentors] = useState<(MentorData & { id: string })[]>(initialMentors);
-  const [filteredMentors, setFilteredMentors] = useState<(MentorData & { id: string })[]>(initialMentors);
+  const [mentors, setMentors] = useState<(MentorData & { id: string })[]>([]);
+  const [filteredMentors, setFilteredMentors] = useState<(MentorData & { id: string })[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Filters
@@ -430,7 +424,7 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
       {/* Avatar Section */}
       <div className="relative h-32 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-2xl font-bold transform group-hover:scale-110 transition-transform duration-300">
-          {mentor.name[0]}
+          {mentor.name?.charAt(0) || "?"}
         </div>
         <div className="absolute top-3 right-3 px-2.5 py-1 bg-background/80 backdrop-blur-sm rounded-full text-xs font-medium text-primary">
           {mentor.company}

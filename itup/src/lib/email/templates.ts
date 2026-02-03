@@ -6,6 +6,16 @@ export interface EmailTemplate {
   text: string;
 }
 
+// HTML 이스케이프 — XSS 방지
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // 상담 신청 알림 (멘토에게)
 export function consultationRequestTemplate(data: {
   mentorName: string;
@@ -32,17 +42,17 @@ export function consultationRequestTemplate(data: {
           <h1 style="color: white; margin: 0; font-size: 24px;">새로운 상담 신청</h1>
         </div>
         <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E8DED4; border-top: none;">
-          <p style="margin-bottom: 20px;">안녕하세요, <strong>${data.mentorName}</strong> 멘토님!</p>
+          <p style="margin-bottom: 20px;">안녕하세요, <strong>${escapeHtml(data.mentorName)}</strong> 멘토님!</p>
           <p style="margin-bottom: 20px;">새로운 상담 신청이 도착했습니다.</p>
 
           <div style="background: #F0E8E0; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
             <h3 style="color: #A0714F; margin-top: 0;">신청자 정보</h3>
-            <p><strong>이름:</strong> ${data.menteeName}</p>
-            <p><strong>이메일:</strong> ${data.menteeEmail}</p>
-            <p><strong>연락처:</strong> ${data.menteePhone}</p>
-            <p><strong>관심 분야:</strong> ${interestLabels[data.interest] || data.interest || "미지정"}</p>
-            ${data.preferredTime ? `<p><strong>희망 시간:</strong> ${data.preferredTime}</p>` : ""}
-            ${data.message ? `<p><strong>문의 내용:</strong> ${data.message}</p>` : ""}
+            <p><strong>이름:</strong> ${escapeHtml(data.menteeName)}</p>
+            <p><strong>이메일:</strong> ${escapeHtml(data.menteeEmail)}</p>
+            <p><strong>연락처:</strong> ${escapeHtml(data.menteePhone)}</p>
+            <p><strong>관심 분야:</strong> ${escapeHtml(interestLabels[data.interest] || data.interest || "미지정")}</p>
+            ${data.preferredTime ? `<p><strong>희망 시간:</strong> ${escapeHtml(data.preferredTime)}</p>` : ""}
+            ${data.message ? `<p><strong>문의 내용:</strong> ${escapeHtml(data.message)}</p>` : ""}
           </div>
 
           <a href="${data.siteUrl}/mentor/dashboard"
@@ -91,13 +101,13 @@ export function consultationConfirmedTemplate(data: {
           <h1 style="color: white; margin: 0; font-size: 24px;">상담 확정!</h1>
         </div>
         <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E8DED4; border-top: none;">
-          <p style="margin-bottom: 20px;">안녕하세요, <strong>${data.menteeName}</strong>님!</p>
+          <p style="margin-bottom: 20px;">안녕하세요, <strong>${escapeHtml(data.menteeName)}</strong>님!</p>
           <p style="margin-bottom: 20px;">축하합니다! 멘토링 상담이 확정되었습니다.</p>
 
           <div style="background: #F0E8E0; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
             <h3 style="color: #10B981; margin-top: 0;">멘토 정보</h3>
-            <p><strong>멘토:</strong> ${data.mentorName}</p>
-            <p><strong>소속:</strong> ${data.mentorCompany}</p>
+            <p><strong>멘토:</strong> ${escapeHtml(data.mentorName)}</p>
+            <p><strong>소속:</strong> ${escapeHtml(data.mentorCompany)}</p>
           </div>
 
           <p style="margin-bottom: 20px;">
@@ -153,12 +163,12 @@ export function businessInquiryTemplate(data: {
           <p style="margin-bottom: 20px;">새로운 기업 도입 문의가 접수되었습니다.</p>
           <div style="background: #F0E8E0; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
             <h3 style="color: #A0714F; margin-top: 0;">문의 정보</h3>
-            <p><strong>회사명:</strong> ${data.companyName}</p>
-            <p><strong>담당자:</strong> ${data.contactName}</p>
-            <p><strong>이메일:</strong> ${data.email}</p>
-            ${data.phone ? `<p><strong>연락처:</strong> ${data.phone}</p>` : ""}
-            ${data.employeeCount ? `<p><strong>임직원 규모:</strong> ${data.employeeCount}</p>` : ""}
-            ${data.message ? `<p><strong>문의 내용:</strong> ${data.message}</p>` : ""}
+            <p><strong>회사명:</strong> ${escapeHtml(data.companyName)}</p>
+            <p><strong>담당자:</strong> ${escapeHtml(data.contactName)}</p>
+            <p><strong>이메일:</strong> ${escapeHtml(data.email)}</p>
+            ${data.phone ? `<p><strong>연락처:</strong> ${escapeHtml(data.phone)}</p>` : ""}
+            ${data.employeeCount ? `<p><strong>임직원 규모:</strong> ${escapeHtml(data.employeeCount)}</p>` : ""}
+            ${data.message ? `<p><strong>문의 내용:</strong> ${escapeHtml(data.message)}</p>` : ""}
           </div>
           <p style="margin-top: 30px; color: #9CA3AF; font-size: 12px;">
             이 이메일은 커피챗 기업 문의 시스템에서 발송되었습니다.
@@ -192,7 +202,7 @@ export function mentorApprovedTemplate(data: {
           <h1 style="color: white; margin: 0; font-size: 24px;">멘토 승인 완료!</h1>
         </div>
         <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E8DED4; border-top: none;">
-          <p style="margin-bottom: 20px;">안녕하세요, <strong>${data.mentorName}</strong>님!</p>
+          <p style="margin-bottom: 20px;">안녕하세요, <strong>${escapeHtml(data.mentorName)}</strong>님!</p>
           <p style="margin-bottom: 20px;">
             축하합니다! 커피챗 멘토 등록이 승인되었습니다.<br/>
             이제 멘토 목록에서 프로필이 공개되며, 멘티들의 상담 신청을 받을 수 있습니다.

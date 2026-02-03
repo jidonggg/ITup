@@ -99,7 +99,7 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
           ) : (
             mentors.map((mentor, index) => (
               <MentorCard
-                key={mentor.name}
+                key={`mentor-${index}`}
                 mentor={mentor}
                 index={index}
                 onClick={() => onMentorClick(mentor)}

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { ADMIN_EMAILS } from "@/lib/admin";
 
-const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY || "";
+const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY;
 
 function getServiceSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -44,6 +44,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: adminCheck.error },
       { status: adminCheck.status }
+    );
+  }
+
+  if (!TOSS_SECRET_KEY) {
+    return NextResponse.json(
+      { error: "결제 시스템이 설정되지 않았어요." },
+      { status: 503 }
     );
   }
 
@@ -137,6 +144,10 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       console.error("Error updating payment:", updateError);
+      return NextResponse.json(
+        { error: "환불은 완료되었으나 기록 업데이트에 실패했어요. 수동 확인이 필요합니다." },
+        { status: 500 }
+      );
     }
 
     // 4. DB 업데이트 — consultations (전액 환불 시 취소 처리)
