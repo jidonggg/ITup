@@ -753,9 +753,9 @@ export default function AdminPage() {
         return;
       }
 
-      // If mentor_noshow, update the booking status and optionally refund
+      // Update booking status based on resolution
       const dispute = disputes.find(d => d.confirmation.id === confirmationId);
-      if (dispute && (finalStatus === "mentor_noshow" || finalStatus === "mentee_noshow")) {
+      if (dispute && (finalStatus === "completed" || finalStatus === "mentor_noshow" || finalStatus === "mentee_noshow")) {
         await supabase
           .from("bookings")
           .update({ status: "completed" as const })

@@ -13,7 +13,6 @@ import type {
   Mentor,
   Product,
   SessionConfirmation,
-  ConfirmationType,
 } from "@/lib/supabase/types";
 import { PRODUCT_INFO, AUTO_COMPLETE_HOURS } from "@/lib/constants";
 
