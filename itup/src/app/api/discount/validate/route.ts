@@ -1,0 +1,209 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { FIRST_BOOKING_DISCOUNT } from "@/lib/constants";
+
+// =============================================
+// Discount Code Configuration
+// =============================================
+
+interface DiscountCode {
+  code: string;
+  percentage: number;
+  description: string;
+  minAmount: number;
+  maxDiscount: number | null;
+  validFrom: Date | null;
+  validUntil: Date | null;
+  usageLimit: number | null;
+  firstTimeOnly: boolean;
+  requiresFreeTrial: boolean;
+}
+
+// Available discount codes
+const DISCOUNT_CODES: DiscountCode[] = [
+  {
+    code: FIRST_BOOKING_DISCOUNT.CODE,
+    percentage: FIRST_BOOKING_DISCOUNT.PERCENTAGE,
+    description: FIRST_BOOKING_DISCOUNT.DESCRIPTION,
+    minAmount: FIRST_BOOKING_DISCOUNT.MIN_AMOUNT,
+    maxDiscount: FIRST_BOOKING_DISCOUNT.MAX_DISCOUNT,
+    validFrom: null, // No start date restriction
+    validUntil: null, // No end date restriction
+    usageLimit: null, // Unlimited uses globally
+    firstTimeOnly: true, // Only for users who haven't made a paid booking
+    requiresFreeTrial: true, // Must have completed a free trial
+  },
+  {
+    code: "WELCOME20",
+    percentage: 20,
+    description: "신규 회원 20% 할인",
+    minAmount: 30000,
+    maxDiscount: 100000,
+    validFrom: null,
+    validUntil: null,
+    usageLimit: null,
+    firstTimeOnly: true,
+    requiresFreeTrial: false,
+  },
+];
+
+// =============================================
+// API Route
+// =============================================
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { code, amount } = body;
+
+    if (!code || typeof code !== "string") {
+      return NextResponse.json(
+        { valid: false, error: "할인 코드를 입력해주세요." },
+        { status: 400 }
+      );
+    }
+
+    if (!amount || typeof amount !== "number" || amount < 0) {
+      return NextResponse.json(
+        { valid: false, error: "유효한 금액이 필요합니다." },
+        { status: 400 }
+      );
+    }
+
+    // Find the discount code
+    const discountCode = DISCOUNT_CODES.find(
+      (dc) => dc.code.toUpperCase() === code.toUpperCase()
+    );
+
+    if (!discountCode) {
+      return NextResponse.json(
+        { valid: false, error: "유효하지 않은 할인 코드입니다." },
+        { status: 400 }
+      );
+    }
+
+    // Check validity dates
+    const now = new Date();
+    if (discountCode.validFrom && now < discountCode.validFrom) {
+      return NextResponse.json(
+        { valid: false, error: "아직 사용할 수 없는 할인 코드입니다." },
+        { status: 400 }
+      );
+    }
+    if (discountCode.validUntil && now > discountCode.validUntil) {
+      return NextResponse.json(
+        { valid: false, error: "만료된 할인 코드입니다." },
+        { status: 400 }
+      );
+    }
+
+    // Check minimum amount
+    if (amount < discountCode.minAmount) {
+      return NextResponse.json(
+        {
+          valid: false,
+          error: `최소 주문 금액은 ${discountCode.minAmount.toLocaleString()}원입니다.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check user-specific conditions (if authenticated)
+    const authHeader = request.headers.get("authorization");
+    let userId: string | null = null;
+
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser(token);
+      userId = user?.id || null;
+
+      if (userId) {
+        // Check if user has completed a free trial (for FIRST10)
+        if (discountCode.requiresFreeTrial) {
+          const { data: freeTrialBookings } = await supabase
+            .from("bookings")
+            .select("id")
+            .eq("mentee_id", userId)
+            .eq("payment_method", "free_trial")
+            .eq("status", "completed")
+            .limit(1);
+
+          if (!freeTrialBookings || freeTrialBookings.length === 0) {
+            return NextResponse.json(
+              {
+                valid: false,
+                error: "이 할인 코드는 무료 체험을 완료한 사용자만 사용할 수 있습니다.",
+              },
+              { status: 400 }
+            );
+          }
+        }
+
+        // Check if user has already made a paid booking (for firstTimeOnly codes)
+        if (discountCode.firstTimeOnly) {
+          const { data: paidBookings } = await supabase
+            .from("bookings")
+            .select("id")
+            .eq("mentee_id", userId)
+            .neq("payment_method", "free_trial")
+            .not("status", "eq", "cancelled")
+            .gt("amount", 0)
+            .limit(1);
+
+          if (paidBookings && paidBookings.length > 0) {
+            return NextResponse.json(
+              {
+                valid: false,
+                error: "이 할인 코드는 첫 유료 예약에만 사용할 수 있습니다.",
+              },
+              { status: 400 }
+            );
+          }
+        }
+      }
+    }
+
+    // Calculate discount amount
+    let discountAmount = Math.floor((amount * discountCode.percentage) / 100);
+
+    // Apply max discount cap
+    if (discountCode.maxDiscount !== null) {
+      discountAmount = Math.min(discountAmount, discountCode.maxDiscount);
+    }
+
+    const finalAmount = amount - discountAmount;
+
+    return NextResponse.json({
+      valid: true,
+      code: discountCode.code,
+      percentage: discountCode.percentage,
+      description: discountCode.description,
+      discountAmount,
+      originalAmount: amount,
+      finalAmount,
+    });
+  } catch {
+    return NextResponse.json(
+      { valid: false, error: "할인 코드 확인 중 오류가 발생했습니다." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  // Return available discount codes (public info only)
+  const publicCodes = DISCOUNT_CODES.map((code) => ({
+    code: code.code,
+    percentage: code.percentage,
+    description: code.description,
+    minAmount: code.minAmount,
+    maxDiscount: code.maxDiscount,
+    firstTimeOnly: code.firstTimeOnly,
+    requiresFreeTrial: code.requiresFreeTrial,
+  }));
+
+  return NextResponse.json({ codes: publicCodes });
+}

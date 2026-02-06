@@ -14,6 +14,7 @@ export default function robots(): MetadataRoute.Robots {
           "/auth/",
           "/mentor/dashboard",
           "/mentor/edit",
+          "/mentor/settlement",
           "/mypage",
           "/payment/",
         ],

@@ -167,51 +167,70 @@ export default function MentorGuidelinesPage() {
         </div>
 
         {/* Guidelines List */}
-        <div className="space-y-3">
-          {filtered.map((item, index) => (
-            <div
-              key={index}
-              className="bg-card-bg border border-card-border rounded-xl overflow-hidden"
-            >
-              <button
-                onClick={() =>
-                  setOpenIndex(openIndex === index ? null : index)
-                }
-                className="w-full px-6 py-4 flex items-center justify-between text-left cursor-pointer hover:bg-secondary/50 transition-colors"
+        <div className="space-y-3" role="region" aria-label="멘토 가이드라인 목록">
+          {filtered.map((item, index) => {
+            const isOpen = openIndex === index;
+            const contentId = `guideline-content-${index}`;
+            const headerId = `guideline-header-${index}`;
+
+            return (
+              <div
+                key={index}
+                className="bg-card-bg border border-card-border rounded-xl overflow-hidden"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
-                    {item.category}
-                  </span>
-                  <span className="font-medium">{item.title}</span>
-                </div>
-                <svg
-                  className={`w-5 h-5 text-muted transition-transform ${
-                    openIndex === index ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <h3>
+                  <button
+                    id={headerId}
+                    onClick={() =>
+                      setOpenIndex(isOpen ? null : index)
+                    }
+                    className="w-full px-6 py-4 flex items-center justify-between text-left cursor-pointer hover:bg-secondary/50 transition-colors"
+                    aria-expanded={isOpen}
+                    aria-controls={contentId}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
+                        {item.category}
+                      </span>
+                      <span className="font-medium">{item.title}</span>
+                    </div>
+                    <svg
+                      className={`w-5 h-5 text-muted transition-transform ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                </h3>
+                <div
+                  id={contentId}
+                  role="region"
+                  aria-labelledby={headerId}
+                  hidden={!isOpen}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-              {openIndex === index && (
-                <div className="px-6 pb-4">
-                  <div className="pt-4 border-t border-card-border">
-                    <p className="text-foreground/80 leading-relaxed whitespace-pre-line">
-                      {item.content}
-                    </p>
-                  </div>
+                  {isOpen && (
+                    <div className="px-6 pb-4">
+                      <div className="pt-4 border-t border-card-border">
+                        <p className="text-foreground/80 leading-relaxed whitespace-pre-line">
+                          {item.content}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
 
         {/* Contact */}

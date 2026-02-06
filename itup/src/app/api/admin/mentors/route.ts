@@ -141,6 +141,40 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true, message: "Mentor rejected" });
   }
 
+  // 멘토 검증 승인 (verification_status 업데이트)
+  if (action === "verify_approve") {
+    const { error } = await supabase
+      .from("mentors")
+      .update({
+        verification_status: "verified",
+        is_approved: true,
+        verified_at: new Date().toISOString(),
+      })
+      .eq("id", mentorId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: "Mentor verification approved" });
+  }
+
+  // 멘토 검증 거절
+  if (action === "verify_reject") {
+    const { error } = await supabase
+      .from("mentors")
+      .update({
+        verification_status: "rejected",
+      })
+      .eq("id", mentorId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: "Mentor verification rejected" });
+  }
+
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
 

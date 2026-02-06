@@ -27,6 +27,7 @@ export default function PaymentModal({ isOpen, onClose, bundle }: PaymentModalPr
   const { showToast } = useToast();
   const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useModalClose(isOpen, onClose);
@@ -86,8 +87,9 @@ export default function PaymentModal({ isOpen, onClose, bundle }: PaymentModalPr
   }, [isOpen, bundle, user]);
 
   const handlePayment = async () => {
-    if (!widgets || !bundle) return;
+    if (!widgets || !bundle || isProcessing) return;
 
+    setIsProcessing(true);
     try {
       const prefix = BUNDLE_PREFIX_MAP[bundle.id];
       const uid = user?.id || "guest";
@@ -103,6 +105,8 @@ export default function PaymentModal({ isOpen, onClose, bundle }: PaymentModalPr
       });
     } catch (err) {
       showToast("결제 요청 중 오류가 발생했어요.", "error");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -208,10 +212,17 @@ export default function PaymentModal({ isOpen, onClose, bundle }: PaymentModalPr
               {/* 결제 버튼 */}
               <button
                 onClick={handlePayment}
-                disabled={isLoading}
+                disabled={isLoading || isProcessing}
                 className="w-full py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold text-lg hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                {bundle.price.toLocaleString()}원 결제하기
+                {isProcessing ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    결제 처리 중...
+                  </span>
+                ) : (
+                  `${bundle.price.toLocaleString()}원 결제하기`
+                )}
               </button>
 
               <p className="mt-4 text-xs text-muted text-center">

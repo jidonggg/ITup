@@ -85,11 +85,17 @@ export default function MentorDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="mentor-detail-modal-title"
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal */}
@@ -118,7 +124,7 @@ export default function MentorDetailModal({
           {/* Name & Role */}
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h2 className="text-2xl font-bold">{mentor.name}</h2>
+              <h2 id="mentor-detail-modal-title" className="text-2xl font-bold">{mentor.name}</h2>
               <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-medium rounded-full">
                 {mentor.company}
               </span>

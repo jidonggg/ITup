@@ -9,6 +9,7 @@ export const PRICE_LIMITS: Record<ProductType, { min: number; max: number }> = {
   coffee_chat: { min: 10000, max: 100000 },
   document_review: { min: 20000, max: 200000 },
   mock_interview: { min: 30000, max: 300000 },
+  free_trial: { min: 0, max: 0 },
 } as const;
 
 // 상품 권장 가격
@@ -16,6 +17,7 @@ export const RECOMMENDED_PRICES: Record<ProductType, number> = {
   coffee_chat: 50000,
   document_review: 70000,
   mock_interview: 100000,
+  free_trial: 0,
 } as const;
 
 // 상품 기본 정보
@@ -38,6 +40,25 @@ export const PRODUCT_INFO: Record<ProductType, { name: string; icon: string; dur
     duration: 60,
     description: "실전 면접 시뮬레이션 + 피드백",
   },
+  free_trial: {
+    name: "무료 체험",
+    icon: "🎁",
+    duration: 15,
+    description: "15분 무료 멘토링 체험",
+  },
+} as const;
+
+// 무료 체험 제한
+export const FREE_TRIAL_LIMIT = 1;
+
+// 첫 유료 예약 할인 코드
+export const FIRST_BOOKING_DISCOUNT = {
+  CODE: "FIRST10",
+  PERCENTAGE: 10,
+  DESCRIPTION: "첫 유료 예약 10% 할인",
+  MIN_AMOUNT: 10000,
+  MAX_DISCOUNT: 50000,
+  OFFER_DURATION_HOURS: 48,
 } as const;
 
 // 레거시 가격 (기존 상품 호환)
@@ -60,7 +81,7 @@ export const COMMISSION_RATE = PLATFORM_FEE_RATE;
 export const REFUND_POLICY = {
   mentee: {
     before_48h: { rate: 100, description: "전액 환불" },
-    before_24h: { rate: 50, description: "50% 환불" },
+    before_24h: { rate: 100, description: "전액 환불" },
     within_24h: { rate: 0, description: "환불 불가" },
     noshow: { rate: 0, description: "환불 불가 + 노쇼 기록" },
   },
@@ -85,6 +106,38 @@ export const NOSHOW_PENALTY = {
   },
 } as const;
 
+// 노쇼 자동 판정 기준 (분)
+export const NOSHOW_THRESHOLD_MINUTES = 10;
+
+// 수수료 단계별 요율 (누적 정산 금액 기준)
+export const COMMISSION_TIERS = [
+  { min: 0, max: 1000000, rate: 0.15, label: "기본 (15%)" },
+  { min: 1000000, max: 5000000, rate: 0.12, label: "실버 (12%)" },
+  { min: 5000000, max: 20000000, rate: 0.10, label: "골드 (10%)" },
+  { min: 20000000, max: Infinity, rate: 0.08, label: "플래티넘 (8%)" },
+] as const;
+
+// 한국 은행 목록
+export const KOREAN_BANKS = [
+  { code: "004", name: "KB국민은행" },
+  { code: "088", name: "신한은행" },
+  { code: "020", name: "우리은행" },
+  { code: "081", name: "하나은행" },
+  { code: "011", name: "NH농협은행" },
+  { code: "003", name: "IBK기업은행" },
+  { code: "023", name: "SC제일은행" },
+  { code: "027", name: "씨티은행" },
+  { code: "032", name: "부산은행" },
+  { code: "031", name: "대구은행" },
+  { code: "039", name: "경남은행" },
+  { code: "034", name: "광주은행" },
+  { code: "035", name: "제주은행" },
+  { code: "037", name: "전북은행" },
+  { code: "090", name: "카카오뱅크" },
+  { code: "092", name: "토스뱅크" },
+  { code: "089", name: "케이뱅크" },
+] as const;
+
 // 정산 규정
 export const SETTLEMENT = {
   MIN_AMOUNT: 10000,        // 최소 정산 금액
@@ -94,7 +147,7 @@ export const SETTLEMENT = {
 } as const;
 
 // 자동 완료 처리
-export const AUTO_COMPLETE_HOURS = 48; // 48시간 무응답 시 자동 완료
+export const AUTO_COMPLETE_HOURS = 24; // 24시간 무응답 시 자동 완료
 
 // 후기 작성 기한 (일)
 export const REVIEW_DEADLINE_DAYS = 7;

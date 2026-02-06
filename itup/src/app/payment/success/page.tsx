@@ -18,7 +18,14 @@ function PaymentSuccessContent() {
   const consultationId = searchParams.get("consultationId");
 
   useEffect(() => {
+    // 중복 호출 방지를 위한 플래그
+    let isProcessed = false;
+
     const verifyPayment = async () => {
+      // 이미 처리 중이거나 처리 완료된 경우 스킵
+      if (isProcessed) return;
+      isProcessed = true;
+
       if (!paymentKey || !orderId || !amount) {
         setError("결제 정보가 올바르지 않아요.");
         setIsVerifying(false);

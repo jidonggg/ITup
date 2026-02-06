@@ -10,6 +10,7 @@ import Mentors from "@/components/Mentors";
 import Pricing from "@/components/Pricing";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
+import FreeTrialBanner from "@/components/FreeTrialBanner";
 import ConsultModal from "@/components/ConsultModal";
 import MentorDetailModal, { MentorData } from "@/components/MentorDetailModal";
 import LoginModal from "@/components/auth/LoginModal";
@@ -17,9 +18,12 @@ import SignupModal from "@/components/auth/SignupModal";
 import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 import PaymentModal from "@/components/PaymentModal";
 import { ProductType, BundleInfo, bundles } from "@/lib/payment/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export default function HomeClient() {
   const router = useRouter();
+  const { user, profile } = useAuth();
   const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
@@ -40,6 +44,29 @@ export default function HomeClient() {
       router.replace(`/auth/callback?code=${code}`);
     }
   }, [router]);
+
+  // Redirect to onboarding if user hasn't completed it
+  useEffect(() => {
+    if (!user || !profile) return;
+    if (profile.role !== "mentee") return;
+
+    const checkOnboarding = async () => {
+      if (!isSupabaseConfigured()) return;
+
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("profiles")
+        .select("preferences, onboarded_at")
+        .eq("id", user.id)
+        .single();
+
+      if (data && !data.onboarded_at) {
+        router.push("/onboarding");
+      }
+    };
+
+    checkOnboarding();
+  }, [user, profile, router]);
 
   const openConsultModal = (productType?: ProductType) => {
     setSelectedProductType(productType);
@@ -101,7 +128,8 @@ export default function HomeClient() {
   return (
     <>
       <Header onLoginClick={openLoginModal} onSignupClick={openSignupModal} />
-      <Hero onConsultClick={() => openConsultModal()} />
+      <Hero />
+      <FreeTrialBanner />
       <Stats />
       <Features />
       <Mentors onMentorClick={openMentorModal} />

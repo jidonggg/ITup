@@ -101,8 +101,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 2. TossPayments 환불 API 호출
+  // 2. 환불 금액 검증
   const refundAmount = cancelAmount || payment.amount;
+
+  if (typeof refundAmount !== "number" || refundAmount <= 0) {
+    return NextResponse.json(
+      { error: "환불 금액은 0보다 커야 해요." },
+      { status: 400 }
+    );
+  }
+
+  if (refundAmount > payment.amount) {
+    return NextResponse.json(
+      { error: `환불 금액(${refundAmount}원)이 결제 금액(${payment.amount}원)을 초과할 수 없어요.` },
+      { status: 400 }
+    );
+  }
+
+  // 3. TossPayments 환불 API 호출
 
   try {
     const tossResponse = await fetch(

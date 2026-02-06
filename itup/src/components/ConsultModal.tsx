@@ -268,11 +268,17 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="consult-modal-title"
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]"
         onClick={handleClose}
+        aria-hidden="true"
       />
 
       {/* Modal */}
@@ -292,7 +298,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
           {step === "payment" ? (
             /* 결제 화면 */
             <div className="text-center py-4">
-              <h2 className="text-2xl font-bold mb-2">결제하기</h2>
+              <h2 id="consult-modal-title" className="text-2xl font-bold mb-2">결제하기</h2>
               <p className="text-muted text-sm mb-6">
                 {currentProduct.name} 신청을 완료하려면 결제를 진행해주세요.
               </p>
@@ -349,7 +355,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
           ) : (
             /* 폼 화면 */
             <>
-              <h2 className="text-2xl font-bold mb-2">상담 신청</h2>
+              <h2 id="consult-modal-title" className="text-2xl font-bold mb-2">상담 신청</h2>
               <p className="text-muted text-sm mb-6">
                 상품을 선택하고 정보를 입력해주세요.
               </p>

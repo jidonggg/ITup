@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { skillCategories } from "@/data/mentors";
+import { VALIDATION } from "@/lib/constants";
 import type { ConsultType } from "@/lib/supabase/types";
 
 const consultTypeOptions: { value: ConsultType; label: string }[] = [
@@ -505,17 +506,32 @@ export default function MentorEditPage() {
 
             {/* 자기소개 */}
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label htmlFor="edit-bio" className="block text-sm font-medium mb-1.5">
                 자기소개 <span className="text-muted">(선택)</span>
               </label>
               <textarea
+                id="edit-bio"
                 name="bio"
                 value={formData.bio}
                 onChange={handleChange}
                 placeholder="멘티들에게 자신을 소개해주세요"
                 rows={4}
+                maxLength={VALIDATION.MAX_BIO_LENGTH}
+                aria-describedby="bio-char-count"
                 className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors resize-none"
               />
+              <div className="flex justify-end mt-1">
+                <span
+                  id="bio-char-count"
+                  className={`text-xs ${
+                    formData.bio.length > VALIDATION.MAX_BIO_LENGTH
+                      ? "text-red-500"
+                      : "text-muted"
+                  }`}
+                >
+                  {formData.bio.length}/{VALIDATION.MAX_BIO_LENGTH}
+                </span>
+              </div>
             </div>
           </div>
 

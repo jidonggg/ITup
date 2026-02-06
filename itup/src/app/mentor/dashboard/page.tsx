@@ -5,32 +5,10 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { Mentor, Consultation, Booking, Product, MentorSchedule, Profile } from "@/lib/supabase/types";
+import { Mentor, Booking, Product, MentorSchedule, Profile } from "@/lib/supabase/types";
 import { PRODUCT_INFO } from "@/lib/constants";
 import VerificationModal from "@/components/VerificationModal";
-
-type ConsultationStatus = "pending" | "confirmed" | "completed" | "cancelled";
-
-const statusLabels: Record<ConsultationStatus, string> = {
-  pending: "대기중",
-  confirmed: "확정",
-  completed: "완료",
-  cancelled: "취소",
-};
-
-const statusColors: Record<ConsultationStatus, string> = {
-  pending: "bg-yellow-500/20 text-yellow-500",
-  confirmed: "bg-blue-500/20 text-blue-500",
-  completed: "bg-green-500/20 text-green-500",
-  cancelled: "bg-red-500/20 text-red-500",
-};
-
-const interestLabels: Record<string, string> = {
-  programming: "프로그래밍",
-  planning: "기획",
-  art: "아트",
-  qa: "QA",
-};
+import BookingCalendar from "@/components/mentor/BookingCalendar";
 
 // v2 Booking status
 type BookingStatusType = "pending" | "paid" | "confirmed" | "completed" | "cancelled" | "refunded";
@@ -59,11 +37,8 @@ export default function MentorDashboardPage() {
   const { user, isInitialized } = useAuth();
   const { showToast } = useToast();
   const [mentor, setMentor] = useState<Mentor | null>(null);
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<ConsultationStatus | "all">("all");
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
   // v2 State
@@ -74,6 +49,7 @@ export default function MentorDashboardPage() {
   const [updatingBookingId, setUpdatingBookingId] = useState<string | null>(null);
   const [meetingLinkInput, setMeetingLinkInput] = useState<Record<string, string>>({});
   const [savingMeetingLink, setSavingMeetingLink] = useState<string | null>(null);
+  const [bookingFeedbacks, setBookingFeedbacks] = useState<Record<string, boolean>>({});
 
   // Schedule form state
   const [newScheduleDay, setNewScheduleDay] = useState(1);
@@ -82,6 +58,9 @@ export default function MentorDashboardPage() {
   const [addingSchedule, setAddingSchedule] = useState(false);
   const [togglingScheduleId, setTogglingScheduleId] = useState<string | null>(null);
   const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null);
+
+  // View mode state for bookings (list or calendar)
+  const [bookingViewMode, setBookingViewMode] = useState<"list" | "calendar">("list");
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -114,18 +93,6 @@ export default function MentorDashboardPage() {
       }
 
       setMentor(mentorData);
-
-      // 해당 멘토의 상담 신청 목록 조회
-      const { data: consultData, error: consultError } = await supabase
-        .from("consultations")
-        .select("*")
-        .eq("mentor_id", mentorData.id)
-        .order("created_at", { ascending: false });
-
-      if (consultError) {
-      } else {
-        setConsultations(consultData || []);
-      }
 
       // v2: Fetch bookings
       const { data: bookingData } = await supabase
@@ -169,6 +136,19 @@ export default function MentorDashboardPage() {
         const linkMap: Record<string, string> = {};
         bookingData.forEach((b: Booking) => { linkMap[b.id] = b.meeting_link || ""; });
         setMeetingLinkInput(linkMap);
+
+        // Fetch mentor feedbacks to check which bookings have feedback
+        const bookingIds = bookingData.map((b: Booking) => b.id);
+        const { data: feedbackData } = await supabase
+          .from("mentor_feedbacks")
+          .select("booking_id")
+          .in("booking_id", bookingIds);
+
+        if (feedbackData) {
+          const feedbackMap: Record<string, boolean> = {};
+          feedbackData.forEach((f: { booking_id: string }) => { feedbackMap[f.booking_id] = true; });
+          setBookingFeedbacks(feedbackMap);
+        }
       }
 
       // v2: Fetch schedules
@@ -192,53 +172,6 @@ export default function MentorDashboardPage() {
     fetchMentorData();
   }, [isInitialized, user]);
 
-  const updateConsultationStatus = async (consultationId: string, newStatus: ConsultationStatus) => {
-    if (!isSupabaseConfigured()) return;
-
-    setUpdatingId(consultationId);
-    const supabase = createClient();
-
-    try {
-      const { error } = await supabase
-        .from("consultations")
-        .update({ status: newStatus })
-        .eq("id", consultationId);
-
-      if (error) {
-        showToast("상태 변경에 실패했어요.", "error");
-        return;
-      }
-      showToast("상태가 변경되었어요.", "success");
-
-      // 로컬 상태 업데이트
-      setConsultations((prev) =>
-        prev.map((c) =>
-          c.id === consultationId ? { ...c, status: newStatus } : c
-        )
-      );
-
-      // 상담 확정 시 이메일 알림 발송
-      if (newStatus === "confirmed") {
-        const { data: { session } } = await supabase.auth.getSession();
-        fetch("/api/email/notify", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(session?.access_token ? { "Authorization": `Bearer ${session.access_token}` } : {}),
-          },
-          body: JSON.stringify({
-            type: "consultation_confirmed",
-            data: { consultationId },
-          }),
-        }).catch(() => {});
-      }
-    } catch (err) {
-      showToast("오류가 발생했어요.", "error");
-    } finally {
-      setUpdatingId(null);
-    }
-  };
-
   // v2: Update booking status
   const updateBookingStatus = async (bookingId: string, newStatus: BookingStatusType) => {
     if (!isSupabaseConfigured()) return;
@@ -258,6 +191,18 @@ export default function MentorDashboardPage() {
       }
       showToast("예약 상태가 변경되었어요.", "success");
 
+      // 예약 확정 시 멘티에게 이메일 알림 발송 (비동기, 에러 무시)
+      if (newStatus === "confirmed") {
+        fetch("/api/email/booking-notification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "confirmed",
+            bookingId,
+          }),
+        }).catch(() => {});
+      }
+
       setBookings((prev) =>
         prev.map((b) =>
           b.id === bookingId ? { ...b, status: newStatus } : b
@@ -273,6 +218,23 @@ export default function MentorDashboardPage() {
   // v2: Save meeting link
   const saveMeetingLink = async (bookingId: string) => {
     if (!isSupabaseConfigured()) return;
+
+    const linkValue = meetingLinkInput[bookingId]?.trim();
+
+    // 미팅 링크가 비어있지 않으면 URL 형식 검증
+    if (linkValue) {
+      try {
+        const url = new URL(linkValue);
+        // http 또는 https 프로토콜만 허용
+        if (!["http:", "https:"].includes(url.protocol)) {
+          showToast("올바른 미팅 링크 형식이 아니에요. (http:// 또는 https://로 시작해야 해요)", "error");
+          return;
+        }
+      } catch {
+        showToast("올바른 미팅 링크 형식이 아니에요. (예: https://meet.google.com/...)", "error");
+        return;
+      }
+    }
 
     setSavingMeetingLink(bookingId);
     const supabase = createClient();
@@ -304,6 +266,24 @@ export default function MentorDashboardPage() {
   // v2: Add schedule slot
   const addScheduleSlot = async () => {
     if (!mentor || !isSupabaseConfigured()) return;
+
+    // 시간 유효성 검증: 시작 시간이 종료 시간보다 이전이어야 함
+    if (newScheduleStart >= newScheduleEnd) {
+      showToast("시작 시간이 종료 시간보다 이전이어야 해요.", "error");
+      return;
+    }
+
+    // 중복 스케줄 검증: 동일 요일, 동일 시간대 스케줄이 있는지 확인
+    const duplicateSchedule = schedules.find(
+      (s) =>
+        s.day_of_week === newScheduleDay &&
+        s.start_time.slice(0, 5) === newScheduleStart &&
+        s.end_time.slice(0, 5) === newScheduleEnd
+    );
+    if (duplicateSchedule) {
+      showToast("이미 동일한 시간대의 스케줄이 있어요.", "error");
+      return;
+    }
 
     setAddingSchedule(true);
     const supabase = createClient();
@@ -392,17 +372,6 @@ export default function MentorDashboardPage() {
     }
   };
 
-  const filteredConsultations = selectedStatus === "all"
-    ? consultations
-    : consultations.filter((c) => c.status === selectedStatus);
-
-  const stats = {
-    total: consultations.length,
-    pending: consultations.filter((c) => c.status === "pending").length,
-    confirmed: consultations.filter((c) => c.status === "confirmed").length,
-    completed: consultations.filter((c) => c.status === "completed").length,
-  };
-
   // v2 booking stats
   const bookingStats = {
     pending: bookings.filter((b) => b.status === "pending" || b.status === "paid").length,
@@ -451,10 +420,10 @@ export default function MentorDashboardPage() {
           <p className="text-muted mb-6">{error}</p>
           <div className="flex gap-4 justify-center">
             <Link
-              href="/mentor/register"
+              href="/mentor/apply"
               className="px-6 py-3 bg-primary text-white rounded-full font-medium"
             >
-              멘토 등록하기
+              멘토 지원하기
             </Link>
             <Link
               href="/"
@@ -485,6 +454,9 @@ export default function MentorDashboardPage() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted">{mentor?.name} 멘토</span>
+            <Link href="/mentor/settlement" className="text-sm text-green-500 hover:underline">
+              정산
+            </Link>
             <Link href="/mentor/edit" className="text-sm text-accent hover:underline">
               프로필 수정
             </Link>
@@ -499,48 +471,53 @@ export default function MentorDashboardPage() {
         {/* Welcome */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">안녕하세요, {mentor?.name}님!</h1>
-          <p className="text-muted">받은 상담 신청을 확인하고 관리하세요.</p>
+          <p className="text-muted">받은 예약을 확인하고 관리하세요.</p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Booking Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-card-bg border border-card-border rounded-xl p-6">
-            <p className="text-sm text-muted mb-1">전체 신청</p>
-            <p className="text-3xl font-bold">{stats.total}</p>
-          </div>
-          <div className="bg-card-bg border border-card-border rounded-xl p-6">
-            <p className="text-sm text-muted mb-1">대기중</p>
-            <p className="text-3xl font-bold text-yellow-500">{stats.pending}</p>
+            <p className="text-sm text-muted mb-1">대기/결제</p>
+            <p className="text-3xl font-bold text-yellow-500">{bookingStats.pending}</p>
           </div>
           <div className="bg-card-bg border border-card-border rounded-xl p-6">
             <p className="text-sm text-muted mb-1">확정</p>
-            <p className="text-3xl font-bold text-blue-500">{stats.confirmed}</p>
+            <p className="text-3xl font-bold text-blue-500">{bookingStats.confirmed}</p>
           </div>
           <div className="bg-card-bg border border-card-border rounded-xl p-6">
             <p className="text-sm text-muted mb-1">완료</p>
-            <p className="text-3xl font-bold text-green-500">{stats.completed}</p>
+            <p className="text-3xl font-bold text-green-500">{bookingStats.completed}</p>
+          </div>
+          <div className="bg-card-bg border border-card-border rounded-xl p-6">
+            <p className="text-sm text-muted mb-1">총 수익</p>
+            <p className="text-3xl font-bold text-primary">{bookingStats.totalRevenue.toLocaleString()}원</p>
           </div>
         </div>
 
-        {/* v2 Booking Stats */}
-        {bookings.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-card-bg border border-card-border rounded-xl p-6">
-              <p className="text-sm text-muted mb-1">v2 대기/결제</p>
-              <p className="text-3xl font-bold text-yellow-500">{bookingStats.pending}</p>
-            </div>
-            <div className="bg-card-bg border border-card-border rounded-xl p-6">
-              <p className="text-sm text-muted mb-1">v2 확정</p>
-              <p className="text-3xl font-bold text-blue-500">{bookingStats.confirmed}</p>
-            </div>
-            <div className="bg-card-bg border border-card-border rounded-xl p-6">
-              <p className="text-sm text-muted mb-1">v2 완료</p>
-              <p className="text-3xl font-bold text-green-500">{bookingStats.completed}</p>
-            </div>
-            <div className="bg-card-bg border border-card-border rounded-xl p-6">
-              <p className="text-sm text-muted mb-1">v2 수익</p>
-              <p className="text-3xl font-bold text-primary">{bookingStats.totalRevenue.toLocaleString()}원</p>
-            </div>
+        {/* Settlement Quick Link */}
+        {mentor && (
+          <div className="mb-6">
+            <Link
+              href="/mentor/settlement"
+              className="block bg-card-bg border border-card-border rounded-xl p-6 hover:border-primary/50 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold group-hover:text-primary transition-colors">정산 관리</p>
+                    <p className="text-sm text-muted">정산 내역 확인 및 계좌 관리</p>
+                  </div>
+                </div>
+                <svg className="w-5 h-5 text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </Link>
           </div>
         )}
 
@@ -598,60 +575,50 @@ export default function MentorDashboardPage() {
           </div>
         )}
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-card-border">
-          {(["all", "pending", "confirmed", "completed", "cancelled"] as const).map((status) => (
-            <button
-              key={status}
-              onClick={() => setSelectedStatus(status)}
-              className={`px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
-                selectedStatus === status
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              {status === "all" ? "전체" : statusLabels[status]}
-              {status !== "all" && (
-                <span className="ml-1 text-xs">
-                  ({consultations.filter((c) => c.status === status).length})
+        {/* ========================================= */}
+        {/* Bookings Section                          */}
+        {/* ========================================= */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">예약 관리</h2>
+            <p className="text-muted text-sm">받은 예약을 확인하고 관리하세요.</p>
+          </div>
+
+          {/* View Mode Toggle */}
+          {bookings.length > 0 && (
+            <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
+              <button
+                onClick={() => setBookingViewMode("list")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                  bookingViewMode === "list"
+                    ? "bg-card-bg text-foreground shadow-sm"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                  목록
                 </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Consultations List */}
-        {filteredConsultations.length === 0 ? (
-          <div className="text-center py-16 bg-card-bg border border-card-border rounded-xl">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
-              <svg className="w-8 h-8 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
+              </button>
+              <button
+                onClick={() => setBookingViewMode("calendar")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                  bookingViewMode === "calendar"
+                    ? "bg-card-bg text-foreground shadow-sm"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  캘린더
+                </span>
+              </button>
             </div>
-            <h3 className="text-lg font-semibold mb-2">
-              {selectedStatus === "all" ? "받은 커피챗 신청이 없어요" : `${statusLabels[selectedStatus as ConsultationStatus]} 상태의 신청이 없어요`}
-            </h3>
-            <p className="text-muted">새로운 커피챗 신청이 오면 여기에 표시돼요.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredConsultations.map((consultation) => (
-              <ConsultationCard
-                key={consultation.id}
-                consultation={consultation}
-                onUpdateStatus={updateConsultationStatus}
-                isUpdating={updatingId === consultation.id}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* ========================================= */}
-        {/* v2 Bookings Section                       */}
-        {/* ========================================= */}
-        <div className="mt-12 mb-8">
-          <h2 className="text-2xl font-bold mb-2">v2 예약 관리</h2>
-          <p className="text-muted text-sm">새로운 예약 시스템으로 접수된 예약을 관리하세요.</p>
+          )}
         </div>
 
         {bookings.length === 0 ? (
@@ -661,10 +628,23 @@ export default function MentorDashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold mb-2">v2 예약이 없어요</h3>
+            <h3 className="text-lg font-semibold mb-2">아직 예약이 없어요</h3>
             <p className="text-muted">새로운 예약이 들어오면 여기에 표시돼요.</p>
           </div>
+        ) : bookingViewMode === "calendar" ? (
+          /* Calendar View */
+          <div className="mb-12">
+            <BookingCalendar
+              bookings={bookings}
+              bookingProfiles={bookingProfiles}
+              bookingProducts={bookingProducts}
+            />
+            <p className="text-xs text-muted mt-3 text-center">
+              예약을 클릭하면 상세 정보를 확인할 수 있어요. 예약 관리(확정/거절 등)는 목록 보기에서 가능해요.
+            </p>
+          </div>
         ) : (
+          /* List View */
           <div className="space-y-4 mb-12">
             {bookings.map((booking) => {
               const menteeProfile = booking.mentee_id ? bookingProfiles[booking.mentee_id] : null;
@@ -740,10 +720,12 @@ export default function MentorDashboardPage() {
                     </div>
                   )}
 
-                  {/* Meeting link for confirmed bookings */}
-                  {booking.status === "confirmed" && (
+                  {/* Meeting link for paid/confirmed bookings */}
+                  {(booking.status === "paid" || booking.status === "confirmed") && (
                     <div className="mb-4">
-                      <p className="text-xs text-muted mb-1">미팅 링크</p>
+                      <p className="text-xs text-muted mb-1">
+                        미팅 링크 {booking.status === "paid" && <span className="text-red-500">* 확정 전 필수 입력</span>}
+                      </p>
                       <div className="flex gap-2">
                         <input
                           type="url"
@@ -786,13 +768,31 @@ export default function MentorDashboardPage() {
                       </>
                     )}
                     {booking.status === "paid" && (
-                      <button
-                        onClick={() => updateBookingStatus(booking.id, "confirmed")}
-                        disabled={updatingBookingId === booking.id}
-                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
-                      >
-                        {updatingBookingId === booking.id ? "처리중..." : "확정"}
-                      </button>
+                      <>
+                        <button
+                          onClick={async () => {
+                            // 미팅링크가 없으면 저장 먼저 요청
+                            if (!meetingLinkInput[booking.id]?.trim()) {
+                              showToast("미팅 링크를 먼저 입력해주세요.", "error");
+                              return;
+                            }
+                            // 미팅링크 저장 후 확정
+                            await saveMeetingLink(booking.id);
+                            await updateBookingStatus(booking.id, "confirmed");
+                          }}
+                          disabled={updatingBookingId === booking.id || savingMeetingLink === booking.id}
+                          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {updatingBookingId === booking.id || savingMeetingLink === booking.id ? "처리중..." : "확정"}
+                        </button>
+                        <button
+                          onClick={() => updateBookingStatus(booking.id, "cancelled")}
+                          disabled={updatingBookingId === booking.id}
+                          className="px-4 py-2 bg-red-500/20 text-red-500 hover:bg-red-500/30 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {updatingBookingId === booking.id ? "처리중..." : "거절"}
+                        </button>
+                      </>
                     )}
                     {booking.status === "confirmed" && (
                       <Link
@@ -801,6 +801,20 @@ export default function MentorDashboardPage() {
                       >
                         완료 확인
                       </Link>
+                    )}
+                    {booking.status === "completed" && (
+                      bookingFeedbacks[booking.id] ? (
+                        <span className="px-4 py-2 bg-green-500/10 text-green-500 rounded-lg text-sm font-medium">
+                          피드백 완료
+                        </span>
+                      ) : (
+                        <Link
+                          href={`/mentor/feedback/${booking.id}`}
+                          className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          피드백 작성
+                        </Link>
+                      )
                     )}
                   </div>
                 </div>
@@ -948,110 +962,3 @@ export default function MentorDashboardPage() {
   );
 }
 
-interface ConsultationCardProps {
-  consultation: Consultation;
-  onUpdateStatus: (id: string, status: ConsultationStatus) => void;
-  isUpdating: boolean;
-}
-
-function ConsultationCard({ consultation, onUpdateStatus, isUpdating }: ConsultationCardProps) {
-  const [showDetails, setShowDetails] = useState(false);
-
-  const getNextActions = (status: ConsultationStatus): { label: string; status: ConsultationStatus; color: string }[] => {
-    switch (status) {
-      case "pending":
-        return [
-          { label: "확정하기", status: "confirmed", color: "bg-blue-500 hover:bg-blue-600" },
-          { label: "취소", status: "cancelled", color: "bg-red-500/20 text-red-500 hover:bg-red-500/30" },
-        ];
-      case "confirmed":
-        return [
-          { label: "완료 처리", status: "completed", color: "bg-green-500 hover:bg-green-600" },
-          { label: "취소", status: "cancelled", color: "bg-red-500/20 text-red-500 hover:bg-red-500/30" },
-        ];
-      default:
-        return [];
-    }
-  };
-
-  const actions = getNextActions(consultation.status);
-
-  return (
-    <div className="bg-card-bg border border-card-border rounded-xl overflow-hidden">
-      <div
-        className="p-6 cursor-pointer hover:bg-secondary/30 transition-colors"
-        onClick={() => setShowDetails(!showDetails)}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-semibold text-lg">{consultation.user_name}</h3>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[consultation.status]}`}>
-                {statusLabels[consultation.status]}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-4 text-sm text-muted">
-              <span>{consultation.user_email}</span>
-              {consultation.interest && (
-                <span className="px-2 py-0.5 bg-primary/10 text-primary rounded">
-                  {interestLabels[consultation.interest] || consultation.interest}
-                </span>
-              )}
-              <span>{new Date(consultation.created_at).toLocaleDateString("ko-KR")}</span>
-            </div>
-          </div>
-          <svg
-            className={`w-5 h-5 text-muted transition-transform ${showDetails ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </div>
-
-      {showDetails && (
-        <div className="px-6 pb-6 border-t border-card-border pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <p className="text-xs text-muted mb-1">연락처</p>
-              <p className="font-medium">{consultation.user_phone}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted mb-1">이메일</p>
-              <p className="font-medium">{consultation.user_email}</p>
-            </div>
-          </div>
-
-          {consultation.message && (
-            <div className="mb-4">
-              <p className="text-xs text-muted mb-1">문의 내용</p>
-              <p className="p-3 bg-secondary rounded-lg text-sm">{consultation.message}</p>
-            </div>
-          )}
-
-          {actions.length > 0 && (
-            <div className="flex gap-2">
-              {actions.map((action) => (
-                <button
-                  key={action.status}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUpdateStatus(consultation.id, action.status);
-                  }}
-                  disabled={isUpdating}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 ${
-                    action.color.includes("text-") ? action.color : `${action.color} text-white`
-                  }`}
-                >
-                  {isUpdating ? "처리중..." : action.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}

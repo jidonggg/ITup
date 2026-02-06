@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
-
-interface HeroProps {
-  onConsultClick: () => void;
-}
 
 const headlines = [
   { line1: "궁금한 거 있으면", line2: "커피챗하세요" },
@@ -13,15 +10,16 @@ const headlines = [
   { line1: "편하게 물어보세요", line2: "커피챗하세요" },
 ];
 
-export default function Hero({ onConsultClick }: HeroProps) {
+export default function Hero() {
+  const router = useRouter();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [headlineIndex, setHeadlineIndex] = useState(0);
   const rafRef = useRef<number | null>(null);
   const { trackClick } = useAnalytics();
 
-  const handleConsultClick = () => {
-    trackClick("히어로_상담신청_버튼");
-    onConsultClick();
+  const handleMentorSearchClick = () => {
+    trackClick("히어로_멘토찾기_버튼");
+    router.push("/mentors");
   };
 
   // 헤드라인 로테이션
@@ -115,10 +113,10 @@ export default function Hero({ onConsultClick }: HeroProps) {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up [animation-delay:300ms] justify-center items-center">
             <button
-              onClick={handleConsultClick}
+              onClick={handleMentorSearchClick}
               className="group relative px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold text-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300 animate-pulse-glow cursor-pointer rounded-full"
             >
-              <span className="relative z-10">커피챗 시작하기</span>
+              <span className="relative z-10">멘토 찾기</span>
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </button>
           </div>

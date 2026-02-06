@@ -20,30 +20,30 @@ import {
 // ---------------------------------------------------------------------------
 
 interface StepOneData {
+  // 기본 정보
   name: string;
   company: string;
   position: string;
   years: number | "";
   jobType: JobType | "";
   engine: EngineType | "";
-}
-
-interface StepTwoData {
+  // 이메일 인증
   companyEmail: string;
   verificationCode: string;
   isVerified: boolean;
   verifiedEmail: string | null;
 }
 
-interface StepThreeData {
+interface StepTwoData {
+  // 이전 경력 (선택)
   wantsPreviousCareer: boolean | null;
   previousCompanies: string;
   insuranceFile: File | null;
-}
-
-interface StepFourData {
+  // 프로필
   bio: string;
   profilePhoto: File | null;
+  // 상품 등록
+  products: Record<ProductType, ProductSetting>;
 }
 
 interface ProductSetting {
@@ -51,17 +51,30 @@ interface ProductSetting {
   price: number | "";
 }
 
-type StepFiveData = Record<ProductType, ProductSetting>;
+type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
-const TOTAL_STEPS = 5;
+interface StepThreeData {
+  availableTimes: Record<DayKey, string[]>;
+}
 
-const STEP_LABELS = [
-  "기본 정보",
-  "이메일 인증",
-  "이전 경력",
-  "프로필",
-  "상품 등록",
+const TOTAL_STEPS = 3;
+
+const STEP_LABELS = ["기본정보 + 인증", "프로필 + 상품", "시간 설정"];
+
+const DAYS: { key: DayKey; label: string }[] = [
+  { key: "mon", label: "월" },
+  { key: "tue", label: "화" },
+  { key: "wed", label: "수" },
+  { key: "thu", label: "목" },
+  { key: "fri", label: "금" },
+  { key: "sat", label: "토" },
+  { key: "sun", label: "일" },
 ];
+
+const TIME_SLOTS = Array.from({ length: 14 }, (_, i) => {
+  const hour = i + 9; // 09:00 ~ 22:00
+  return `${hour.toString().padStart(2, "0")}:00`;
+});
 
 // ---------------------------------------------------------------------------
 // Initial states
@@ -74,30 +87,36 @@ const initialStepOne: StepOneData = {
   years: "",
   jobType: "",
   engine: "",
-};
-
-const initialStepTwo: StepTwoData = {
   companyEmail: "",
   verificationCode: "",
   isVerified: false,
   verifiedEmail: null,
 };
 
-const initialStepThree: StepThreeData = {
+const initialStepTwo: StepTwoData = {
   wantsPreviousCareer: null,
   previousCompanies: "",
   insuranceFile: null,
-};
-
-const initialStepFour: StepFourData = {
   bio: "",
   profilePhoto: null,
+  products: {
+    coffee_chat: { enabled: false, price: "" },
+    document_review: { enabled: false, price: "" },
+    mock_interview: { enabled: false, price: "" },
+    free_trial: { enabled: false, price: "" },
+  },
 };
 
-const initialStepFive: StepFiveData = {
-  coffee_chat: { enabled: false, price: "" },
-  document_review: { enabled: false, price: "" },
-  mock_interview: { enabled: false, price: "" },
+const initialStepThree: StepThreeData = {
+  availableTimes: {
+    mon: [],
+    tue: [],
+    wed: [],
+    thu: [],
+    fri: [],
+    sat: [],
+    sun: [],
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -116,8 +135,6 @@ export default function MentorApplyPage() {
   const [stepOne, setStepOne] = useState<StepOneData>(initialStepOne);
   const [stepTwo, setStepTwo] = useState<StepTwoData>(initialStepTwo);
   const [stepThree, setStepThree] = useState<StepThreeData>(initialStepThree);
-  const [stepFour, setStepFour] = useState<StepFourData>(initialStepFour);
-  const [stepFive, setStepFive] = useState<StepFiveData>(initialStepFive);
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -147,7 +164,7 @@ export default function MentorApplyPage() {
   };
 
   // ---------------------------------------------------------------------------
-  // Step 1 handlers
+  // Step 1 handlers (기본정보 + 인증)
   // ---------------------------------------------------------------------------
 
   const handleStepOneChange = (
@@ -163,31 +180,13 @@ export default function MentorApplyPage() {
     clearError(name);
   };
 
-  const validateStepOne = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!stepOne.name.trim()) newErrors.name = "이름을 입력해주세요.";
-    if (!stepOne.company.trim()) newErrors.company = "현재 회사를 입력해주세요.";
-    if (!stepOne.position.trim()) newErrors.position = "직책/직급을 입력해주세요.";
-    if (stepOne.years === "" || stepOne.years < 3) {
-      newErrors.years = "경력은 최소 3년 이상이어야 합니다.";
-    }
-    if (!stepOne.jobType) newErrors.jobType = "직군을 선택해주세요.";
-    if (!stepOne.engine) newErrors.engine = "엔진을 선택해주세요.";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // ---------------------------------------------------------------------------
-  // Step 2 handlers
-  // ---------------------------------------------------------------------------
-
   const handleSendCode = async () => {
-    if (!stepTwo.companyEmail.trim()) {
-      setErrors({ companyEmail: "회사 이메일을 입력해주세요." });
+    if (!stepOne.companyEmail.trim()) {
+      setErrors((prev) => ({ ...prev, companyEmail: "회사 이메일을 입력해주세요." }));
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(stepTwo.companyEmail)) {
-      setErrors({ companyEmail: "올바른 이메일 형식을 입력해주세요." });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(stepOne.companyEmail)) {
+      setErrors((prev) => ({ ...prev, companyEmail: "올바른 이메일 형식을 입력해주세요." }));
       return;
     }
     setIsSendingCode(true);
@@ -198,27 +197,27 @@ export default function MentorApplyPage() {
       const res = await fetch("/api/verification/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: stepTwo.companyEmail }),
+        body: JSON.stringify({ email: stepOne.companyEmail }),
       });
       const data = await res.json();
 
       if (!res.ok) {
-        setErrors({ companyEmail: data.error || "인증 코드 발송에 실패했습니다." });
+        setErrors((prev) => ({ ...prev, companyEmail: data.error || "인증 코드 발송에 실패했습니다." }));
         return;
       }
 
       setCodeSent(true);
       showToast("인증 코드가 발송되었습니다. 이메일을 확인해주세요.", "success");
     } catch {
-      setErrors({ companyEmail: "인증 코드 발송 중 오류가 발생했습니다." });
+      setErrors((prev) => ({ ...prev, companyEmail: "인증 코드 발송 중 오류가 발생했습니다." }));
     } finally {
       setIsSendingCode(false);
     }
   };
 
   const handleVerifyCode = async () => {
-    if (!stepTwo.verificationCode.trim()) {
-      setErrors({ verificationCode: "인증 코드를 입력해주세요." });
+    if (!stepOne.verificationCode.trim()) {
+      setErrors((prev) => ({ ...prev, verificationCode: "인증 코드를 입력해주세요." }));
       return;
     }
     setIsVerifying(true);
@@ -230,79 +229,100 @@ export default function MentorApplyPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: stepTwo.companyEmail,
-          code: stepTwo.verificationCode,
+          email: stepOne.companyEmail,
+          code: stepOne.verificationCode,
         }),
       });
       const data = await res.json();
 
       if (!res.ok) {
-        setErrors({ verificationCode: data.error || "인증에 실패했습니다." });
+        setErrors((prev) => ({ ...prev, verificationCode: data.error || "인증에 실패했습니다." }));
         return;
       }
 
-      setStepTwo((prev) => ({
+      setStepOne((prev) => ({
         ...prev,
         isVerified: true,
         verifiedEmail: prev.companyEmail,
       }));
       showToast("이메일 인증이 완료되었습니다!", "success");
     } catch {
-      setErrors({ verificationCode: "인증 처리 중 오류가 발생했습니다." });
+      setErrors((prev) => ({ ...prev, verificationCode: "인증 처리 중 오류가 발생했습니다." }));
     } finally {
       setIsVerifying(false);
     }
   };
 
-  const validateStepTwo = (): boolean => {
-    if (!stepTwo.isVerified) {
-      setErrors({ verification: "회사 이메일 인증을 완료해주세요." });
-      return false;
-    }
-    setErrors({});
-    return true;
-  };
-
-  // ---------------------------------------------------------------------------
-  // Step 3 handlers (optional – always valid)
-  // ---------------------------------------------------------------------------
-
-  const handleInsuranceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setStepThree((prev) => ({ ...prev, insuranceFile: file }));
-  };
-
-  // ---------------------------------------------------------------------------
-  // Step 4 handlers
-  // ---------------------------------------------------------------------------
-
-  const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setStepFour((prev) => ({ ...prev, profilePhoto: file }));
-  };
-
-  const validateStepFour = (): boolean => {
+  const validateStepOne = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!stepFour.bio.trim()) {
-      newErrors.bio = "자기소개를 입력해주세요.";
-    } else if (stepFour.bio.length > VALIDATION.MAX_BIO_LENGTH) {
-      newErrors.bio = `자기소개는 ${VALIDATION.MAX_BIO_LENGTH}자 이하여야 합니다.`;
+    if (!stepOne.name.trim()) newErrors.name = "이름을 입력해주세요.";
+    if (!stepOne.company.trim()) newErrors.company = "현재 회사를 입력해주세요.";
+    if (!stepOne.position.trim()) newErrors.position = "직책/직급을 입력해주세요.";
+    if (stepOne.years === "" || stepOne.years < 3) {
+      newErrors.years = "경력은 최소 3년 이상이어야 합니다.";
+    }
+    if (!stepOne.jobType) newErrors.jobType = "직군을 선택해주세요.";
+    if (!stepOne.engine) newErrors.engine = "엔진을 선택해주세요.";
+    if (!stepOne.isVerified) {
+      newErrors.verification = "회사 이메일 인증을 완료해주세요.";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   // ---------------------------------------------------------------------------
-  // Step 5 handlers
+  // Step 2 handlers (프로필 + 상품)
   // ---------------------------------------------------------------------------
 
+  // 파일 업로드 크기 제한 (5MB)
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+  const ALLOWED_DOCUMENT_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+  const handleInsuranceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        showToast("파일 크기는 5MB 이하여야 합니다.", "error");
+        e.target.value = "";
+        return;
+      }
+      if (!ALLOWED_DOCUMENT_TYPES.includes(file.type)) {
+        showToast("PDF, JPG, PNG 형식의 파일만 업로드 가능합니다.", "error");
+        e.target.value = "";
+        return;
+      }
+    }
+    setStepTwo((prev) => ({ ...prev, insuranceFile: file }));
+  };
+
+  const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        showToast("파일 크기는 5MB 이하여야 합니다.", "error");
+        e.target.value = "";
+        return;
+      }
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        showToast("JPG, PNG, WebP 형식의 이미지만 업로드 가능합니다.", "error");
+        e.target.value = "";
+        return;
+      }
+    }
+    setStepTwo((prev) => ({ ...prev, profilePhoto: file }));
+  };
+
   const toggleProduct = (type: ProductType) => {
-    setStepFive((prev) => ({
+    setStepTwo((prev) => ({
       ...prev,
-      [type]: {
-        ...prev[type],
-        enabled: !prev[type].enabled,
-        price: !prev[type].enabled ? RECOMMENDED_PRICES[type] : "",
+      products: {
+        ...prev.products,
+        [type]: {
+          ...prev.products[type],
+          enabled: !prev.products[type].enabled,
+          price: !prev.products[type].enabled ? RECOMMENDED_PRICES[type] : "",
+        },
       },
     }));
     clearError(`price_${type}`);
@@ -311,17 +331,32 @@ export default function MentorApplyPage() {
   const handlePriceChange = (type: ProductType, value: string) => {
     const numericValue = value.replace(/[^0-9]/g, "");
     const num = numericValue === "" ? "" : parseInt(numericValue, 10);
-    setStepFive((prev) => ({
+    setStepTwo((prev) => ({
       ...prev,
-      [type]: { ...prev[type], price: num },
+      products: {
+        ...prev.products,
+        [type]: { ...prev.products[type], price: num },
+      },
     }));
     clearError(`price_${type}`);
   };
 
-  const validateStepFive = (): boolean => {
+  const validateStepTwo = (): boolean => {
     const newErrors: Record<string, string> = {};
-    const enabledProducts = (Object.keys(stepFive) as ProductType[]).filter(
-      (t) => stepFive[t].enabled
+
+    // 자기소개 필수 + 최소/최대 길이 검증
+    const trimmedBio = stepTwo.bio.trim();
+    if (!trimmedBio) {
+      newErrors.bio = "자기소개를 입력해주세요.";
+    } else if (trimmedBio.length < VALIDATION.MIN_INTRO_LENGTH) {
+      newErrors.bio = `자기소개는 최소 ${VALIDATION.MIN_INTRO_LENGTH}자 이상 입력해주세요.`;
+    } else if (stepTwo.bio.length > VALIDATION.MAX_BIO_LENGTH) {
+      newErrors.bio = `자기소개는 ${VALIDATION.MAX_BIO_LENGTH}자 이하여야 합니다.`;
+    }
+
+    // 상품 최소 1개
+    const enabledProducts = (Object.keys(stepTwo.products) as ProductType[]).filter(
+      (t) => stepTwo.products[t].enabled
     );
 
     if (enabledProducts.length === 0) {
@@ -329,7 +364,7 @@ export default function MentorApplyPage() {
     }
 
     for (const type of enabledProducts) {
-      const price = stepFive[type].price;
+      const price = stepTwo.products[type].price;
       const limits = PRICE_LIMITS[type];
       if (price === "" || price < limits.min || price > limits.max) {
         newErrors[`price_${type}`] = `가격은 ${formatPrice(limits.min)}원 ~ ${formatPrice(limits.max)}원 사이여야 합니다.`;
@@ -338,6 +373,49 @@ export default function MentorApplyPage() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // ---------------------------------------------------------------------------
+  // Step 3 handlers (시간 설정)
+  // ---------------------------------------------------------------------------
+
+  const toggleTimeSlot = (day: DayKey, time: string) => {
+    setStepThree((prev) => {
+      const current = prev.availableTimes[day];
+      const updated = current.includes(time)
+        ? current.filter((t) => t !== time)
+        : [...current, time].sort();
+      return {
+        ...prev,
+        availableTimes: { ...prev.availableTimes, [day]: updated },
+      };
+    });
+  };
+
+  const toggleAllDay = (day: DayKey) => {
+    setStepThree((prev) => {
+      const current = prev.availableTimes[day];
+      const allSelected = current.length === TIME_SLOTS.length;
+      return {
+        ...prev,
+        availableTimes: {
+          ...prev.availableTimes,
+          [day]: allSelected ? [] : [...TIME_SLOTS],
+        },
+      };
+    });
+  };
+
+  const validateStepThree = (): boolean => {
+    const hasAnySlot = Object.values(stepThree.availableTimes).some(
+      (slots) => slots.length > 0
+    );
+    if (!hasAnySlot) {
+      setErrors({ availableTimes: "최소 1개 이상의 시간대를 선택해주세요." });
+      return false;
+    }
+    setErrors({});
+    return true;
   };
 
   // ---------------------------------------------------------------------------
@@ -355,14 +433,7 @@ export default function MentorApplyPage() {
         valid = validateStepTwo();
         break;
       case 3:
-        // Step 3 is optional, always valid
-        valid = true;
-        break;
-      case 4:
-        valid = validateStepFour();
-        break;
-      case 5:
-        valid = validateStepFive();
+        valid = validateStepThree();
         if (valid) handleFinalSubmit();
         return;
     }
@@ -416,10 +487,18 @@ export default function MentorApplyPage() {
       }
 
       // Parse previous companies
-      const previousCompaniesArray = stepThree.previousCompanies
+      const previousCompaniesArray = stepTwo.previousCompanies
         .split(",")
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
+
+      // Build available_times (exclude empty days)
+      const availableTimes: Record<string, string[]> = {};
+      for (const [day, slots] of Object.entries(stepThree.availableTimes)) {
+        if (slots.length > 0) {
+          availableTimes[day] = slots;
+        }
+      }
 
       // Insert mentor
       const { data: mentorData, error: mentorError } = await supabase
@@ -435,20 +514,20 @@ export default function MentorApplyPage() {
           role: stepOne.position.trim(),
           experience: `${stepOne.years}년`,
           skills: [],
-          bio: stepFour.bio.trim() || null,
+          bio: stepTwo.bio.trim() || null,
           consult_types: [],
-          verified_email: stepTwo.verifiedEmail,
-          verified_company: stepTwo.verifiedEmail
-            ? stepTwo.verifiedEmail.split("@")[1]
+          verified_email: stepOne.verifiedEmail,
+          verified_company: stepOne.verifiedEmail
+            ? stepOne.verifiedEmail.split("@")[1]
             : null,
-          is_verified: stepTwo.isVerified,
-          verification_method: stepTwo.isVerified ? "email" as const : null,
-          verified_at: stepTwo.isVerified ? new Date().toISOString() : null,
-          verification_status: stepTwo.isVerified ? "verified" as const : "pending" as const,
+          is_verified: stepOne.isVerified,
+          verification_method: stepOne.isVerified ? "email" as const : null,
+          verified_at: stepOne.isVerified ? new Date().toISOString() : null,
+          verification_status: stepOne.isVerified ? "verified" as const : "pending" as const,
           previous_companies: previousCompaniesArray.length > 0 ? previousCompaniesArray : null,
           previous_companies_detail: [],
           profile_image_url: null,
-          available_times: null,
+          available_times: Object.keys(availableTimes).length > 0 ? availableTimes : null,
           price: null,
           contact_method: null,
         })
@@ -460,8 +539,8 @@ export default function MentorApplyPage() {
       }
 
       // Insert enabled products
-      const enabledProducts = (Object.keys(stepFive) as ProductType[]).filter(
-        (t) => stepFive[t].enabled
+      const enabledProducts = (Object.keys(stepTwo.products) as ProductType[]).filter(
+        (t) => stepTwo.products[t].enabled
       );
 
       if (enabledProducts.length > 0) {
@@ -471,7 +550,7 @@ export default function MentorApplyPage() {
           title: PRODUCT_INFO[type].name,
           description: PRODUCT_INFO[type].description,
           duration_minutes: PRODUCT_INFO[type].duration,
-          price: stepFive[type].price as number,
+          price: stepTwo.products[type].price as number,
           is_active: true,
         }));
 
@@ -480,8 +559,6 @@ export default function MentorApplyPage() {
           .insert(productInserts);
 
         if (productError) {
-          // Mentor was created successfully, but products failed — still show success
-          // since products can be added later from the dashboard
           showToast("상품 등록 중 일부 오류가 있었습니다. 대시보드에서 다시 등록할 수 있습니다.", "warning");
         }
       }
@@ -674,286 +751,223 @@ export default function MentorApplyPage() {
   );
 
   // ---------------------------------------------------------------------------
-  // Step 1: Basic Info
+  // Step 1: 기본정보 + 인증
   // ---------------------------------------------------------------------------
 
   const renderStepOne = () => (
-    <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-      <h3 className="text-lg font-semibold">기본 정보</h3>
-      <p className="text-sm text-muted -mt-3">
-        멘토로 활동하기 위한 기본 정보를 입력해주세요.
-      </p>
+    <div className="space-y-6">
+      {/* 기본 정보 섹션 */}
+      <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
+        <h3 className="text-lg font-semibold">기본 정보</h3>
+        <p className="text-sm text-muted -mt-3">
+          멘토로 활동하기 위한 기본 정보를 입력해주세요.
+        </p>
 
-      {/* Name */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">
-          이름 <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          name="name"
-          value={stepOne.name}
-          onChange={handleStepOneChange}
-          placeholder="멘토로 표시될 이름"
-          maxLength={VALIDATION.MAX_NAME_LENGTH}
-          className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
-            errors.name ? "border-red-500" : "border-card-border"
-          }`}
-        />
-        {errors.name && (
-          <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-        )}
-      </div>
-
-      {/* Company */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">
-          현재 회사 <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          name="company"
-          value={stepOne.company}
-          onChange={handleStepOneChange}
-          placeholder="예: 넥슨, 넷마블, 크래프톤"
-          className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
-            errors.company ? "border-red-500" : "border-card-border"
-          }`}
-        />
-        {errors.company && (
-          <p className="mt-1 text-sm text-red-500">{errors.company}</p>
-        )}
-      </div>
-
-      {/* Position */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">
-          직책/직급 <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          name="position"
-          value={stepOne.position}
-          onChange={handleStepOneChange}
-          placeholder="예: 시니어 클라이언트 프로그래머"
-          className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
-            errors.position ? "border-red-500" : "border-card-border"
-          }`}
-        />
-        {errors.position && (
-          <p className="mt-1 text-sm text-red-500">{errors.position}</p>
-        )}
-      </div>
-
-      {/* Years of experience */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">
-          경력 (년) <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="number"
-          name="years"
-          value={stepOne.years}
-          onChange={handleStepOneChange}
-          placeholder="최소 3년 이상"
-          min={3}
-          max={40}
-          className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
-            errors.years ? "border-red-500" : "border-card-border"
-          }`}
-        />
-        {errors.years && (
-          <p className="mt-1 text-sm text-red-500">{errors.years}</p>
-        )}
-      </div>
-
-      {/* Job type */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">
-          직군 <span className="text-red-500">*</span>
-        </label>
-        <select
-          name="jobType"
-          value={stepOne.jobType}
-          onChange={handleStepOneChange}
-          className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground focus:outline-none focus:border-primary transition-colors cursor-pointer ${
-            errors.jobType ? "border-red-500" : "border-card-border"
-          }`}
-        >
-          <option value="">선택해주세요</option>
-          {JOB_TYPES.map((jt) => (
-            <option key={jt.value} value={jt.value}>
-              {jt.label}
-            </option>
-          ))}
-        </select>
-        {errors.jobType && (
-          <p className="mt-1 text-sm text-red-500">{errors.jobType}</p>
-        )}
-      </div>
-
-      {/* Engine */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">
-          주력 엔진 <span className="text-red-500">*</span>
-        </label>
-        <select
-          name="engine"
-          value={stepOne.engine}
-          onChange={handleStepOneChange}
-          className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground focus:outline-none focus:border-primary transition-colors cursor-pointer ${
-            errors.engine ? "border-red-500" : "border-card-border"
-          }`}
-        >
-          <option value="">선택해주세요</option>
-          {ENGINE_TYPES.map((et) => (
-            <option key={et.value} value={et.value}>
-              {et.label}
-            </option>
-          ))}
-        </select>
-        {errors.engine && (
-          <p className="mt-1 text-sm text-red-500">{errors.engine}</p>
-        )}
-      </div>
-    </div>
-  );
-
-  // ---------------------------------------------------------------------------
-  // Step 2: Company Email Verification
-  // ---------------------------------------------------------------------------
-
-  const renderStepTwo = () => (
-    <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-      <h3 className="text-lg font-semibold">회사 이메일 인증</h3>
-      <p className="text-sm text-muted -mt-3">
-        현재 재직 중인 회사의 이메일로 인증해주세요. 인증된 멘토에게는 인증 뱃지가 부여됩니다.
-      </p>
-
-      {stepTwo.isVerified ? (
-        /* Verified state */
-        <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <div>
-              <p className="font-semibold text-green-800">인증 완료</p>
-              <p className="text-sm text-green-700">{stepTwo.verifiedEmail}</p>
-            </div>
-          </div>
+        {/* Name */}
+        <div>
+          <label htmlFor="mentor-name" className="block text-sm font-medium mb-1.5">
+            이름 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="mentor-name"
+            name="name"
+            value={stepOne.name}
+            onChange={handleStepOneChange}
+            placeholder="멘토로 표시될 이름"
+            maxLength={VALIDATION.MAX_NAME_LENGTH}
+            aria-required="true"
+            aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? "name-error" : undefined}
+            className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
+              errors.name ? "border-red-500" : "border-card-border"
+            }`}
+          />
+          {errors.name && (
+            <p id="name-error" className="mt-1 text-sm text-red-500" role="alert">{errors.name}</p>
+          )}
         </div>
-      ) : (
-        <>
-          {/* Email input + send button */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              회사 이메일 <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                value={stepTwo.companyEmail}
-                onChange={(e) => {
-                  setStepTwo((prev) => ({ ...prev, companyEmail: e.target.value }));
-                  clearError("companyEmail");
-                }}
-                placeholder="name@company.com"
-                disabled={codeSent}
-                className={`flex-1 px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors disabled:opacity-60 ${
-                  errors.companyEmail ? "border-red-500" : "border-card-border"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={handleSendCode}
-                disabled={isSendingCode || codeSent}
-                className="px-4 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
-              >
-                {isSendingCode ? (
-                  <span className="flex items-center gap-2">
-                    <svg
-                      className="w-4 h-4 animate-spin"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
-                    발송 중
-                  </span>
-                ) : codeSent ? (
-                  "발송 완료"
-                ) : (
-                  "인증 코드 발송"
-                )}
-              </button>
-            </div>
-            {errors.companyEmail && (
-              <p className="mt-1 text-sm text-red-500">{errors.companyEmail}</p>
-            )}
-            {codeSent && !errors.companyEmail && (
-              <p className="mt-1 text-sm text-green-600">
-                인증 코드가 발송되었습니다. 이메일을 확인해주세요.
-              </p>
-            )}
-          </div>
 
-          {/* Verification code input */}
-          {codeSent && (
+        {/* Company */}
+        <div>
+          <label htmlFor="mentor-company" className="block text-sm font-medium mb-1.5">
+            현재 회사 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="mentor-company"
+            name="company"
+            value={stepOne.company}
+            onChange={handleStepOneChange}
+            placeholder="예: 넥슨, 넷마블, 크래프톤"
+            aria-required="true"
+            aria-invalid={!!errors.company}
+            aria-describedby={errors.company ? "company-error" : undefined}
+            className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
+              errors.company ? "border-red-500" : "border-card-border"
+            }`}
+          />
+          {errors.company && (
+            <p id="company-error" className="mt-1 text-sm text-red-500" role="alert">{errors.company}</p>
+          )}
+        </div>
+
+        {/* Position */}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            직책/직급 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="position"
+            value={stepOne.position}
+            onChange={handleStepOneChange}
+            placeholder="예: 시니어 클라이언트 프로그래머"
+            className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
+              errors.position ? "border-red-500" : "border-card-border"
+            }`}
+          />
+          {errors.position && (
+            <p className="mt-1 text-sm text-red-500">{errors.position}</p>
+          )}
+        </div>
+
+        {/* Years of experience */}
+        <div>
+          <label htmlFor="mentor-years" className="block text-sm font-medium mb-1.5">
+            경력 (년) <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            id="mentor-years"
+            name="years"
+            value={stepOne.years}
+            onChange={handleStepOneChange}
+            placeholder="최소 3년 이상"
+            min={3}
+            max={40}
+            aria-required="true"
+            aria-invalid={!!errors.years}
+            aria-describedby={errors.years ? "years-error" : undefined}
+            className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
+              errors.years ? "border-red-500" : "border-card-border"
+            }`}
+          />
+          {errors.years && (
+            <p id="years-error" className="mt-1 text-sm text-red-500" role="alert">{errors.years}</p>
+          )}
+        </div>
+
+        {/* Job type */}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            직군 <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="jobType"
+            value={stepOne.jobType}
+            onChange={handleStepOneChange}
+            className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground focus:outline-none focus:border-primary transition-colors cursor-pointer ${
+              errors.jobType ? "border-red-500" : "border-card-border"
+            }`}
+          >
+            <option value="">선택해주세요</option>
+            {JOB_TYPES.map((jt) => (
+              <option key={jt.value} value={jt.value}>
+                {jt.label}
+              </option>
+            ))}
+          </select>
+          {errors.jobType && (
+            <p className="mt-1 text-sm text-red-500">{errors.jobType}</p>
+          )}
+        </div>
+
+        {/* Engine */}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            주력 엔진 <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="engine"
+            value={stepOne.engine}
+            onChange={handleStepOneChange}
+            className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground focus:outline-none focus:border-primary transition-colors cursor-pointer ${
+              errors.engine ? "border-red-500" : "border-card-border"
+            }`}
+          >
+            <option value="">선택해주세요</option>
+            {ENGINE_TYPES.map((et) => (
+              <option key={et.value} value={et.value}>
+                {et.label}
+              </option>
+            ))}
+          </select>
+          {errors.engine && (
+            <p className="mt-1 text-sm text-red-500">{errors.engine}</p>
+          )}
+        </div>
+      </div>
+
+      {/* 이메일 인증 섹션 */}
+      <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
+        <h3 className="text-lg font-semibold">회사 이메일 인증</h3>
+        <p className="text-sm text-muted -mt-3">
+          현재 재직 중인 회사의 이메일로 인증해주세요. 인증된 멘토에게는 인증 뱃지가 부여됩니다.
+        </p>
+
+        {stepOne.isVerified ? (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <svg
+                  className="w-5 h-5 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-green-800">인증 완료</p>
+                <p className="text-sm text-green-700">{stepOne.verifiedEmail}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Email input + send button */}
             <div>
               <label className="block text-sm font-medium mb-1.5">
-                인증 코드 (6자리)
+                회사 이메일 <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-2">
                 <input
-                  type="text"
-                  value={stepTwo.verificationCode}
+                  type="email"
+                  value={stepOne.companyEmail}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
-                    setStepTwo((prev) => ({ ...prev, verificationCode: val }));
-                    clearError("verificationCode");
+                    setStepOne((prev) => ({ ...prev, companyEmail: e.target.value }));
+                    clearError("companyEmail");
                   }}
-                  placeholder="000000"
-                  maxLength={6}
-                  className={`flex-1 px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors text-center text-lg tracking-widest font-mono ${
-                    errors.verificationCode
-                      ? "border-red-500"
-                      : "border-card-border"
+                  placeholder="name@company.com"
+                  disabled={codeSent}
+                  className={`flex-1 px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors disabled:opacity-60 ${
+                    errors.companyEmail ? "border-red-500" : "border-card-border"
                   }`}
                 />
                 <button
                   type="button"
-                  onClick={handleVerifyCode}
-                  disabled={
-                    isVerifying || stepTwo.verificationCode.length !== 6
-                  }
-                  className="px-5 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  onClick={handleSendCode}
+                  disabled={isSendingCode || codeSent}
+                  className="px-4 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
                 >
-                  {isVerifying ? (
+                  {isSendingCode ? (
                     <span className="flex items-center gap-2">
                       <svg
                         className="w-4 h-4 animate-spin"
@@ -974,128 +988,369 @@ export default function MentorApplyPage() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                         />
                       </svg>
-                      확인 중
+                      발송 중
                     </span>
+                  ) : codeSent ? (
+                    "발송 완료"
                   ) : (
-                    "인증하기"
+                    "인증 코드 발송"
                   )}
                 </button>
               </div>
-              {errors.verificationCode && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.verificationCode}
+              {errors.companyEmail && (
+                <p className="mt-1 text-sm text-red-500">{errors.companyEmail}</p>
+              )}
+              {codeSent && !errors.companyEmail && (
+                <p className="mt-1 text-sm text-green-600">
+                  인증 코드가 발송되었습니다. 이메일을 확인해주세요.
                 </p>
               )}
+            </div>
 
-              {/* Resend link */}
+            {/* Verification code input */}
+            {codeSent && (
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  인증 코드 (6자리)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={stepOne.verificationCode}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+                      setStepOne((prev) => ({ ...prev, verificationCode: val }));
+                      clearError("verificationCode");
+                    }}
+                    placeholder="000000"
+                    maxLength={6}
+                    className={`flex-1 px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors text-center text-lg tracking-widest font-mono ${
+                      errors.verificationCode
+                        ? "border-red-500"
+                        : "border-card-border"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyCode}
+                    disabled={
+                      isVerifying || stepOne.verificationCode.length !== 6
+                    }
+                    className="px-5 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  >
+                    {isVerifying ? (
+                      <span className="flex items-center gap-2">
+                        <svg
+                          className="w-4 h-4 animate-spin"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                        확인 중
+                      </span>
+                    ) : (
+                      "인증하기"
+                    )}
+                  </button>
+                </div>
+                {errors.verificationCode && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.verificationCode}
+                  </p>
+                )}
+
+                {/* Resend link */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCodeSent(false);
+                    setStepOne((prev) => ({
+                      ...prev,
+                      verificationCode: "",
+                    }));
+                  }}
+                  className="mt-2 text-sm text-primary hover:underline cursor-pointer"
+                >
+                  인증 코드 재발송
+                </button>
+              </div>
+            )}
+
+            {errors.verification && (
+              <p className="text-sm text-red-500">{errors.verification}</p>
+            )}
+
+            {/* No company email note */}
+            <div className="pt-2 border-t border-card-border">
               <button
                 type="button"
-                onClick={() => {
-                  setCodeSent(false);
-                  setStepTwo((prev) => ({
-                    ...prev,
-                    verificationCode: "",
-                  }));
-                }}
-                className="mt-2 text-sm text-primary hover:underline cursor-pointer"
+                onClick={() =>
+                  showToast(
+                    "회사 이메일이 없는 경우 support@itup.kr 로 문의해주세요. 재직증명서 등 대체 인증 방법을 안내드립니다.",
+                    "info"
+                  )
+                }
+                className="text-sm text-primary hover:underline cursor-pointer"
               >
-                인증 코드 재발송
+                회사 이메일이 없는 경우?
               </button>
             </div>
-          )}
-
-          {errors.verification && (
-            <p className="text-sm text-red-500">{errors.verification}</p>
-          )}
-
-          {/* No company email note */}
-          <div className="pt-2 border-t border-card-border">
-            <button
-              type="button"
-              onClick={() =>
-                showToast(
-                  "회사 이메일이 없는 경우 support@itup.kr 로 문의해주세요. 재직증명서 등 대체 인증 방법을 안내드립니다.",
-                  "info"
-                )
-              }
-              className="text-sm text-primary hover:underline cursor-pointer"
-            >
-              회사 이메일이 없는 경우?
-            </button>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 
   // ---------------------------------------------------------------------------
-  // Step 3: Previous Career (Optional)
+  // Step 2: 프로필 + 상품
   // ---------------------------------------------------------------------------
 
-  const renderStepThree = () => (
-    <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-      <h3 className="text-lg font-semibold">이전 경력</h3>
-      <p className="text-sm text-muted -mt-3">
-        이전 회사 경력을 추가하면 멘티에게 더 풍부한 프로필을 보여줄 수 있어요.
-      </p>
+  const renderStepTwo = () => {
+    const productTypes: ProductType[] = [
+      "coffee_chat",
+      "document_review",
+      "mock_interview",
+    ];
 
-      {/* Yes/No selection */}
-      {stepThree.wantsPreviousCareer === null && (
-        <div>
-          <p className="text-sm font-medium mb-3">
-            이전 회사 경력을 추가하시겠어요?
+    return (
+      <div className="space-y-6">
+        {/* 이전 경력 (선택) */}
+        <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
+          <h3 className="text-lg font-semibold">이전 경력</h3>
+          <p className="text-sm text-muted -mt-3">
+            이전 회사 경력을 추가하면 멘티에게 더 풍부한 프로필을 보여줄 수 있어요.
           </p>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                setStepThree((prev) => ({ ...prev, wantsPreviousCareer: true }))
-              }
-              className="flex-1 px-4 py-3 bg-primary/10 border border-primary/30 text-primary rounded-xl font-medium hover:bg-primary/20 transition-colors cursor-pointer"
-            >
-              네, 추가할게요
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setStepThree((prev) => ({
-                  ...prev,
-                  wantsPreviousCareer: false,
-                }))
-              }
-              className="flex-1 px-4 py-3 bg-secondary border border-card-border text-muted rounded-xl font-medium hover:bg-secondary/80 transition-colors cursor-pointer"
-            >
-              아니요, 건너뛸게요
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Previous career form */}
-      {stepThree.wantsPreviousCareer === true && (
-        <>
-          {/* Insurance file upload */}
+          {/* Yes/No selection */}
+          {stepTwo.wantsPreviousCareer === null && (
+            <div>
+              <p className="text-sm font-medium mb-3">
+                이전 회사 경력을 추가하시겠어요?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStepTwo((prev) => ({ ...prev, wantsPreviousCareer: true }))
+                  }
+                  className="flex-1 px-4 py-3 bg-primary/10 border border-primary/30 text-primary rounded-xl font-medium hover:bg-primary/20 transition-colors cursor-pointer"
+                >
+                  네, 추가할게요
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStepTwo((prev) => ({
+                      ...prev,
+                      wantsPreviousCareer: false,
+                    }))
+                  }
+                  className="flex-1 px-4 py-3 bg-secondary border border-card-border text-muted rounded-xl font-medium hover:bg-secondary/80 transition-colors cursor-pointer"
+                >
+                  아니요, 건너뛸게요
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Previous career form */}
+          {stepTwo.wantsPreviousCareer === true && (
+            <>
+              {/* Insurance file upload */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  건강보험 자격득실확인서{" "}
+                  <span className="text-muted">(선택)</span>
+                </label>
+                <p className="text-xs text-muted mb-2">
+                  경력 인증을 위해 건강보험 자격득실확인서를 업로드할 수 있습니다. (추후 관리자 검토)
+                </p>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleInsuranceFileChange}
+                    className="hidden"
+                    id="insurance-file"
+                  />
+                  <label
+                    htmlFor="insurance-file"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-8 border-2 border-dashed border-card-border rounded-xl text-muted hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                  >
+                    {stepTwo.insuranceFile ? (
+                      <div className="flex items-center gap-2">
+                        <svg
+                          className="w-5 h-5 text-green-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="text-foreground text-sm">
+                          {stepTwo.insuranceFile.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                          />
+                        </svg>
+                        <span className="text-sm">
+                          PDF, JPG, PNG 파일을 선택하세요
+                        </span>
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              {/* Previous companies text input */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  이전 회사명 <span className="text-muted">(선택)</span>
+                </label>
+                <input
+                  type="text"
+                  value={stepTwo.previousCompanies}
+                  onChange={(e) =>
+                    setStepTwo((prev) => ({
+                      ...prev,
+                      previousCompanies: e.target.value,
+                    }))
+                  }
+                  placeholder="쉼표로 구분 (예: 스마일게이트, 펄어비스)"
+                  className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
+                />
+                <p className="mt-1 text-xs text-muted">
+                  쉼표(,)로 구분하여 여러 회사를 입력할 수 있습니다.
+                </p>
+              </div>
+
+              {/* Reset button */}
+              <button
+                type="button"
+                onClick={() =>
+                  setStepTwo((prev) => ({
+                    ...prev,
+                    wantsPreviousCareer: null,
+                    previousCompanies: "",
+                    insuranceFile: null,
+                  }))
+                }
+                className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer"
+              >
+                다시 선택하기
+              </button>
+            </>
+          )}
+
+          {/* Skipped state */}
+          {stepTwo.wantsPreviousCareer === false && (
+            <div className="bg-secondary/50 rounded-xl p-4 flex items-center justify-between">
+              <p className="text-sm text-muted">이전 경력을 건너뛰었습니다.</p>
+              <button
+                type="button"
+                onClick={() =>
+                  setStepTwo((prev) => ({ ...prev, wantsPreviousCareer: null }))
+                }
+                className="text-sm text-primary hover:underline cursor-pointer"
+              >
+                다시 선택
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 프로필 작성 */}
+        <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
+          <h3 className="text-lg font-semibold">프로필 작성</h3>
+          <p className="text-sm text-muted -mt-3">
+            멘티들에게 보여질 프로필을 작성해주세요.
+          </p>
+
+          {/* Bio */}
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              건강보험 자격득실확인서{" "}
-              <span className="text-muted">(선택)</span>
+              자기소개 <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-muted mb-2">
-              경력 인증을 위해 건강보험 자격득실확인서를 업로드할 수 있습니다. (추후 관리자 검토)
-            </p>
+            <textarea
+              value={stepTwo.bio}
+              onChange={(e) => {
+                setStepTwo((prev) => ({ ...prev, bio: e.target.value }));
+                clearError("bio");
+              }}
+              placeholder="멘티들에게 어떤 도움을 줄 수 있는지 소개해주세요. 경력, 전문 분야, 멘토링 스타일 등을 자유롭게 작성해주세요."
+              rows={6}
+              maxLength={VALIDATION.MAX_BIO_LENGTH}
+              className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors resize-none ${
+                errors.bio ? "border-red-500" : "border-card-border"
+              }`}
+            />
+            <div className="flex items-center justify-between mt-1">
+              {errors.bio ? (
+                <p className="text-sm text-red-500">{errors.bio}</p>
+              ) : (
+                <span />
+              )}
+              <span
+                className={`text-xs ${
+                  stepTwo.bio.length > VALIDATION.MAX_BIO_LENGTH
+                    ? "text-red-500"
+                    : "text-muted"
+                }`}
+              >
+                {stepTwo.bio.length}/{VALIDATION.MAX_BIO_LENGTH}
+              </span>
+            </div>
+          </div>
+
+          {/* Profile photo */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              프로필 사진 <span className="text-muted">(선택)</span>
+            </label>
             <div className="relative">
               <input
                 type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handleInsuranceFileChange}
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleProfilePhotoChange}
                 className="hidden"
-                id="insurance-file"
+                id="profile-photo"
               />
               <label
-                htmlFor="insurance-file"
-                className="flex items-center justify-center gap-2 w-full px-4 py-8 border-2 border-dashed border-card-border rounded-xl text-muted hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                htmlFor="profile-photo"
+                className="flex flex-col items-center justify-center gap-3 w-full px-4 py-8 border-2 border-dashed border-card-border rounded-xl text-muted hover:border-primary hover:text-primary transition-colors cursor-pointer"
               >
-                {stepThree.insuranceFile ? (
+                {stepTwo.profilePhoto ? (
                   <div className="flex items-center gap-2">
                     <svg
                       className="w-5 h-5 text-green-500"
@@ -1111,332 +1366,251 @@ export default function MentorApplyPage() {
                       />
                     </svg>
                     <span className="text-foreground text-sm">
-                      {stepThree.insuranceFile.name}
+                      {stepTwo.profilePhoto.name}
                     </span>
                   </div>
                 ) : (
                   <>
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
+                    <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
+                      <svg
+                        className="w-8 h-8"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                    </div>
                     <span className="text-sm">
-                      PDF, JPG, PNG 파일을 선택하세요
+                      JPG, PNG, WebP (추후 업로드 기능 제공 예정)
                     </span>
                   </>
                 )}
               </label>
             </div>
           </div>
-
-          {/* Previous companies text input */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              이전 회사명 <span className="text-muted">(선택)</span>
-            </label>
-            <input
-              type="text"
-              value={stepThree.previousCompanies}
-              onChange={(e) =>
-                setStepThree((prev) => ({
-                  ...prev,
-                  previousCompanies: e.target.value,
-                }))
-              }
-              placeholder="쉼표로 구분 (예: 스마일게이트, 펄어비스)"
-              className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
-            />
-            <p className="mt-1 text-xs text-muted">
-              쉼표(,)로 구분하여 여러 회사를 입력할 수 있습니다.
-            </p>
-          </div>
-
-          {/* Reset button */}
-          <button
-            type="button"
-            onClick={() =>
-              setStepThree({
-                wantsPreviousCareer: null,
-                previousCompanies: "",
-                insuranceFile: null,
-              })
-            }
-            className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer"
-          >
-            다시 선택하기
-          </button>
-        </>
-      )}
-
-      {/* Skipped state */}
-      {stepThree.wantsPreviousCareer === false && (
-        <div className="bg-secondary/50 rounded-xl p-4 flex items-center justify-between">
-          <p className="text-sm text-muted">이전 경력을 건너뛰었습니다.</p>
-          <button
-            type="button"
-            onClick={() =>
-              setStepThree((prev) => ({ ...prev, wantsPreviousCareer: null }))
-            }
-            className="text-sm text-primary hover:underline cursor-pointer"
-          >
-            다시 선택
-          </button>
         </div>
-      )}
-    </div>
-  );
 
-  // ---------------------------------------------------------------------------
-  // Step 4: Profile
-  // ---------------------------------------------------------------------------
+        {/* 상품 등록 */}
+        <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
+          <h3 className="text-lg font-semibold">상품 등록</h3>
+          <p className="text-sm text-muted -mt-3">
+            제공하고 싶은 멘토링 서비스와 가격을 설정해주세요. 최소 1개 이상 등록해야 합니다.
+          </p>
 
-  const renderStepFour = () => (
-    <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-      <h3 className="text-lg font-semibold">프로필 작성</h3>
-      <p className="text-sm text-muted -mt-3">
-        멘티들에게 보여질 프로필을 작성해주세요.
-      </p>
-
-      {/* Bio */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">
-          자기소개 <span className="text-red-500">*</span>
-        </label>
-        <textarea
-          value={stepFour.bio}
-          onChange={(e) => {
-            setStepFour((prev) => ({ ...prev, bio: e.target.value }));
-            clearError("bio");
-          }}
-          placeholder="멘티들에게 어떤 도움을 줄 수 있는지 소개해주세요. 경력, 전문 분야, 멘토링 스타일 등을 자유롭게 작성해주세요."
-          rows={6}
-          maxLength={VALIDATION.MAX_BIO_LENGTH}
-          className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors resize-none ${
-            errors.bio ? "border-red-500" : "border-card-border"
-          }`}
-        />
-        <div className="flex items-center justify-between mt-1">
-          {errors.bio ? (
-            <p className="text-sm text-red-500">{errors.bio}</p>
-          ) : (
-            <span />
+          {errors.products && (
+            <p className="text-sm text-red-500">{errors.products}</p>
           )}
-          <span
-            className={`text-xs ${
-              stepFour.bio.length > VALIDATION.MAX_BIO_LENGTH
-                ? "text-red-500"
-                : "text-muted"
-            }`}
-          >
-            {stepFour.bio.length}/{VALIDATION.MAX_BIO_LENGTH}
-          </span>
-        </div>
-      </div>
 
-      {/* Profile photo */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">
-          프로필 사진 <span className="text-muted">(선택)</span>
-        </label>
-        <div className="relative">
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleProfilePhotoChange}
-            className="hidden"
-            id="profile-photo"
-          />
-          <label
-            htmlFor="profile-photo"
-            className="flex flex-col items-center justify-center gap-3 w-full px-4 py-8 border-2 border-dashed border-card-border rounded-xl text-muted hover:border-primary hover:text-primary transition-colors cursor-pointer"
-          >
-            {stepFour.profilePhoto ? (
-              <div className="flex items-center gap-2">
-                <svg
-                  className="w-5 h-5 text-green-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+          <div className="space-y-4">
+            {productTypes.map((type) => {
+              const info = PRODUCT_INFO[type];
+              const limits = PRICE_LIMITS[type];
+              const recommended = RECOMMENDED_PRICES[type];
+              const setting = stepTwo.products[type];
+
+              return (
+                <div
+                  key={type}
+                  className={`border rounded-xl p-5 transition-all duration-300 ${
+                    setting.enabled
+                      ? "border-primary bg-primary/5"
+                      : "border-card-border bg-secondary/30"
+                  }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span className="text-foreground text-sm">
-                  {stepFour.profilePhoto.name}
-                </span>
-              </div>
-            ) : (
-              <>
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm">
-                  JPG, PNG, WebP (추후 업로드 기능 제공 예정)
-                </span>
-              </>
-            )}
-          </label>
-        </div>
-      </div>
-    </div>
-  );
-
-  // ---------------------------------------------------------------------------
-  // Step 5: Product Registration
-  // ---------------------------------------------------------------------------
-
-  const renderStepFive = () => {
-    const productTypes: ProductType[] = [
-      "coffee_chat",
-      "document_review",
-      "mock_interview",
-    ];
-
-    return (
-      <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-        <h3 className="text-lg font-semibold">상품 등록</h3>
-        <p className="text-sm text-muted -mt-3">
-          제공하고 싶은 멘토링 서비스와 가격을 설정해주세요. 최소 1개 이상 등록해야 합니다.
-        </p>
-
-        {errors.products && (
-          <p className="text-sm text-red-500">{errors.products}</p>
-        )}
-
-        <div className="space-y-4">
-          {productTypes.map((type) => {
-            const info = PRODUCT_INFO[type];
-            const limits = PRICE_LIMITS[type];
-            const recommended = RECOMMENDED_PRICES[type];
-            const setting = stepFive[type];
-
-            return (
-              <div
-                key={type}
-                className={`border rounded-xl p-5 transition-all duration-300 ${
-                  setting.enabled
-                    ? "border-primary bg-primary/5"
-                    : "border-card-border bg-secondary/30"
-                }`}
-              >
-                {/* Header with toggle */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{info.icon}</span>
-                    <div>
-                      <p className="font-semibold">{info.name}</p>
-                      <p className="text-xs text-muted">
-                        {info.description} ({info.duration}분)
-                      </p>
+                  {/* Header with toggle */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{info.icon}</span>
+                      <div>
+                        <p className="font-semibold">{info.name}</p>
+                        <p className="text-xs text-muted">
+                          {info.description} ({info.duration}분)
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Toggle switch */}
-                  <button
-                    type="button"
-                    onClick={() => toggleProduct(type)}
-                    className={`relative w-12 h-6 rounded-full transition-colors duration-300 cursor-pointer ${
-                      setting.enabled ? "bg-primary" : "bg-secondary"
-                    }`}
-                    role="switch"
-                    aria-checked={setting.enabled}
-                    aria-label={`${info.name} 활성화`}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 ${
-                        setting.enabled ? "translate-x-6" : "translate-x-0"
+                    {/* Toggle switch */}
+                    <button
+                      type="button"
+                      onClick={() => toggleProduct(type)}
+                      className={`relative w-12 h-6 rounded-full transition-colors duration-300 cursor-pointer ${
+                        setting.enabled ? "bg-primary" : "bg-secondary"
                       }`}
-                    />
-                  </button>
-                </div>
-
-                {/* Price input (shown when enabled) */}
-                {setting.enabled && (
-                  <div className="mt-4 space-y-2">
-                    <label className="block text-sm font-medium">
-                      가격 (원)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={
-                          setting.price === ""
-                            ? ""
-                            : formatPrice(setting.price as number)
-                        }
-                        onChange={(e) => handlePriceChange(type, e.target.value)}
-                        placeholder={`${formatPrice(limits.min)} ~ ${formatPrice(limits.max)}`}
-                        className={`w-full px-4 py-3 pr-10 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
-                          errors[`price_${type}`]
-                            ? "border-red-500"
-                            : "border-card-border"
+                      role="switch"
+                      aria-checked={setting.enabled}
+                      aria-label={`${info.name} 활성화`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 ${
+                          setting.enabled ? "translate-x-6" : "translate-x-0"
                         }`}
                       />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted text-sm">
-                        원
-                      </span>
-                    </div>
-
-                    {errors[`price_${type}`] && (
-                      <p className="text-sm text-red-500">
-                        {errors[`price_${type}`]}
-                      </p>
-                    )}
-
-                    <div className="flex items-center justify-between text-xs text-muted">
-                      <span>
-                        설정 범위: {formatPrice(limits.min)}원 ~{" "}
-                        {formatPrice(limits.max)}원
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setStepFive((prev) => ({
-                            ...prev,
-                            [type]: { ...prev[type], price: recommended },
-                          }));
-                          clearError(`price_${type}`);
-                        }}
-                        className="text-primary hover:underline cursor-pointer"
-                      >
-                        권장가 {formatPrice(recommended)}원 적용
-                      </button>
-                    </div>
+                    </button>
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {/* Price input (shown when enabled) */}
+                  {setting.enabled && (
+                    <div className="mt-4 space-y-2">
+                      <label className="block text-sm font-medium">
+                        가격 (원)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={
+                            setting.price === ""
+                              ? ""
+                              : formatPrice(setting.price as number)
+                          }
+                          onChange={(e) => handlePriceChange(type, e.target.value)}
+                          placeholder={`${formatPrice(limits.min)} ~ ${formatPrice(limits.max)}`}
+                          className={`w-full px-4 py-3 pr-10 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
+                            errors[`price_${type}`]
+                              ? "border-red-500"
+                              : "border-card-border"
+                          }`}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted text-sm">
+                          원
+                        </span>
+                      </div>
+
+                      {errors[`price_${type}`] && (
+                        <p className="text-sm text-red-500">
+                          {errors[`price_${type}`]}
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-between text-xs text-muted">
+                        <span>
+                          설정 범위: {formatPrice(limits.min)}원 ~{" "}
+                          {formatPrice(limits.max)}원
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStepTwo((prev) => ({
+                              ...prev,
+                              products: {
+                                ...prev.products,
+                                [type]: { ...prev.products[type], price: recommended },
+                              },
+                            }));
+                            clearError(`price_${type}`);
+                          }}
+                          className="text-primary hover:underline cursor-pointer"
+                        >
+                          권장가 {formatPrice(recommended)}원 적용
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
   };
+
+  // ---------------------------------------------------------------------------
+  // Step 3: 시간 설정
+  // ---------------------------------------------------------------------------
+
+  const renderStepThree = () => (
+    <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
+      <h3 className="text-lg font-semibold">가능 시간 설정</h3>
+      <p className="text-sm text-muted -mt-3">
+        멘토링이 가능한 요일과 시간대를 선택해주세요. 최소 1개 이상의 시간대를 선택해야 합니다.
+      </p>
+
+      {errors.availableTimes && (
+        <p className="text-sm text-red-500">{errors.availableTimes}</p>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              <th className="p-2 text-left text-sm font-medium text-muted w-20">시간</th>
+              {DAYS.map((day) => (
+                <th key={day.key} className="p-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => toggleAllDay(day.key)}
+                    className="text-sm font-semibold hover:text-primary transition-colors cursor-pointer"
+                    title={`${day.label}요일 전체 선택/해제`}
+                  >
+                    {day.label}
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {TIME_SLOTS.map((time) => (
+              <tr key={time} className="border-t border-card-border/50">
+                <td className="p-2 text-sm text-muted whitespace-nowrap">{time}</td>
+                {DAYS.map((day) => {
+                  const isSelected = stepThree.availableTimes[day.key].includes(time);
+                  return (
+                    <td key={day.key} className="p-1 text-center">
+                      <button
+                        type="button"
+                        onClick={() => toggleTimeSlot(day.key, time)}
+                        className={`w-8 h-8 rounded-lg transition-all duration-200 cursor-pointer ${
+                          isSelected
+                            ? "bg-primary text-white shadow-sm"
+                            : "bg-secondary hover:bg-secondary/80 text-transparent"
+                        }`}
+                        aria-label={`${day.label}요일 ${time}`}
+                        aria-pressed={isSelected}
+                      >
+                        {isSelected && (
+                          <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Summary */}
+      {Object.values(stepThree.availableTimes).some((s) => s.length > 0) && (
+        <div className="bg-secondary/50 rounded-xl p-4">
+          <p className="text-sm font-medium mb-2">선택된 시간대</p>
+          <div className="flex flex-wrap gap-2">
+            {DAYS.map((day) => {
+              const slots = stepThree.availableTimes[day.key];
+              if (slots.length === 0) return null;
+              return (
+                <span
+                  key={day.key}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-xs rounded-full"
+                >
+                  {day.label} ({slots.length}개)
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   // ---------------------------------------------------------------------------
   // Render current step
@@ -1450,10 +1624,6 @@ export default function MentorApplyPage() {
         return renderStepTwo();
       case 3:
         return renderStepThree();
-      case 4:
-        return renderStepFour();
-      case 5:
-        return renderStepFive();
       default:
         return null;
     }
@@ -1550,10 +1720,6 @@ export default function MentorApplyPage() {
                 </span>
               ) : currentStep === TOTAL_STEPS ? (
                 "멘토 지원 완료"
-              ) : currentStep === 3 ? (
-                stepThree.wantsPreviousCareer === null
-                  ? "다음 단계"
-                  : "다음"
               ) : (
                 "다음"
               )}

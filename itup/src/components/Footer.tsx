@@ -7,7 +7,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 const footerLinks = {
   서비스: [
     { label: "멘토 찾기", href: "/mentors" },
-    { label: "멘토 등록", href: "/mentor/register" },
+    { label: "멘토 지원", href: "/mentor/apply" },
     { label: "멘토링 소개", href: "/#features" },
     { label: "기업 서비스", href: "/business" },
   ],
@@ -160,6 +160,7 @@ export default function Footer() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="이메일 주소"
+                aria-label="뉴스레터 구독용 이메일 주소"
                 className="flex-1 md:w-64 px-4 py-3 bg-card-bg border border-card-border rounded-full text-sm focus:outline-none focus:border-primary transition-colors"
                 disabled={isSubmitting}
               />

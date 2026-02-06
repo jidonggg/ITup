@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { MentorData } from "@/components/MentorDetailModal";
 import { mentorsData as fallbackMentors } from "@/data/mentors";
@@ -108,7 +109,7 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
 
         {/* View All Button */}
         <div className="text-center mt-12">
-          <a
+          <Link
             href="/mentors"
             className="group inline-flex items-center gap-2 px-8 py-4 border border-card-border text-foreground hover:border-primary hover:text-primary transition-all duration-300 cursor-pointer rounded-full"
           >
@@ -121,7 +122,7 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -165,7 +166,16 @@ function MentorCard({ mentor, index, onClick }: MentorCardProps) {
     >
       <div
         onClick={onClick}
-        className="group relative bg-card-bg border border-card-border rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`${mentor.name} 멘토 상세 정보 보기`}
+        className="group relative bg-card-bg border border-card-border rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
       >
         {/* Avatar Section */}
         <div className="relative h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">

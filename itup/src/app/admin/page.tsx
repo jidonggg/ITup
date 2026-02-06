@@ -5,11 +5,10 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { isAdmin } from "@/lib/admin";
-import { Mentor, Consultation, Booking, SessionConfirmation, ProductType } from "@/lib/supabase/types";
+import { Mentor, Consultation, Booking, SessionConfirmation, ProductType, Settlement, SettlementStatus } from "@/lib/supabase/types";
 import { PRODUCT_INFO, PAGINATION } from "@/lib/constants";
 
-type TabType = "overview" | "mentors" | "consultations" | "analytics" | "verification" | "bookings" | "disputes";
+type TabType = "overview" | "mentors" | "consultations" | "analytics" | "verification" | "bookings" | "disputes" | "settlements";
 
 interface MentorWithEmail extends Mentor {
   user_email?: string;
@@ -63,7 +62,7 @@ interface Stats {
 }
 
 export default function AdminPage() {
-  const { user, isInitialized } = useAuth();
+  const { user, profile, isInitialized } = useAuth();
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
@@ -127,9 +126,14 @@ export default function AdminPage() {
     finalStatus: "completed" | "mentee_noshow" | "mentor_noshow" | "disputed";
   } | null>(null);
 
+  // v2: Settlements
+  const [adminSettlements, setAdminSettlements] = useState<(Settlement & { mentor_name?: string })[]>([]);
+  const [settlementFilter, setSettlementFilter] = useState<SettlementStatus | "all">("all");
+  const [processingSettlementId, setProcessingSettlementId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isInitialized) return;
-    if (!user || !isAdmin(user.email)) {
+    if (!user || profile?.role !== "admin") {
       setIsLoading(false);
       return;
     }
@@ -302,12 +306,12 @@ export default function AdminPage() {
       // Click stats (top actions)
       const { data: clickData } = await supabase
         .from("analytics_events")
-        .select("target");
+        .select("event_name");
 
       if (clickData) {
         const clickCounts: Record<string, number> = {};
         clickData.forEach((ev) => {
-          const target = ev.target || "unknown";
+          const target = ev.event_name || "unknown";
           clickCounts[target] = (clickCounts[target] || 0) + 1;
         });
 
@@ -435,10 +439,20 @@ export default function AdminPage() {
         .order("created_at", { ascending: false });
 
       if (confirmationsData) {
-        // Filter for mismatches: both sides confirmed but disagree
+        // Filter for mismatches: both sides responded and at least one disagrees
+        // mentor_confirmed/mentee_confirmed 값이 있고 (양측 모두 응답함)
+        // 서로 불일치하거나 둘 중 하나라도 문제 상태(noshow, issue)인 경우 분쟁으로 처리
         const disputeConfirmations = confirmationsData.filter(sc => {
+          // 양측 모두 응답해야 함
           if (!sc.mentor_confirmed || !sc.mentee_confirmed) return false;
-          return sc.mentor_confirmed !== sc.mentee_confirmed;
+          // 불일치하거나 문제 상태가 있는 경우
+          const hasIssue =
+            sc.mentor_confirmed !== sc.mentee_confirmed ||
+            sc.mentor_confirmed.includes("noshow") ||
+            sc.mentee_confirmed.includes("noshow") ||
+            sc.mentor_confirmed === "issue" ||
+            sc.mentee_confirmed === "issue";
+          return hasIssue;
         });
 
         if (disputeConfirmations.length > 0) {
@@ -497,6 +511,33 @@ export default function AdminPage() {
           setStats(prev => ({ ...prev, disputeCount: 0 }));
         }
       }
+      // =============================================
+      // v2: Settlements
+      // =============================================
+      const { data: settlementsData } = await supabase
+        .from("settlements")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (settlementsData) {
+        const sMentorIds = [...new Set(settlementsData.map(s => s.mentor_id).filter(Boolean))];
+        let sMentorNameMap: Record<string, string> = {};
+        if (sMentorIds.length > 0) {
+          const { data: sMentorNames } = await supabase
+            .from("mentors")
+            .select("id, name")
+            .in("id", sMentorIds);
+          if (sMentorNames) {
+            sMentorNameMap = Object.fromEntries(sMentorNames.map(m => [m.id, m.name]));
+          }
+        }
+
+        setAdminSettlements(settlementsData.map(s => ({
+          ...s,
+          mentor_name: sMentorNameMap[s.mentor_id] || "알 수 없음",
+        })));
+      }
+
     } catch (error) {
     } finally {
       setIsLoading(false);
@@ -540,13 +581,25 @@ export default function AdminPage() {
       }
 
       // Update local state
+      const targetMentor = mentors.find(m => m.id === mentorId);
+      const wasApproved = targetMentor?.is_approved ?? false;
+
       setMentors(prev => prev.map(m =>
         m.id === mentorId ? { ...m, is_approved: approve } : m
       ));
-      setStats(prev => ({
-        ...prev,
-        pendingMentors: prev.pendingMentors + (approve ? -1 : 1),
-      }));
+
+      // pendingMentors 카운트 정확하게 업데이트
+      // approve=true: pending -> approved (-1)
+      // approve=false: approved -> pending (+1)
+      // 이미 같은 상태면 변경 없음
+      if (wasApproved !== approve) {
+        setStats(prev => ({
+          ...prev,
+          pendingMentors: approve
+            ? Math.max(0, prev.pendingMentors - 1)
+            : prev.pendingMentors + 1,
+        }));
+      }
 
       // 멘토 승인 시 이메일 알림 발송
       if (approve && token) {
@@ -671,37 +724,29 @@ export default function AdminPage() {
         return;
       }
 
-      const supabase = createClient();
+      // 서버 API를 통한 검증 처리 (보안 강화)
+      const response = await fetch("/api/admin/mentors", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mentorId,
+          action: action === "approve" ? "verify_approve" : "verify_reject",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        showToast(result.error || "멘토 검증 처리 중 오류가 발생했습니다.", "error");
+        return;
+      }
 
       if (action === "approve") {
-        const { error } = await supabase
-          .from("mentors")
-          .update({
-            verification_status: "verified" as const,
-            is_approved: true,
-            verified_at: new Date().toISOString(),
-          })
-          .eq("id", mentorId);
-
-        if (error) {
-          showToast("멘토 검증 승인 중 오류가 발생했습니다.", "error");
-          return;
-        }
-
         showToast("멘토가 검증 승인되었습니다.", "success");
       } else {
-        const { error } = await supabase
-          .from("mentors")
-          .update({
-            verification_status: "rejected" as const,
-          })
-          .eq("id", mentorId);
-
-        if (error) {
-          showToast("멘토 검증 거절 중 오류가 발생했습니다.", "error");
-          return;
-        }
-
         showToast("멘토 검증이 거절되었습니다.", "success");
       }
 
@@ -893,7 +938,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!user || !isAdmin(user.email)) {
+  if (!user || profile?.role !== "admin") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-8 text-center">
@@ -987,6 +1032,7 @@ export default function AdminPage() {
             { id: "verification" as TabType, label: `멘토 검증 ${stats.pendingVerifications > 0 ? `(${stats.pendingVerifications})` : ""}` },
             { id: "bookings" as TabType, label: "예약 관리" },
             { id: "disputes" as TabType, label: `분쟁 관리 ${stats.disputeCount > 0 ? `(${stats.disputeCount})` : ""}` },
+            { id: "settlements" as TabType, label: "정산 관리" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1744,6 +1790,208 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* =============================================
+            v2: Settlements Tab
+            ============================================= */}
+        {activeTab === "settlements" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">정산 관리</h2>
+              <span className="text-sm text-muted">
+                {adminSettlements.length}건
+              </span>
+            </div>
+
+            {/* Filter */}
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { value: "all" as const, label: "전체" },
+                { value: "pending" as const, label: "대기중" },
+                { value: "processing" as const, label: "처리중" },
+                { value: "completed" as const, label: "완료" },
+                { value: "failed" as const, label: "실패" },
+              ].map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => setSettlementFilter(f.value)}
+                  className={`px-4 py-2 rounded-full text-sm cursor-pointer transition-colors ${
+                    settlementFilter === f.value
+                      ? "bg-primary text-white"
+                      : "bg-card-bg border border-card-border text-muted hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-card-bg border border-card-border rounded-xl overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-secondary">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium">멘토</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">정산 기간</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium">총 매출</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium">수수료</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium">정산액</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium">상태</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium">액션</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminSettlements
+                    .filter(s => settlementFilter === "all" || s.status === settlementFilter)
+                    .map((settlement) => {
+                      const statusStyles: Record<string, string> = {
+                        pending: "bg-yellow-500/20 text-yellow-500",
+                        processing: "bg-blue-500/20 text-blue-500",
+                        completed: "bg-green-500/20 text-green-500",
+                        failed: "bg-red-500/20 text-red-500",
+                      };
+                      const statusLabels: Record<string, string> = {
+                        pending: "대기중",
+                        processing: "처리중",
+                        completed: "완료",
+                        failed: "실패",
+                      };
+
+                      return (
+                        <tr key={settlement.id} className="border-t border-card-border">
+                          <td className="px-4 py-3 text-sm font-medium">{settlement.mentor_name}</td>
+                          <td className="px-4 py-3 text-sm text-muted">
+                            {new Date(settlement.period_start).toLocaleDateString("ko-KR")} ~{" "}
+                            {new Date(settlement.period_end).toLocaleDateString("ko-KR")}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right">
+                            {settlement.total_amount.toLocaleString()}원
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right text-muted">
+                            -{settlement.platform_fee.toLocaleString()}원
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right font-bold text-primary">
+                            {settlement.settlement_amount.toLocaleString()}원
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`px-2 py-1 text-xs rounded-full ${statusStyles[settlement.status] || ""}`}>
+                              {statusLabels[settlement.status] || settlement.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {settlement.status === "pending" && (
+                                <button
+                                  onClick={async () => {
+                                    setProcessingSettlementId(settlement.id);
+                                    try {
+                                      const token = await getAuthToken();
+                                      const res = await fetch("/api/settlement/process", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                                        body: JSON.stringify({ settlementId: settlement.id, action: "process" }),
+                                      });
+                                      const result = await res.json();
+                                      if (res.ok) {
+                                        setAdminSettlements(prev => prev.map(s =>
+                                          s.id === settlement.id ? { ...s, status: "processing" as const } : s
+                                        ));
+                                        showToast("처리 시작됨", "success");
+                                      } else {
+                                        showToast(result.error || "정산 처리 시작 실패", "error");
+                                      }
+                                    } catch {
+                                      showToast("정산 처리 중 오류가 발생했습니다.", "error");
+                                    } finally {
+                                      setProcessingSettlementId(null);
+                                    }
+                                  }}
+                                  disabled={processingSettlementId === settlement.id}
+                                  className="px-2 py-1 bg-blue-500 text-white rounded text-xs cursor-pointer hover:bg-blue-600 disabled:opacity-50"
+                                >
+                                  처리
+                                </button>
+                              )}
+                              {settlement.status === "processing" && (
+                                <button
+                                  onClick={async () => {
+                                    setProcessingSettlementId(settlement.id);
+                                    try {
+                                      const token = await getAuthToken();
+                                      const res = await fetch("/api/settlement/process", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                                        body: JSON.stringify({ settlementId: settlement.id, action: "complete" }),
+                                      });
+                                      const result = await res.json();
+                                      if (res.ok) {
+                                        setAdminSettlements(prev => prev.map(s =>
+                                          s.id === settlement.id ? { ...s, status: "completed" as const, settled_at: new Date().toISOString() } : s
+                                        ));
+                                        showToast("정산 완료", "success");
+                                      } else {
+                                        showToast(result.error || "정산 완료 처리 실패", "error");
+                                      }
+                                    } catch {
+                                      showToast("정산 완료 처리 중 오류가 발생했습니다.", "error");
+                                    } finally {
+                                      setProcessingSettlementId(null);
+                                    }
+                                  }}
+                                  disabled={processingSettlementId === settlement.id}
+                                  className="px-2 py-1 bg-green-500 text-white rounded text-xs cursor-pointer hover:bg-green-600 disabled:opacity-50"
+                                >
+                                  완료
+                                </button>
+                              )}
+                              {(settlement.status === "pending" || settlement.status === "processing") && (
+                                <button
+                                  onClick={async () => {
+                                    setProcessingSettlementId(settlement.id);
+                                    try {
+                                      const token = await getAuthToken();
+                                      const res = await fetch("/api/settlement/process", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                                        body: JSON.stringify({ settlementId: settlement.id, action: "fail", failureReason: "관리자 실패 처리" }),
+                                      });
+                                      const result = await res.json();
+                                      if (res.ok) {
+                                        setAdminSettlements(prev => prev.map(s =>
+                                          s.id === settlement.id ? { ...s, status: "failed" as const } : s
+                                        ));
+                                        showToast("실패 처리됨", "success");
+                                      } else {
+                                        showToast(result.error || "실패 처리 중 오류", "error");
+                                      }
+                                    } catch {
+                                      showToast("실패 처리 중 오류가 발생했습니다.", "error");
+                                    } finally {
+                                      setProcessingSettlementId(null);
+                                    }
+                                  }}
+                                  disabled={processingSettlementId === settlement.id}
+                                  className="px-2 py-1 bg-red-500 text-white rounded text-xs cursor-pointer hover:bg-red-600 disabled:opacity-50"
+                                >
+                                  실패
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  {adminSettlements.filter(s => settlementFilter === "all" || s.status === settlementFilter).length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-muted">
+                        정산 내역이 없습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

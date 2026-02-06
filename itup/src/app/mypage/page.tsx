@@ -6,139 +6,37 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { Consultation, Mentor, Payment, Booking, Product } from "@/lib/supabase/types";
+import { Mentor, Booking, Product, MentorFeedback } from "@/lib/supabase/types";
 import { PRODUCT_INFO } from "@/lib/constants";
-import ReviewModal from "@/components/ReviewModal";
-
-interface ConsultationWithMentor extends Consultation {
-  mentor?: Mentor | null;
-}
+import FreeTrialConversionCTA from "@/components/FreeTrialConversionCTA";
 
 interface BookingWithDetails extends Booking {
   mentor?: Mentor | null;
   product?: Product | null;
   has_review?: boolean;
+  feedback?: MentorFeedback | null;
 }
 
-type TabType = "profile" | "consultations" | "payments" | "bookings";
-
-const PRODUCT_TYPE_LABELS: Record<string, { icon: string; label: string }> = {
-  coffee: { icon: "☕", label: "커피챗" },
-  resume: { icon: "📄", label: "이력서/포폴 첨삭" },
-  interview: { icon: "🎤", label: "모의면접" },
-};
-
-const BUNDLE_TYPE_LABELS: Record<string, { icon: string; label: string }> = {
-  starter: { icon: "🎯", label: "스타터 번들" },
-  allinone: { icon: "🚀", label: "올인원 번들" },
-  full: { icon: "👑", label: "풀패키지 번들" },
-};
+type TabType = "profile" | "bookings";
 
 export default function MyPage() {
   const router = useRouter();
   const { user, profile, isLoading, isInitialized, signOut, refreshProfile } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>("profile");
-  const [consultations, setConsultations] = useState<ConsultationWithMentor[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [isLoadingConsultations, setIsLoadingConsultations] = useState(true);
-  const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [selectedConsultation, setSelectedConsultation] = useState<ConsultationWithMentor | null>(null);
+  const [expandedFeedback, setExpandedFeedback] = useState<string | null>(null);
+  const [showConversionCTA, setShowConversionCTA] = useState(false);
+  const [lastFreeTrialMentorId, setLastFreeTrialMentorId] = useState<string | null>(null);
 
   // 비로그인 시 차단 화면에서 처리 (early return)
 
-  // Fetch consultations
-  useEffect(() => {
-    const fetchConsultations = async () => {
-      if (!user || !isSupabaseConfigured()) {
-        setIsLoadingConsultations(false);
-        return;
-      }
-
-      try {
-        const supabase = createClient();
-        const { data: consultData, error } = await supabase
-          .from("consultations")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          return;
-        }
-
-        if (consultData && consultData.length > 0) {
-          const mentorIds = [...new Set(consultData.map(c => c.mentor_id).filter(Boolean))];
-          let mentorsMap: Record<string, Mentor> = {};
-
-          if (mentorIds.length > 0) {
-            const { data: mentorData } = await supabase
-              .from("mentors")
-              .select("*")
-              .in("id", mentorIds);
-
-            if (mentorData) {
-              mentorsMap = Object.fromEntries(mentorData.map(m => [m.id, m]));
-            }
-          }
-
-          const consultationsWithMentor = consultData.map(c => ({
-            ...c,
-            mentor: c.mentor_id ? mentorsMap[c.mentor_id] : null,
-          }));
-
-          setConsultations(consultationsWithMentor);
-        }
-      } catch (error) {
-      } finally {
-        setIsLoadingConsultations(false);
-      }
-    };
-
-    if (user) {
-      fetchConsultations();
-    }
-  }, [user]);
-
-  // Fetch payments
-  useEffect(() => {
-    const fetchPayments = async () => {
-      if (!user || !isSupabaseConfigured()) {
-        setIsLoadingPayments(false);
-        return;
-      }
-
-      try {
-        const supabase = createClient();
-
-        const { data: paymentData } = await supabase
-          .from("payments")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (paymentData) {
-          setPayments(paymentData);
-        }
-      } catch (error) {
-      } finally {
-        setIsLoadingPayments(false);
-      }
-    };
-
-    if (user) {
-      fetchPayments();
-    }
-  }, [user]);
-
-  // Fetch bookings (v2)
+  // Fetch bookings
   useEffect(() => {
     const fetchBookings = async () => {
       if (!user || !isSupabaseConfigured()) {
@@ -155,6 +53,8 @@ export default function MyPage() {
           .order("created_at", { ascending: false });
 
         if (error) {
+          console.error("예약 내역 조회 실패:", error.message);
+          setBookings([]);
           setIsLoadingBookings(false);
           return;
         }
@@ -205,16 +105,45 @@ export default function MyPage() {
             }
           }
 
+          // Fetch mentor feedbacks
+          let feedbacksMap: Record<string, MentorFeedback> = {};
+          if (bookingIds.length > 0) {
+            const { data: feedbackData } = await supabase
+              .from("mentor_feedbacks")
+              .select("*")
+              .in("booking_id", bookingIds);
+
+            if (feedbackData) {
+              feedbacksMap = Object.fromEntries(feedbackData.map((f: MentorFeedback) => [f.booking_id, f]));
+            }
+          }
+
           const bookingsWithDetails: BookingWithDetails[] = bookingData.map(b => ({
             ...b,
             mentor: b.mentor_id ? mentorsMap[b.mentor_id] : null,
             product: b.product_id ? productsMap[b.product_id] : null,
             has_review: reviewedBookingIds.has(b.id),
+            feedback: feedbacksMap[b.id] || null,
           }));
 
           setBookings(bookingsWithDetails);
+
+          // Check if user completed free trial but hasn't booked a paid session
+          const completedFreeTrial = bookingData.find(
+            b => b.payment_method === "free_trial" && b.status === "completed"
+          );
+          const hasPaidBooking = bookingData.some(
+            b => b.payment_method !== "free_trial" && b.amount > 0 && b.status !== "cancelled"
+          );
+
+          if (completedFreeTrial && !hasPaidBooking) {
+            setShowConversionCTA(true);
+            setLastFreeTrialMentorId(completedFreeTrial.mentor_id);
+          }
         }
       } catch (error) {
+        console.error("예약 내역 로딩 중 오류:", error);
+        setBookings([]);
       } finally {
         setIsLoadingBookings(false);
       }
@@ -236,14 +165,32 @@ export default function MyPage() {
   const handleSaveProfile = async () => {
     if (!user || !isSupabaseConfigured()) return;
 
+    // 이름 유효성 검사
+    const trimmedName = editName.trim();
+    if (!trimmedName) {
+      showToast("이름을 입력해주세요.", "error");
+      return;
+    }
+    if (trimmedName.length > 50) {
+      showToast("이름은 50자 이내로 입력해주세요.", "error");
+      return;
+    }
+
+    // 연락처 유효성 검사 (입력된 경우에만)
+    const trimmedPhone = editPhone.trim();
+    if (trimmedPhone && !/^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/.test(trimmedPhone)) {
+      showToast("올바른 연락처 형식이 아니에요. (예: 010-1234-5678)", "error");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const supabase = createClient();
       const { error } = await supabase
         .from("profiles")
         .update({
-          name: editName,
-          phone: editPhone,
+          name: trimmedName,
+          phone: trimmedPhone || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
@@ -256,6 +203,7 @@ export default function MyPage() {
         showToast("프로필이 수정되었어요.", "success");
       }
     } catch (error) {
+      showToast("프로필 수정 중 오류가 발생했어요.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -264,74 +212,6 @@ export default function MyPage() {
   const handleLogout = async () => {
     await signOut();
     router.push("/");
-  };
-
-  const handleOpenReview = (consultation: ConsultationWithMentor) => {
-    setSelectedConsultation(consultation);
-    setReviewModalOpen(true);
-  };
-
-  const handleReviewSuccess = () => {
-    setConsultations((prev) =>
-      prev.map((c) =>
-        c.id === selectedConsultation?.id ? { ...c, has_review: true } : c
-      )
-    );
-    setReviewModalOpen(false);
-    setSelectedConsultation(null);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      pending: "bg-yellow-500/20 text-yellow-500",
-      confirmed: "bg-blue-500/20 text-blue-500",
-      completed: "bg-green-500/20 text-green-500",
-      cancelled: "bg-red-500/20 text-red-500",
-      active: "bg-green-500/20 text-green-500",
-      expired: "bg-gray-500/20 text-gray-500",
-      failed: "bg-red-500/20 text-red-500",
-      refunded: "bg-orange-500/20 text-orange-500",
-    };
-    const labels: Record<string, string> = {
-      pending: "대기중",
-      confirmed: "확정",
-      completed: "완료",
-      cancelled: "취소",
-      active: "활성",
-      expired: "만료",
-      failed: "실패",
-      refunded: "환불",
-    };
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || "bg-gray-500/20 text-gray-500"}`}>
-        {labels[status] || status}
-      </span>
-    );
-  };
-
-  const getPaymentLabel = (payment: Payment) => {
-    if (payment.bundle_type) {
-      const info = BUNDLE_TYPE_LABELS[payment.bundle_type];
-      return info ? `${info.icon} ${info.label}` : payment.bundle_type;
-    }
-    if (payment.product_type) {
-      const info = PRODUCT_TYPE_LABELS[payment.product_type];
-      return info ? `${info.icon} ${info.label}` : payment.product_type;
-    }
-    return "상담";
-  };
-
-  const getConsultProductBadge = (consultation: ConsultationWithMentor) => {
-    const pt = consultation.product_type;
-    if (pt && PRODUCT_TYPE_LABELS[pt]) {
-      const info = PRODUCT_TYPE_LABELS[pt];
-      return (
-        <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
-          {info.icon} {info.label}
-        </span>
-      );
-    }
-    return null;
   };
 
   const getBookingStatusBadge = (status: string) => {
@@ -404,8 +284,6 @@ export default function MyPage() {
   const tabs = [
     { id: "profile" as TabType, label: "프로필", icon: "👤" },
     { id: "bookings" as TabType, label: "예약 내역", icon: "📅" },
-    { id: "consultations" as TabType, label: "상담 내역", icon: "☕" },
-    { id: "payments" as TabType, label: "결제 내역", icon: "💳" },
   ];
 
   if (!isInitialized || isLoading) {
@@ -463,6 +341,17 @@ export default function MyPage() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">마이페이지</h1>
+
+        {/* Conversion CTA for free trial users */}
+        {showConversionCTA && (
+          <div className="mb-8">
+            <FreeTrialConversionCTA
+              mentorId={lastFreeTrialMentorId || undefined}
+              variant="inline"
+              onDismiss={() => setShowConversionCTA(false)}
+            />
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 mb-8 border-b border-card-border">
@@ -638,6 +527,74 @@ export default function MyPage() {
                       </span>
                     </div>
 
+                    {/* Meeting link for confirmed bookings */}
+                    {booking.status === "confirmed" && booking.meeting_link && (
+                      <div className="mb-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                        <p className="text-xs text-muted mb-1 flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          미팅 링크
+                        </p>
+                        <a
+                          href={booking.meeting_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline"
+                        >
+                          세션 참여하기
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      </div>
+                    )}
+                    {booking.status === "confirmed" && !booking.meeting_link && (
+                      <div className="mb-3 p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
+                        <p className="text-xs text-yellow-600 flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          멘토가 미팅 링크를 아직 등록하지 않았어요
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Mentor feedback for completed bookings */}
+                    {booking.status === "completed" && booking.feedback && (
+                      <div className="mb-3">
+                        <button
+                          onClick={() => setExpandedFeedback(expandedFeedback === booking.id ? null : booking.id)}
+                          className="w-full text-left p-3 bg-green-500/5 border border-green-500/20 rounded-lg hover:bg-green-500/10 transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-green-600 flex items-center gap-1">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                              </svg>
+                              멘토 피드백이 있어요
+                            </p>
+                            <svg
+                              className={`w-4 h-4 text-green-600 transition-transform ${expandedFeedback === booking.id ? "rotate-180" : ""}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </button>
+                        {expandedFeedback === booking.id && (
+                          <div className="mt-2 p-3 bg-background rounded-lg border border-card-border">
+                            <p className="text-sm whitespace-pre-wrap">{booking.feedback.content}</p>
+                            <p className="text-xs text-muted mt-2">
+                              작성일: {new Date(booking.feedback.created_at).toLocaleDateString("ko-KR")}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Amount */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
@@ -664,24 +621,19 @@ export default function MyPage() {
                           </Link>
                         )}
                         {booking.status === "completed" && !booking.has_review && booking.mentor_id && (
-                          <button
-                            onClick={() => {
-                              setSelectedConsultation(null);
-                              setReviewModalOpen(false);
-                              // Navigate to review or open modal for booking
-                              router.push(`/review/write?bookingId=${booking.id}&mentorId=${booking.mentor_id}`);
-                            }}
-                            className="px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors cursor-pointer"
+                          <Link
+                            href={`/review/write?bookingId=${booking.id}&mentorId=${booking.mentor_id}`}
+                            className="px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
                           >
                             리뷰 작성
-                          </button>
+                          </Link>
                         )}
                         {booking.status === "completed" && booking.has_review && (
                           <span className="px-3 py-1.5 text-xs font-medium bg-green-500/10 text-green-500 rounded-lg">
                             리뷰 완료
                           </span>
                         )}
-                        {(booking.status === "pending" || booking.status === "paid") && (
+                        {(booking.status === "pending" || booking.status === "paid" || booking.status === "confirmed") && (
                           <button
                             onClick={() => handleCancelBooking(booking.id)}
                             className="px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors cursor-pointer"
@@ -690,144 +642,6 @@ export default function MyPage() {
                           </button>
                         )}
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Consultations Tab */}
-        {activeTab === "consultations" && (
-          <section className="bg-card-bg border border-card-border rounded-2xl p-6">
-            <h2 className="text-xl font-semibold mb-6">상담 신청 내역</h2>
-
-            {isLoadingConsultations ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-              </div>
-            ) : consultations.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-4xl mb-4">☕</div>
-                <p className="text-muted mb-4">아직 신청한 상담이 없어요.</p>
-                <Link
-                  href="/mentors"
-                  className="inline-flex items-center gap-2 text-primary hover:underline"
-                >
-                  멘토 둘러보기
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {consultations.map((consultation) => (
-                  <div
-                    key={consultation.id}
-                    className="p-4 bg-background border border-card-border rounded-xl"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium">
-                            {consultation.mentor?.name || "멘토"} 멘토님과의 상담
-                          </p>
-                          {getConsultProductBadge(consultation)}
-                        </div>
-                        <p className="text-sm text-muted">
-                          {consultation.mentor?.company} · {consultation.mentor?.role}
-                        </p>
-                      </div>
-                      {getStatusBadge(consultation.status)}
-                    </div>
-                    {consultation.interest && (
-                      <p className="text-sm text-muted mb-2">
-                        관심 분야: {consultation.interest}
-                      </p>
-                    )}
-                    {consultation.message && (
-                      <p className="text-sm text-foreground/80 mb-3 line-clamp-2">
-                        {consultation.message}
-                      </p>
-                    )}
-                    {(consultation.status === "confirmed" || consultation.status === "completed") &&
-                      consultation.mentor?.contact_method && (
-                      <div className="mb-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                        <p className="text-xs text-muted mb-1 flex items-center gap-1">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                          멘토 연락 방법
-                        </p>
-                        <p className="text-sm text-foreground">{consultation.mentor.contact_method}</p>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted">
-                        신청일: {new Date(consultation.created_at).toLocaleDateString("ko-KR", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      {consultation.status === "completed" && !consultation.has_review && consultation.mentor_id && (
-                        <button
-                          onClick={() => handleOpenReview(consultation)}
-                          className="px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors cursor-pointer"
-                        >
-                          리뷰 작성
-                        </button>
-                      )}
-                      {consultation.status === "completed" && consultation.has_review && (
-                        <span className="px-3 py-1.5 text-xs font-medium bg-green-500/10 text-green-500 rounded-lg">
-                          리뷰 완료
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Payments Tab */}
-        {activeTab === "payments" && (
-          <section className="bg-card-bg border border-card-border rounded-2xl p-6">
-            <h2 className="text-xl font-semibold mb-6">결제 내역</h2>
-
-            {isLoadingPayments ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-              </div>
-            ) : payments.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted">결제 내역이 없어요.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {payments.map((payment) => (
-                  <div
-                    key={payment.id}
-                    className="flex items-center justify-between p-4 bg-background border border-card-border rounded-xl"
-                  >
-                    <div>
-                      <p className="font-medium">{getPaymentLabel(payment)}</p>
-                      <p className="text-xs text-muted">
-                        {new Date(payment.created_at).toLocaleDateString("ko-KR", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </p>
-                    </div>
-                    <div className="text-right flex items-center gap-3">
-                      <p className="font-semibold">{payment.amount.toLocaleString()}원</p>
-                      {getStatusBadge(payment.status)}
                     </div>
                   </div>
                 ))}
@@ -849,23 +663,6 @@ export default function MyPage() {
           </Link>
         </div>
       </main>
-
-      {/* Review Modal */}
-      {selectedConsultation && selectedConsultation.mentor_id && (
-        <ReviewModal
-          isOpen={reviewModalOpen}
-          onClose={() => {
-            setReviewModalOpen(false);
-            setSelectedConsultation(null);
-          }}
-          consultationId={selectedConsultation.id}
-          mentorId={selectedConsultation.mentor_id}
-          mentorName={selectedConsultation.mentor?.name || "멘토"}
-          userId={user.id}
-          userName={profile?.name || user.email || "익명"}
-          onSuccess={handleReviewSuccess}
-        />
-      )}
     </div>
   );
 }

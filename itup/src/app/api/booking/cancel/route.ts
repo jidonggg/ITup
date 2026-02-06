@@ -14,7 +14,7 @@ const HOURS_24 = 24 * 60 * 60 * 1000;
  *
  * Mentee cancellation:
  *   - More than 48h before scheduled_at  -> 100%
- *   - 24-48h before                      -> 50%
+ *   - 24-48h before                      -> 100%
  *   - Less than 24h                      -> 0%
  *
  * Mentor cancellation:
@@ -36,7 +36,7 @@ function calculateRefundRate(
     return 100;
   }
   if (timeUntilSession > HOURS_24) {
-    return 50;
+    return 100;
   }
   return 0;
 }

@@ -1,6 +1,8 @@
 import { PRICES } from "@/lib/constants";
 
-export type ProductType = "coffee" | "resume" | "interview";
+export type PaymentProductType = "coffee" | "resume" | "interview";
+/** @deprecated Use PaymentProductType instead — 'ProductType'은 @/lib/supabase/types와 이름 충돌 */
+export type ProductType = PaymentProductType;
 export type BundleType = "starter" | "allinone" | "full";
 
 export interface ProductInfo {

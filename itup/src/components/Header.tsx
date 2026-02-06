@@ -39,7 +39,7 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
   // 기본 네비게이션 링크
   const baseNavLinks = [
     { href: "/mentors", label: "멘토 둘러보기" },
-    { href: "/mentor/register", label: "멘토 등록" },
+    { href: "/mentor/apply", label: "멘토 지원" },
     { href: "/faq", label: "FAQ" },
   ];
 
@@ -143,6 +143,7 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
           className={`md:hidden overflow-hidden transition-all duration-300 ${
             isMobileMenuOpen ? "max-h-80 pb-4" : "max-h-0"
           }`}
+          aria-hidden={!isMobileMenuOpen}
         >
           <div className="flex flex-col gap-4 pt-4 border-t border-card-border">
             {navLinks.map((link) => (

@@ -14,6 +14,8 @@ CREATE TABLE public.profiles (
   name text,
   phone text,
   role text DEFAULT 'mentee' CHECK (role IN ('mentee', 'mentor', 'admin')),
+  preferences jsonb DEFAULT NULL,
+  onboarded_at timestamptz DEFAULT NULL,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -73,11 +75,11 @@ CREATE TABLE public.mentors (
 CREATE TABLE public.products (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   mentor_id uuid REFERENCES public.mentors(id) ON DELETE CASCADE NOT NULL,
-  type text NOT NULL CHECK (type IN ('coffee_chat', 'document_review', 'mock_interview')),
+  type text NOT NULL CHECK (type IN ('coffee_chat', 'document_review', 'mock_interview', 'free_trial')),
   title text NOT NULL,
   description text,
   duration_minutes integer NOT NULL DEFAULT 30,
-  price integer NOT NULL CHECK (price >= 10000 AND price <= 300000),
+  price integer NOT NULL CHECK (price >= 0),
   is_active boolean DEFAULT true,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
@@ -346,6 +348,58 @@ CREATE TABLE public.business_inquiries (
 );
 
 -- =============================================
+-- 20. mentor_bank_accounts (멘토 정산 계좌)
+-- =============================================
+CREATE TABLE public.mentor_bank_accounts (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  mentor_id uuid REFERENCES public.mentors(id) ON DELETE CASCADE NOT NULL,
+  bank_name text NOT NULL,
+  account_number text NOT NULL,
+  account_holder text NOT NULL,
+  is_default boolean DEFAULT true,
+  verified_at timestamptz,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- =============================================
+-- 21. settlements (정산 내역)
+-- =============================================
+CREATE TABLE public.settlements (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  mentor_id uuid REFERENCES public.mentors(id) ON DELETE SET NULL NOT NULL,
+  bank_account_id uuid REFERENCES public.mentor_bank_accounts(id),
+  period_start date NOT NULL,
+  period_end date NOT NULL,
+  booking_ids uuid[] DEFAULT '{}',
+  total_amount integer NOT NULL DEFAULT 0,
+  platform_fee integer NOT NULL DEFAULT 0,
+  settlement_amount integer NOT NULL DEFAULT 0,
+  commission_rate numeric(4,3) NOT NULL DEFAULT 0.150,
+  status text DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+  failure_reason text,
+  settled_at timestamptz,
+  processed_by uuid REFERENCES public.profiles(id),
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- =============================================
+-- 22. session_reminders (세션 리마인더 추적)
+-- =============================================
+CREATE TABLE public.session_reminders (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  booking_id uuid REFERENCES public.bookings(id) ON DELETE CASCADE NOT NULL,
+  reminder_type text NOT NULL CHECK (reminder_type IN ('24h', '1h')),
+  email_sent boolean DEFAULT false,
+  alimtalk_sent boolean DEFAULT false,
+  error_message text,
+  sent_at timestamptz DEFAULT now(),
+  created_at timestamptz DEFAULT now(),
+  UNIQUE (booking_id, reminder_type)
+);
+
+-- =============================================
 -- 인덱스
 -- =============================================
 CREATE INDEX idx_products_mentor ON public.products(mentor_id);
@@ -380,6 +434,12 @@ CREATE INDEX idx_page_views_created ON public.page_views(created_at);
 CREATE INDEX idx_events_session ON public.analytics_events(session_id);
 CREATE INDEX idx_events_type ON public.analytics_events(event_type);
 CREATE INDEX idx_events_created ON public.analytics_events(created_at);
+CREATE INDEX idx_bank_accounts_mentor ON public.mentor_bank_accounts(mentor_id);
+CREATE INDEX idx_settlements_mentor ON public.settlements(mentor_id);
+CREATE INDEX idx_settlements_status ON public.settlements(status);
+CREATE INDEX idx_session_reminders_booking ON public.session_reminders(booking_id);
+CREATE INDEX idx_session_reminders_type ON public.session_reminders(reminder_type);
+CREATE INDEX idx_session_reminders_sent_at ON public.session_reminders(sent_at);
 
 -- =============================================
 -- VIEW: mentor_stats
@@ -421,6 +481,9 @@ ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.newsletter_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.business_inquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mentor_bank_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settlements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.session_reminders ENABLE ROW LEVEL SECURITY;
 
 -- profiles
 CREATE POLICY "Profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
@@ -519,6 +582,18 @@ CREATE POLICY "View sessions" ON public.sessions FOR SELECT USING (auth.role() =
 -- newsletter
 CREATE POLICY "Subscribe newsletter" ON public.newsletter_subscriptions FOR INSERT WITH CHECK (true);
 
+-- mentor_bank_accounts
+CREATE POLICY "Mentors can view own bank accounts" ON public.mentor_bank_accounts FOR SELECT USING (mentor_id IN (SELECT id FROM public.mentors WHERE user_id = auth.uid()));
+CREATE POLICY "Mentors can manage own bank accounts" ON public.mentor_bank_accounts FOR ALL USING (mentor_id IN (SELECT id FROM public.mentors WHERE user_id = auth.uid()));
+CREATE POLICY "Admins can manage bank accounts" ON public.mentor_bank_accounts FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- settlements
+CREATE POLICY "Mentors can view own settlements" ON public.settlements FOR SELECT USING (mentor_id IN (SELECT id FROM public.mentors WHERE user_id = auth.uid()));
+CREATE POLICY "Admins can manage settlements" ON public.settlements FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- session_reminders (cron job only - uses service role)
+CREATE POLICY "Admins can view session_reminders" ON public.session_reminders FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
 -- =============================================
 -- 트리거 & 함수
 -- =============================================
@@ -569,6 +644,8 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER bookings_updated_at BEFORE UPDATE ON public.bookings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 CREATE TRIGGER products_updated_at BEFORE UPDATE ON public.products FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 CREATE TRIGGER session_confirmations_updated_at BEFORE UPDATE ON public.session_confirmations FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+CREATE TRIGGER bank_accounts_updated_at BEFORE UPDATE ON public.mentor_bank_accounts FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+CREATE TRIGGER settlements_updated_at BEFORE UPDATE ON public.settlements FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 CREATE OR REPLACE FUNCTION public.update_mentor_sessions_count()
 RETURNS TRIGGER AS $$

@@ -107,6 +107,13 @@ export const analyticsLimiter = new RateLimiter({
   maxKeys: 1000,
 });
 
+/** /api/notification/alimtalk — 10 req / 60s per phone number */
+export const alimtalkLimiter = new RateLimiter({
+  limit: 10,
+  windowMs: 60 * 1000,
+  maxKeys: 500,
+});
+
 export function getClientIp(request: Request): string {
   const headers = new Headers(request.headers);
   const forwarded = headers.get("x-forwarded-for");

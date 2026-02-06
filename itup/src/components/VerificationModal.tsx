@@ -104,6 +104,7 @@ export default function VerificationModal({
     setEmail("");
     setCode("");
     setError(null);
+    setIsLoading(false);
     onClose();
   };
 

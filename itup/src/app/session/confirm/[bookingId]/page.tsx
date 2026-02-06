@@ -15,6 +15,8 @@ import type {
   SessionConfirmation,
 } from "@/lib/supabase/types";
 import { PRODUCT_INFO, AUTO_COMPLETE_HOURS } from "@/lib/constants";
+import FreeTrialConversionCTA from "@/components/FreeTrialConversionCTA";
+import { trackFreeTrialCompleted } from "@/lib/analytics/conversion";
 
 // =============================================
 // Types
@@ -324,43 +326,87 @@ function BothConfirmedSuccess({ confirmation }: { confirmation: SessionConfirmat
 // =============================================
 
 function DisputeNotice({ confirmation }: { confirmation: SessionConfirmation }) {
+  const isResolved = confirmation.resolved_at !== null;
+
+  const getMentorStatusLabel = (value: string | null): string => {
+    switch (value) {
+      case "completed":
+        return "완료";
+      case "mentee_noshow":
+        return "멘티 노쇼";
+      case "issue":
+        return "문제 발생";
+      default:
+        return value || "미확인";
+    }
+  };
+
+  const getMenteeStatusLabel = (value: string | null): string => {
+    switch (value) {
+      case "completed":
+        return "완료";
+      case "mentor_noshow":
+        return "멘토 노쇼";
+      case "issue":
+        return "문제 발생";
+      default:
+        return value || "미확인";
+    }
+  };
+
   return (
-    <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
+    <div className={`${isResolved ? "bg-gray-500/5 border-gray-500/20" : "bg-red-500/5 border-red-500/20"} border rounded-2xl p-6`}>
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
-          <AlertTriangleIcon className="w-6 h-6 text-red-500" />
+        <div className={`w-12 h-12 rounded-full ${isResolved ? "bg-gray-500/20" : "bg-red-500/20"} flex items-center justify-center shrink-0`}>
+          <AlertTriangleIcon className={`w-6 h-6 ${isResolved ? "text-gray-500" : "text-red-500"}`} />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-red-600 mb-1">확인 내용 불일치</h3>
+          <h3 className={`text-lg font-bold ${isResolved ? "text-gray-600" : "text-red-600"} mb-1`}>
+            {isResolved ? "분쟁 처리 완료" : "확인 내용 불일치"}
+          </h3>
           <p className="text-sm text-muted mb-3">
-            멘토와 멘티의 세션 확인 내용이 일치하지 않습니다. 관리자가 확인 후 처리할
-            예정입니다.
+            {isResolved
+              ? "관리자가 분쟁을 검토하고 처리를 완료했습니다."
+              : "멘토와 멘티의 세션 확인 내용이 일치하지 않습니다. 관리자가 확인 후 처리할 예정입니다."}
           </p>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <span className="text-muted w-16">멘토:</span>
               <span className="font-medium">
-                {confirmation.mentor_confirmed === "completed"
-                  ? "완료"
-                  : confirmation.mentor_confirmed === "mentee_noshow"
-                    ? "멘티 노쇼"
-                    : "문제 발생"}
+                {getMentorStatusLabel(confirmation.mentor_confirmed)}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted w-16">멘티:</span>
               <span className="font-medium">
-                {confirmation.mentee_confirmed === "completed"
-                  ? "완료"
-                  : confirmation.mentee_confirmed === "mentor_noshow"
-                    ? "멘토 노쇼"
-                    : "문제 발생"}
+                {getMenteeStatusLabel(confirmation.mentee_confirmed)}
               </span>
             </div>
+            {isResolved && confirmation.final_status && (
+              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-card-border">
+                <span className="text-muted w-16">최종:</span>
+                <span className="font-medium text-primary">
+                  {confirmation.final_status === "completed"
+                    ? "완료"
+                    : confirmation.final_status === "mentee_noshow"
+                      ? "멘티 노쇼"
+                      : confirmation.final_status === "mentor_noshow"
+                        ? "멘토 노쇼"
+                        : "분쟁"}
+                </span>
+              </div>
+            )}
           </div>
-          <p className="text-xs text-muted mt-3">
-            문의 사항이 있으시면 고객센터로 연락해주세요.
-          </p>
+          {!isResolved && (
+            <p className="text-xs text-muted mt-3">
+              문의 사항이 있으시면 고객센터로 연락해주세요.
+            </p>
+          )}
+          {isResolved && confirmation.resolved_at && (
+            <p className="text-xs text-muted mt-3">
+              처리일: {format(new Date(confirmation.resolved_at), "yyyy년 M월 d일 HH:mm", { locale: ko })}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -377,7 +423,31 @@ function AutoCompleteNotice({ scheduledAt }: { scheduledAt: string }) {
   );
   const now = new Date();
   const remaining = deadline.getTime() - now.getTime();
-  const remainingHours = Math.max(0, Math.ceil(remaining / (1000 * 60 * 60)));
+  const remainingHours = Math.ceil(remaining / (1000 * 60 * 60));
+  const isExpired = remaining <= 0;
+
+  // 자동 완료 시간이 지났으면 다른 메시지 표시
+  if (isExpired) {
+    return (
+      <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-4 flex items-start gap-3">
+        <div className="w-9 h-9 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0 mt-0.5">
+          <ClockIcon className="w-4.5 h-4.5 text-yellow-500" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-yellow-600 mb-0.5">자동 완료 대기 중</p>
+          <p className="text-xs text-muted leading-relaxed">
+            자동 완료 기한이 지났습니다. 곧 자동으로 &quot;완료&quot; 처리될 예정입니다.
+            <br />
+            문제가 있다면 빠르게 확인을 제출해주세요.
+          </p>
+          <p className="text-xs text-muted mt-1">
+            자동 완료 예정:{" "}
+            {format(deadline, "yyyy년 M월 d일 HH:mm", { locale: ko })}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 flex items-start gap-3">
@@ -571,6 +641,8 @@ export default function SessionConfirmPage({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isFreeTrial, setIsFreeTrial] = useState(false);
+  const [showConversionCTA, setShowConversionCTA] = useState(false);
 
   // Determine whether both sides confirmed and check for disputes
   const bothConfirmed =
@@ -619,49 +691,53 @@ export default function SessionConfirmPage({
         setIsLoading(false);
         return;
       }
+
+      // 예약 상태 검증: confirmed 또는 paid 상태만 세션 확인 가능
+      const validStatuses = ["confirmed", "paid", "completed"];
+      if (!validStatuses.includes(bookingData.status)) {
+        if (bookingData.status === "cancelled" || bookingData.status === "refunded") {
+          setError("취소되었거나 환불된 예약은 세션 확인이 불가능해요.");
+        } else if (bookingData.status === "pending") {
+          setError("결제가 완료되지 않은 예약이에요. 결제 후 다시 시도해주세요.");
+        } else {
+          setError("세션 확인이 불가능한 예약 상태에요.");
+        }
+        setIsLoading(false);
+        return;
+      }
+
       setBooking(bookingData);
 
-      // 2. Determine user role
+      // Check if this is a free trial booking
+      const isFreeTrialBooking = bookingData.payment_method === "free_trial";
+      setIsFreeTrial(isFreeTrialBooking);
+
+      // 2. Fetch mentor data first (always needed)
+      const { data: mentorData, error: mentorError } = await supabase
+        .from("mentors")
+        .select("*")
+        .eq("id", bookingData.mentor_id)
+        .single();
+
+      if (mentorError || !mentorData) {
+        setError("멘토 정보를 찾을 수 없어요.");
+        setIsLoading(false);
+        return;
+      }
+      setMentor(mentorData);
+
+      // 3. Determine user role
       if (user.id === bookingData.mentee_id) {
         setUserRole("mentee");
+      } else if (mentorData.user_id === user.id) {
+        setUserRole("mentor");
       } else {
-        // Check if user is the mentor (need to match user_id from mentors table)
-        const { data: mentorData } = await supabase
-          .from("mentors")
-          .select("*")
-          .eq("id", bookingData.mentor_id)
-          .single();
-
-        if (mentorData) {
-          setMentor(mentorData);
-          if (mentorData.user_id === user.id) {
-            setUserRole("mentor");
-          } else {
-            setError("이 예약에 대한 접근 권한이 없어요.");
-            setIsLoading(false);
-            return;
-          }
-        } else {
-          setError("멘토 정보를 찾을 수 없어요.");
-          setIsLoading(false);
-          return;
-        }
+        setError("이 예약에 대한 접근 권한이 없어요.");
+        setIsLoading(false);
+        return;
       }
 
-      // 3. Fetch mentor (if not already fetched above)
-      if (!mentor) {
-        const { data: mentorData } = await supabase
-          .from("mentors")
-          .select("*")
-          .eq("id", bookingData.mentor_id)
-          .single();
-
-        if (mentorData) {
-          setMentor(mentorData);
-        }
-      }
-
-      // 4. Fetch product
+      // 4. Fetch product (numbering adjusted)
       if (bookingData.product_id) {
         const { data: productData } = await supabase
           .from("products")
@@ -674,7 +750,7 @@ export default function SessionConfirmPage({
         }
       }
 
-      // 5. Fetch or create session_confirmations
+      // 5. Fetch session_confirmations
       const { data: confirmData } = await supabase
         .from("session_confirmations")
         .select("*")
@@ -706,6 +782,14 @@ export default function SessionConfirmPage({
     if (!user || !booking || !userRole) return;
     if (!isSupabaseConfigured()) {
       showToast("데이터베이스 연결이 필요해요.", "error");
+      return;
+    }
+
+    // 세션 시작 시간 이후에만 확인 가능
+    const sessionTime = new Date(booking.scheduled_at);
+    const now = new Date();
+    if (now < sessionTime) {
+      showToast("세션 시작 시간 이후에 확인할 수 있어요.", "error");
       return;
     }
 
@@ -823,6 +907,12 @@ export default function SessionConfirmPage({
       // Re-fetch the data to reflect the changes
       setIsLoading(true);
       await fetchData();
+
+      // Track free trial completion and show conversion CTA
+      if (isFreeTrial && userRole === "mentee" && status === "completed") {
+        trackFreeTrialCompleted(user.id, booking.mentor_id, bookingId);
+        setShowConversionCTA(true);
+      }
     } catch {
       showToast("확인 제출 중 오류가 발생했어요.", "error");
     } finally {
@@ -956,6 +1046,48 @@ export default function SessionConfirmPage({
           </p>
         </div>
 
+        {/* Meeting Link */}
+        {booking.meeting_link ? (
+          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6">
+            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              미팅 링크
+            </h3>
+            <a
+              href={booking.meeting_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
+            >
+              세션 참여하기
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+            <p className="mt-3 text-xs text-muted">
+              {booking.meeting_link}
+            </p>
+          </div>
+        ) : (
+          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-yellow-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <h3 className="font-semibold text-yellow-700 mb-1">미팅 링크 미등록</h3>
+                <p className="text-sm text-yellow-600">
+                  {userRole === "mentor"
+                    ? "세션 시작 전 대시보드에서 미팅 링크를 등록해주세요."
+                    : "멘토가 미팅 링크를 아직 등록하지 않았습니다. 잠시 후 다시 확인해주세요."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Booking Details */}
         <div className="bg-card-bg border border-card-border rounded-2xl p-6">
           <h3 className="font-semibold text-lg mb-4">예약 정보</h3>
@@ -1078,6 +1210,16 @@ export default function SessionConfirmPage({
               상대방의 확인을 기다리고 있어요.
             </p>
           </div>
+        )}
+
+        {/* Free Trial Conversion CTA - show for mentees after completing free trial */}
+        {isFreeTrial && userRole === "mentee" && (bothCompleted || showConversionCTA) && (
+          <FreeTrialConversionCTA
+            mentorId={mentor.id}
+            mentorName={mentor.name}
+            variant="full"
+            onDismiss={() => setShowConversionCTA(false)}
+          />
         )}
 
         {/* Back Link */}

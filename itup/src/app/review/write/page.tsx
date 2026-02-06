@@ -26,7 +26,7 @@ function StarRating({
   onHover: (star: number) => void;
   onLeave: () => void;
 }) {
-  const labels = ["", "별로예요", "그저 그래요", "보통이에요", "좋아요", "최고예요!"];
+  const labels = ["별점을 선택해주세요", "별로예요", "그저 그래요", "보통이에요", "좋아요", "최고예요!"];
 
   return (
     <div>
@@ -85,7 +85,7 @@ function ReviewWriteContent() {
   const [alreadyReviewed, setAlreadyReviewed] = useState(false);
 
   // Form states
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -192,6 +192,11 @@ function ReviewWriteContent() {
 
   const handleSubmit = async () => {
     if (!user || !profile || !booking || !bookingId || !mentorId) return;
+
+    if (rating === 0) {
+      showToast("별점을 선택해주세요.", "error");
+      return;
+    }
 
     if (content.length < VALIDATION.MIN_REVIEW_LENGTH) {
       showToast(`리뷰는 최소 ${VALIDATION.MIN_REVIEW_LENGTH}자 이상 작성해주세요.`, "error");
@@ -539,7 +544,7 @@ function ReviewWriteContent() {
             {/* Submit Button */}
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || content.length < VALIDATION.MIN_REVIEW_LENGTH}
+              disabled={isSubmitting || rating === 0 || content.length < VALIDATION.MIN_REVIEW_LENGTH}
               className="w-full py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold text-lg cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? (

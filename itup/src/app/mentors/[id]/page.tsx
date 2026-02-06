@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PRODUCT_INFO } from "@/lib/constants";
 import { JOB_TYPES, ENGINE_TYPES } from "@/lib/constants";
 import type { Mentor, Product, Review, ProductType } from "@/lib/supabase/types";
+import MentorDetailClient from "./MentorDetailClient";
 
 function StarRating({ rating, size = "md" }: { rating: number; size?: "sm" | "md" }) {
   const sizeClass = size === "sm" ? "w-4 h-4" : "w-5 h-5";
@@ -87,29 +88,29 @@ export default async function MentorDetailPage({
   const minPrice = products.length > 0 ? Math.min(...products.map((p) => p.price)) : null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-secondary/90 backdrop-blur-md border-b border-card-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-14 md:h-16">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-xl">☕</span>
+              <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <span className="text-white text-lg md:text-xl">☕</span>
               </div>
-              <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+              <span className="text-lg md:text-xl font-bold text-foreground group-hover:text-primary transition-colors hidden sm:inline">
                 커피챗
               </span>
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <Link
                 href="/mentors"
-                className="text-muted hover:text-foreground transition-colors text-sm"
+                className="text-muted hover:text-foreground transition-colors text-sm min-h-[44px] flex items-center px-2"
               >
                 멘토 찾기
               </Link>
               <Link
                 href="/"
-                className="text-muted hover:text-foreground transition-colors text-sm"
+                className="text-muted hover:text-foreground transition-colors text-sm min-h-[44px] flex items-center px-2 hidden sm:flex"
               >
                 홈으로
               </Link>
@@ -118,9 +119,9 @@ export default async function MentorDetailPage({
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumb */}
-        <nav className="mb-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 pb-24 lg:pb-8">
+        {/* Breadcrumb - Hidden on mobile */}
+        <nav className="hidden md:block mb-6">
           <ol className="flex items-center gap-2 text-sm text-muted">
             <li>
               <Link href="/" className="hover:text-primary transition-colors">
@@ -146,39 +147,39 @@ export default async function MentorDetailPage({
           </ol>
         </nav>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-4 md:gap-8">
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Mentor Profile Header */}
-            <section className="bg-card-bg border border-card-border rounded-2xl overflow-hidden mb-8">
+            <section className="bg-card-bg border border-card-border rounded-2xl overflow-hidden mb-4 md:mb-8">
               {/* Gradient Banner */}
-              <div className="h-32 bg-gradient-to-r from-primary to-primary-dark relative">
+              <div className="h-24 md:h-32 bg-gradient-to-r from-primary to-primary-dark relative">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
               </div>
 
-              <div className="px-6 pb-6 -mt-14 relative">
+              <div className="px-4 md:px-6 pb-5 md:pb-6 -mt-12 md:-mt-14 relative">
                 {/* Avatar */}
-                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-4xl font-bold border-4 border-card-bg shadow-lg mb-4">
+                <div className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-3xl md:text-4xl font-bold border-4 border-card-bg shadow-lg mb-3 md:mb-4">
                   {typedMentor.name.charAt(0)}
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 md:gap-4">
                   <div className="flex-1">
                     {/* Name and Verification */}
-                    <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-2xl font-bold text-foreground">
+                    <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2 flex-wrap">
+                      <h1 className="text-xl md:text-2xl font-bold text-foreground">
                         {typedMentor.name}
                       </h1>
                       {typedMentor.is_verified && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 md:px-2.5 md:py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200">
                           <span>✓</span>
-                          인증된 멘토
+                          인증됨
                         </span>
                       )}
                     </div>
 
                     {/* Company & Position */}
-                    <p className="text-foreground font-medium mb-1">
+                    <p className="text-foreground font-medium text-sm md:text-base mb-1">
                       {typedMentor.company}
                       {typedMentor.position && (
                         <span className="text-muted font-normal"> · {typedMentor.position}</span>
@@ -187,34 +188,34 @@ export default async function MentorDetailPage({
 
                     {/* Years */}
                     {typedMentor.years && (
-                      <p className="text-muted text-sm mb-3">
+                      <p className="text-muted text-xs md:text-sm mb-2 md:mb-3">
                         경력 {typedMentor.years}년
                       </p>
                     )}
 
                     {/* Badges */}
-                    <div className="flex flex-wrap gap-2 mb-3">
+                    <div className="flex flex-wrap gap-1.5 md:gap-2 mb-2 md:mb-3">
                       {typedMentor.job_type && (
-                        <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                        <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
                           {getJobTypeLabel(typedMentor.job_type)}
                         </span>
                       )}
                       {typedMentor.engine && (
-                        <span className="px-3 py-1 bg-accent/10 text-accent text-xs font-medium rounded-full">
+                        <span className="px-2.5 py-1 bg-accent/10 text-accent text-xs font-medium rounded-full">
                           {getEngineLabel(typedMentor.engine)}
                         </span>
                       )}
-                      {typedMentor.skills.slice(0, 4).map((skill) => (
+                      {typedMentor.skills.slice(0, 3).map((skill) => (
                         <span
                           key={skill}
-                          className="px-3 py-1 bg-secondary text-muted text-xs rounded-full"
+                          className="px-2.5 py-1 bg-secondary text-muted text-xs rounded-full hidden sm:inline-block"
                         >
                           {skill}
                         </span>
                       ))}
-                      {typedMentor.skills.length > 4 && (
-                        <span className="px-3 py-1 bg-secondary text-muted text-xs rounded-full">
-                          +{typedMentor.skills.length - 4}
+                      {typedMentor.skills.length > 3 && (
+                        <span className="px-2.5 py-1 bg-secondary text-muted text-xs rounded-full">
+                          +{typedMentor.skills.length - 3}
                         </span>
                       )}
                     </div>
@@ -222,31 +223,36 @@ export default async function MentorDetailPage({
                     {/* Previous Companies */}
                     {typedMentor.previous_companies_detail &&
                       typedMentor.previous_companies_detail.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {typedMentor.previous_companies_detail.map((prev, idx) => (
+                        <div className="flex flex-wrap gap-1.5 md:gap-2 mb-2 md:mb-3">
+                          {typedMentor.previous_companies_detail.slice(0, 2).map((prev, idx) => (
                             <span
                               key={idx}
-                              className="text-xs text-muted bg-secondary px-2.5 py-1 rounded-full"
+                              className="text-xs text-muted bg-secondary px-2 py-0.5 md:px-2.5 md:py-1 rounded-full"
                             >
                               전) {prev.company_name}
                               {prev.years ? ` (${prev.years}년)` : ""}
                             </span>
                           ))}
+                          {typedMentor.previous_companies_detail.length > 2 && (
+                            <span className="text-xs text-muted bg-secondary px-2 py-0.5 rounded-full">
+                              +{typedMentor.previous_companies_detail.length - 2}
+                            </span>
+                          )}
                         </div>
                       )}
 
                     {/* Rating & Stats */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <StarRating rating={typedMentor.rating} />
+                    <div className="flex items-center gap-3 md:gap-4 flex-wrap">
+                      <div className="flex items-center gap-1 md:gap-2">
+                        <StarRating rating={typedMentor.rating} size="sm" />
                         <span className="text-sm font-semibold text-foreground">
                           {typedMentor.rating.toFixed(1)}
                         </span>
                       </div>
-                      <span className="text-sm text-muted">
+                      <span className="text-xs md:text-sm text-muted">
                         리뷰 {typedMentor.reviews}개
                       </span>
-                      <span className="text-sm text-muted">
+                      <span className="text-xs md:text-sm text-muted">
                         세션 {typedMentor.sessions}회
                       </span>
                     </div>
@@ -255,45 +261,71 @@ export default async function MentorDetailPage({
               </div>
             </section>
 
-            {/* Bio Section */}
+            {/* Free Trial Banner */}
+            <section className="mb-4 md:mb-8">
+              <div className="bg-gradient-to-r from-accent/20 via-primary/10 to-accent/20 border border-accent/30 rounded-2xl p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 text-center sm:text-left">
+                    <span className="text-xl md:text-2xl">🎁</span>
+                    <div>
+                      <p className="font-semibold text-sm md:text-base">15분 무료 멘토링 체험</p>
+                      <p className="text-xs md:text-sm text-muted">결제 없이 먼저 체험해 보세요!</p>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/free-trial/${id}`}
+                    className="px-5 py-2.5 bg-gradient-to-r from-accent to-primary text-white font-medium rounded-xl hover:shadow-lg transition-all whitespace-nowrap text-sm min-h-[44px] flex items-center"
+                  >
+                    무료 체험 신청
+                  </Link>
+                </div>
+              </div>
+            </section>
+
+            {/* Bio Section - Collapsible on mobile */}
             {typedMentor.bio && (
-              <section className="bg-card-bg border border-card-border rounded-2xl p-6 mb-8">
-                <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+              <MentorDetailClient
+                sectionType="bio"
+                title="자기소개"
+                icon={
                   <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  자기소개
-                </h2>
-                <p className="text-foreground leading-relaxed whitespace-pre-line">
+                }
+              >
+                <p className="text-foreground text-sm md:text-base leading-relaxed whitespace-pre-line">
                   {typedMentor.bio}
                 </p>
-              </section>
+              </MentorDetailClient>
             )}
 
             {/* Products Section */}
-            <section className="bg-card-bg border border-card-border rounded-2xl p-6 mb-8">
-              <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
+            <MentorDetailClient
+              sectionType="products"
+              title="멘토링 상품"
+              badge={products.length > 0 ? products.length : undefined}
+              icon={
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                멘토링 상품
-              </h2>
-
+              }
+              defaultExpanded
+            >
               {products.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {products.map((product) => {
                     const productInfo = PRODUCT_INFO[product.type as ProductType];
                     return (
                       <div
                         key={product.id}
-                        className="border border-card-border rounded-xl p-5 hover:border-primary/50 transition-all"
+                        className="border border-card-border rounded-xl p-4 md:p-5 hover:border-primary/50 transition-all"
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="text-2xl">{productInfo?.icon || "📦"}</span>
+                            <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                              <span className="text-xl md:text-2xl">{productInfo?.icon || "📦"}</span>
                               <div>
-                                <h3 className="font-semibold text-foreground">
+                                <h3 className="font-semibold text-foreground text-sm md:text-base">
                                   {product.title}
                                 </h3>
                                 <p className="text-xs text-muted">
@@ -301,17 +333,17 @@ export default async function MentorDetailPage({
                                 </p>
                               </div>
                             </div>
-                            <p className="text-sm text-muted ml-10">
+                            <p className="text-xs md:text-sm text-muted ml-8 md:ml-10">
                               {product.description || productInfo?.description || ""}
                             </p>
                           </div>
-                          <div className="flex items-center gap-4 sm:flex-col sm:items-end">
-                            <p className="text-lg font-bold text-primary">
+                          <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 md:gap-3 ml-8 sm:ml-0">
+                            <p className="text-base md:text-lg font-bold text-primary">
                               {product.price.toLocaleString("ko-KR")}원
                             </p>
                             <Link
                               href={`/booking/${product.id}`}
-                              className="inline-flex items-center justify-center px-5 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-medium rounded-xl hover:shadow-lg transition-all cursor-pointer whitespace-nowrap"
+                              className="inline-flex items-center justify-center px-4 md:px-5 py-2 md:py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-medium rounded-xl hover:shadow-lg transition-all cursor-pointer whitespace-nowrap min-h-[40px] md:min-h-[44px]"
                             >
                               예약하기
                             </Link>
@@ -322,44 +354,41 @@ export default async function MentorDetailPage({
                   })}
                 </div>
               ) : (
-                <div className="text-center py-10">
-                  <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-secondary flex items-center justify-center">
-                    <svg className="w-7 h-7 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="text-center py-8 md:py-10">
+                  <div className="w-12 h-12 md:w-14 md:h-14 mx-auto mb-3 rounded-full bg-secondary flex items-center justify-center">
+                    <svg className="w-6 h-6 md:w-7 md:h-7 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
                   </div>
                   <p className="text-muted text-sm">아직 등록된 상품이 없습니다</p>
                 </div>
               )}
-            </section>
+            </MentorDetailClient>
 
             {/* Reviews Section */}
-            <section className="bg-card-bg border border-card-border rounded-2xl p-6">
-              <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
+            <MentorDetailClient
+              sectionType="reviews"
+              title="리뷰"
+              badge={reviews.length > 0 ? reviews.length : undefined}
+              icon={
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                리뷰
-                {reviews.length > 0 && (
-                  <span className="text-sm font-normal text-muted">
-                    ({reviews.length}개)
-                  </span>
-                )}
-              </h2>
-
+              }
+            >
               {reviews.length > 0 ? (
-                <div className="space-y-5">
+                <div className="space-y-4 md:space-y-5">
                   {reviews.map((review) => (
                     <div
                       key={review.id}
-                      className="border-b border-card-border last:border-b-0 pb-5 last:pb-0"
+                      className="border-b border-card-border last:border-b-0 pb-4 md:pb-5 last:pb-0"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm font-medium text-muted">
+                        <div className="flex items-center gap-2 md:gap-3">
+                          <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-secondary flex items-center justify-center text-xs md:text-sm font-medium text-muted">
                             {review.user_name.charAt(0)}
                           </div>
-                          <span className="font-medium text-foreground text-sm">
+                          <span className="font-medium text-foreground text-xs md:text-sm">
                             {review.user_name}
                           </span>
                         </div>
@@ -367,30 +396,30 @@ export default async function MentorDetailPage({
                           {formatDate(review.created_at)}
                         </span>
                       </div>
-                      <div className="ml-11 mb-2">
+                      <div className="ml-9 md:ml-11 mb-2">
                         <StarRating rating={review.rating} size="sm" />
                       </div>
-                      <p className="ml-11 text-sm text-foreground leading-relaxed">
+                      <p className="ml-9 md:ml-11 text-xs md:text-sm text-foreground leading-relaxed">
                         {review.content}
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-10">
-                  <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-secondary flex items-center justify-center">
-                    <svg className="w-7 h-7 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="text-center py-8 md:py-10">
+                  <div className="w-12 h-12 md:w-14 md:h-14 mx-auto mb-3 rounded-full bg-secondary flex items-center justify-center">
+                    <svg className="w-6 h-6 md:w-7 md:h-7 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                   </div>
                   <p className="text-muted text-sm">아직 리뷰가 없습니다</p>
                 </div>
               )}
-            </section>
+            </MentorDetailClient>
           </div>
 
           {/* Sidebar (sticky on desktop) */}
-          <aside className="lg:w-80 flex-shrink-0">
+          <aside className="hidden lg:block lg:w-80 flex-shrink-0">
             <div className="bg-card-bg border border-card-border rounded-2xl p-6 sticky top-24">
               {/* Quick Summary */}
               <div className="flex items-center gap-3 mb-4">
@@ -469,6 +498,31 @@ export default async function MentorDetailPage({
           </aside>
         </div>
       </main>
+
+      {/* Mobile Sticky Bottom CTA */}
+      {products.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-card-bg/95 backdrop-blur-md border-t border-card-border lg:hidden pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{typedMentor.name}</p>
+                <p className="text-xs text-muted">
+                  {minPrice !== null && (
+                    <span className="text-primary font-semibold">{minPrice.toLocaleString("ko-KR")}원</span>
+                  )}
+                  {minPrice !== null && " 부터"}
+                </p>
+              </div>
+              <Link
+                href={`/booking/${products[0].id}`}
+                className="px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg transition-all cursor-pointer whitespace-nowrap min-h-[48px] flex items-center"
+              >
+                예약하기
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

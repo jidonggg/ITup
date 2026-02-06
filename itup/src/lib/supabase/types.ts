@@ -6,7 +6,7 @@
 
 export type ConsultType = "coffee" | "resume" | "interview";
 
-export type ProductType = "coffee_chat" | "document_review" | "mock_interview";
+export type ProductType = "coffee_chat" | "document_review" | "mock_interview" | "free_trial";
 
 export type JobType = "client" | "server" | "planner" | "artist" | "other";
 
@@ -28,12 +28,22 @@ export type CancelledBy = "mentee" | "mentor" | "admin";
 
 // -- Table types --
 
+export interface OnboardingPreferences {
+  job_type?: JobType;
+  engine?: EngineType;
+  mentoring_type?: ProductType;
+}
+
+export type SettlementStatus = "pending" | "processing" | "completed" | "failed";
+
 export interface Profile {
   id: string;
   email: string | null;
   name: string | null;
   phone: string | null;
   role: "mentee" | "mentor" | "admin";
+  preferences: OnboardingPreferences | null;
+  onboarded_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -291,6 +301,54 @@ export interface BusinessInquiry {
   created_at: string;
 }
 
+// -- 정산 테이블 --
+
+export interface MentorBankAccount {
+  id: string;
+  mentor_id: string;
+  bank_name: string;
+  account_number: string;
+  account_holder: string;
+  is_default: boolean;
+  verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Settlement {
+  id: string;
+  mentor_id: string;
+  bank_account_id: string | null;
+  period_start: string;
+  period_end: string;
+  booking_ids: string[];
+  total_amount: number;
+  platform_fee: number;
+  settlement_amount: number;
+  commission_rate: number;
+  status: SettlementStatus;
+  failure_reason: string | null;
+  settled_at: string | null;
+  processed_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// -- Session Reminders (Cron) --
+
+export type ReminderType = "24h" | "1h";
+
+export interface SessionReminder {
+  id: string;
+  booking_id: string;
+  reminder_type: ReminderType;
+  email_sent: boolean;
+  alimtalk_sent: boolean;
+  error_message: string | null;
+  sent_at: string;
+  created_at: string;
+}
+
 // -- View types --
 
 export interface MentorStats {
@@ -363,6 +421,21 @@ export interface Database {
         Row: VerifiedDomain;
         Insert: Omit<VerifiedDomain, "id" | "created_at">;
         Update: Partial<Omit<VerifiedDomain, "id" | "created_at">>;
+      };
+      mentor_bank_accounts: {
+        Row: MentorBankAccount;
+        Insert: Omit<MentorBankAccount, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<MentorBankAccount, "id" | "created_at">>;
+      };
+      settlements: {
+        Row: Settlement;
+        Insert: Omit<Settlement, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<Settlement, "id" | "created_at">>;
+      };
+      session_reminders: {
+        Row: SessionReminder;
+        Insert: Omit<SessionReminder, "id" | "created_at" | "sent_at">;
+        Update: Partial<Omit<SessionReminder, "id" | "created_at">>;
       };
       // 레거시
       consultations: {

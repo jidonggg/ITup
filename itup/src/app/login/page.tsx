@@ -1,18 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // URL에서 에러 메시지 처리 (OAuth 콜백 등에서 전달)
+  useEffect(() => {
+    const errorFromUrl = searchParams.get("error");
+    if (errorFromUrl) {
+      setError(decodeURIComponent(errorFromUrl));
+      // URL에서 에러 파라미터 제거
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("error");
+      window.history.replaceState({}, "", newUrl.pathname);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -81,6 +94,56 @@ export default function LoginPage() {
       });
     } catch {
       setError("Google 로그인 중 오류가 발생했어요.");
+    }
+  };
+
+  // 카카오 로그인
+  // 환경변수 설정 필요:
+  // - Supabase Dashboard > Authentication > Providers > Kakao 활성화
+  // - KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET 설정
+  const handleKakaoLogin = async () => {
+    if (!isSupabaseConfigured()) {
+      setError("서비스 연결에 문제가 있어요.");
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      await supabase.auth.signInWithOAuth({
+        provider: "kakao",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+    } catch {
+      setError("카카오 로그인 중 오류가 발생했어요.");
+    }
+  };
+
+  // 네이버 로그인
+  // 환경변수 설정 필요:
+  // - Supabase Dashboard > Authentication > Providers에서 Custom OIDC Provider 설정
+  // - 네이버 개발자 센터에서 애플리케이션 등록 후 Client ID/Secret 발급
+  // - NAVER_CLIENT_ID, NAVER_CLIENT_SECRET 설정
+  // - Callback URL: {SUPABASE_URL}/auth/v1/callback
+  const handleNaverLogin = async () => {
+    if (!isSupabaseConfigured()) {
+      setError("서비스 연결에 문제가 있어요.");
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      // 네이버는 Supabase에서 기본 지원하지 않으므로
+      // Custom OIDC Provider로 설정 필요
+      await supabase.auth.signInWithOAuth({
+        provider: "naver" as "google", // Supabase Custom Provider 설정 필요
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+    } catch {
+      setError("네이버 로그인 중 오류가 발생했어요.");
     }
   };
 
@@ -176,10 +239,33 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <button
-            onClick={handleGoogleLogin}
-            className="w-full py-3 border border-card-border rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-secondary transition-colors cursor-pointer"
-          >
+          <div className="space-y-3">
+            <button
+              onClick={handleKakaoLogin}
+              className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              style={{ backgroundColor: "#FEE500", color: "#000000" }}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.87 5.33 4.67 6.73l-.95 3.53c-.08.29.24.54.5.39l4.2-2.78c.52.05 1.05.08 1.58.08 5.52 0 10-3.58 10-8s-4.48-8-10-8z" />
+              </svg>
+              카카오로 계속하기
+            </button>
+
+            <button
+              onClick={handleNaverLogin}
+              className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              style={{ backgroundColor: "#03C75A", color: "#FFFFFF" }}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" />
+              </svg>
+              네이버로 계속하기
+            </button>
+
+            <button
+              onClick={handleGoogleLogin}
+              className="w-full py-3 border border-card-border rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-secondary transition-colors cursor-pointer"
+            >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
@@ -198,8 +284,9 @@ export default function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Google로 계속하기
-          </button>
+              Google로 계속하기
+            </button>
+          </div>
 
           <p className="text-center text-muted text-sm mt-6">
             아직 계정이 없으신가요?{" "}
@@ -222,5 +309,21 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginContent />
+    </Suspense>
   );
 }

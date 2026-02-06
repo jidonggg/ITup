@@ -26,6 +26,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { Product, Mentor, MentorSchedule } from "@/lib/supabase/types";
 import { PLATFORM_FEE_RATE, PRODUCT_INFO, REFUND_POLICY } from "@/lib/constants";
+import { MobileStepIndicator, StickyBottomCTA } from "@/components/mobile";
 
 // =============================================
 // Types
@@ -43,6 +44,46 @@ interface BookingFormData {
 }
 
 // =============================================
+// Session Storage keys for progress saving
+// =============================================
+const STORAGE_KEY_PREFIX = "booking_progress_";
+
+function saveProgress(productId: string, data: {
+  step: number;
+  selectedDate: string | null;
+  selectedTime: string | null;
+  formData: BookingFormData;
+}) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY_PREFIX + productId, JSON.stringify(data));
+  } catch {
+    // sessionStorage not available
+  }
+}
+
+function loadProgress(productId: string): {
+  step: number;
+  selectedDate: string | null;
+  selectedTime: string | null;
+  formData: BookingFormData;
+} | null {
+  try {
+    const data = sessionStorage.getItem(STORAGE_KEY_PREFIX + productId);
+    return data ? JSON.parse(data) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearProgress(productId: string) {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY_PREFIX + productId);
+  } catch {
+    // sessionStorage not available
+  }
+}
+
+// =============================================
 // Step Indicator
 // =============================================
 
@@ -53,9 +94,9 @@ const STEPS = [
   { number: 4, label: "결제 확인" },
 ];
 
-function StepIndicator({ currentStep }: { currentStep: number }) {
+function DesktopStepIndicator({ currentStep }: { currentStep: number }) {
   return (
-    <div className="flex items-center justify-center gap-1 sm:gap-2 mb-8">
+    <div className="hidden md:flex items-center justify-center gap-1 sm:gap-2 mb-8">
       {STEPS.map((step, index) => (
         <div key={step.number} className="flex items-center">
           <div className="flex flex-col items-center">
@@ -113,23 +154,23 @@ function StepProductConfirm({
   const productInfo = PRODUCT_INFO[product.type];
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">상품 확인</h2>
+    <div className="max-w-lg mx-auto pb-24 md:pb-8">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">상품 확인</h2>
 
-      <div className="bg-card-bg border border-card-border rounded-2xl p-6 mb-6">
+      <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-6 mb-6">
         {/* Product Info */}
-        <div className="flex items-start gap-4 mb-6">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-2xl shrink-0">
+        <div className="flex items-start gap-3 md:gap-4 mb-5 md:mb-6">
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-xl md:text-2xl shrink-0">
             {productInfo.icon}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold mb-1">{product.title}</h3>
-            <p className="text-sm text-muted mb-2">{productInfo.description}</p>
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-lg font-medium">
+            <h3 className="text-base md:text-lg font-bold mb-1">{product.title}</h3>
+            <p className="text-xs md:text-sm text-muted mb-2">{productInfo.description}</p>
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 text-sm">
+              <span className="px-2 md:px-2.5 py-1 bg-primary/10 text-primary rounded-lg font-medium text-xs md:text-sm">
                 {product.duration_minutes}분
               </span>
-              <span className="font-bold text-primary text-lg">
+              <span className="font-bold text-primary text-base md:text-lg">
                 {product.price.toLocaleString()}원
               </span>
             </div>
@@ -137,16 +178,16 @@ function StepProductConfirm({
         </div>
 
         {/* Divider */}
-        <div className="border-t border-card-border my-5" />
+        <div className="border-t border-card-border my-4 md:my-5" />
 
         {/* Mentor Info */}
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-lg shrink-0">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-base md:text-lg shrink-0">
             {mentor.name.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="font-semibold">{mentor.name}</span>
+              <span className="font-semibold text-sm md:text-base">{mentor.name}</span>
               {mentor.is_verified && (
                 <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
                   <path
@@ -157,28 +198,39 @@ function StepProductConfirm({
                 </svg>
               )}
             </div>
-            <p className="text-sm text-muted">{mentor.company} &middot; {mentor.role}</p>
+            <p className="text-xs md:text-sm text-muted">{mentor.company} &middot; {mentor.role}</p>
           </div>
         </div>
 
         {/* Product Description */}
         {product.description && (
           <>
-            <div className="border-t border-card-border my-5" />
+            <div className="border-t border-card-border my-4 md:my-5" />
             <div>
-              <p className="text-sm text-muted mb-1.5">상품 설명</p>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{product.description}</p>
+              <p className="text-xs md:text-sm text-muted mb-1.5">상품 설명</p>
+              <p className="text-xs md:text-sm leading-relaxed whitespace-pre-wrap">{product.description}</p>
             </div>
           </>
         )}
       </div>
 
+      {/* Desktop button */}
       <button
         onClick={onNext}
-        className="w-full py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold text-lg cursor-pointer hover:opacity-90 transition-opacity"
+        className="hidden md:block w-full py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold text-lg cursor-pointer hover:opacity-90 transition-opacity min-h-[48px]"
       >
         다음
       </button>
+
+      {/* Mobile sticky CTA */}
+      <StickyBottomCTA>
+        <button
+          onClick={onNext}
+          className="w-full py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold text-base cursor-pointer hover:opacity-90 transition-opacity min-h-[48px] active:scale-[0.98]"
+        >
+          다음
+        </button>
+      </StickyBottomCTA>
     </div>
   );
 }
@@ -286,7 +338,6 @@ function StepDateTimeSelect({
         const h = Math.floor(min / 60);
         const m = min % 60;
         const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-        const scheduledAt = `${dateStr}T${timeStr}:00`;
 
         // Check if this slot overlaps with any existing booking
         const isBooked = existingBookings.some((booking) => {
@@ -322,17 +373,17 @@ function StepDateTimeSelect({
     const days = getMonthDays(month);
     return (
       <div>
-        <h4 className="text-center font-semibold mb-3">
+        <h4 className="text-center font-semibold mb-3 text-sm md:text-base">
           {format(month, "yyyy년 M월", { locale: ko })}
         </h4>
-        <div className="grid grid-cols-7 gap-1 mb-1">
+        <div className="grid grid-cols-7 gap-0.5 md:gap-1 mb-1">
           {weekDays.map((day) => (
             <div key={day} className="text-center text-xs text-muted font-medium py-1">
               {day}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5 md:gap-1">
           {days.map((day, i) => {
             const inMonth = isSameMonth(day, month);
             const available = inMonth && isDateAvailable(day);
@@ -350,9 +401,10 @@ function StepDateTimeSelect({
                 }}
                 disabled={!available}
                 className={`
-                  relative aspect-square flex items-center justify-center text-sm rounded-lg transition-all cursor-pointer
+                  relative aspect-square flex items-center justify-center text-xs md:text-sm rounded-lg transition-all cursor-pointer
+                  min-h-[40px] md:min-h-[44px]
                   ${!inMonth ? "invisible" : ""}
-                  ${available ? "hover:bg-primary/10" : "text-muted/40 cursor-not-allowed"}
+                  ${available ? "hover:bg-primary/10 active:bg-primary/20" : "text-muted/40 cursor-not-allowed"}
                   ${selected ? "bg-primary text-white font-bold shadow-md hover:bg-primary" : ""}
                   ${today && !selected ? "ring-1 ring-primary font-semibold" : ""}
                 `}
@@ -367,27 +419,27 @@ function StepDateTimeSelect({
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">일정 선택</h2>
+    <div className="max-w-2xl mx-auto pb-28 md:pb-8">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">일정 선택</h2>
 
       {/* Calendar */}
-      <div className="bg-card-bg border border-card-border rounded-2xl p-4 sm:p-6 mb-6">
+      <div className="bg-card-bg border border-card-border rounded-2xl p-3 md:p-6 mb-4 md:mb-6">
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
             disabled={isSameMonth(currentMonth, new Date()) || isBefore(currentMonth, new Date())}
-            className="p-2 hover:bg-secondary rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-2.5 md:p-2 hover:bg-secondary rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="font-semibold text-lg">
+          <span className="font-semibold text-base md:text-lg">
             {format(currentMonth, "yyyy년", { locale: ko })}
           </span>
           <button
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-2 hover:bg-secondary rounded-lg transition-colors cursor-pointer"
+            className="p-2.5 md:p-2 hover:bg-secondary rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -395,7 +447,11 @@ function StepDateTimeSelect({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Single calendar on mobile, two on desktop */}
+        <div className="md:hidden">
+          {renderCalendar(currentMonth)}
+        </div>
+        <div className="hidden md:grid md:grid-cols-2 gap-6">
           {renderCalendar(currentMonth)}
           {renderCalendar(nextMonth)}
         </div>
@@ -411,14 +467,14 @@ function StepDateTimeSelect({
 
       {/* Time Slots */}
       {selectedDate && (
-        <div className="bg-card-bg border border-card-border rounded-2xl p-4 sm:p-6 mb-6">
-          <h3 className="font-semibold mb-1">
+        <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
+          <h3 className="font-semibold mb-1 text-sm md:text-base">
             {format(selectedDate, "M월 d일 (EEEE)", { locale: ko })}
           </h3>
-          <p className="text-sm text-muted mb-4">시간을 선택해주세요</p>
+          <p className="text-xs md:text-sm text-muted mb-3 md:mb-4">시간을 선택해주세요</p>
 
           {timeSlots.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:flex md:flex-wrap gap-2">
               {timeSlots.map((slot) => (
                 <button
                   key={slot.time}
@@ -427,12 +483,13 @@ function StepDateTimeSelect({
                   }}
                   disabled={!slot.available}
                   className={`
-                    px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer
+                    px-3 md:px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer
+                    min-h-[44px]
                     ${
                       selectedTime === slot.time
                         ? "bg-primary text-white shadow-md"
                         : slot.available
-                          ? "bg-secondary hover:bg-primary/10 text-foreground"
+                          ? "bg-secondary hover:bg-primary/10 active:bg-primary/20 text-foreground"
                           : "bg-secondary/50 text-muted/40 cursor-not-allowed line-through"
                     }
                   `}
@@ -451,37 +508,56 @@ function StepDateTimeSelect({
 
       {/* Selected Summary */}
       {selectedDate && selectedTime && (
-        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mb-6 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-3 md:p-4 mb-4 md:mb-6 flex items-center gap-3">
+          <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 md:w-5 md:h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
           <div>
-            <p className="font-semibold">
+            <p className="font-semibold text-sm md:text-base">
               {format(selectedDate, "yyyy년 M월 d일 (EEEE)", { locale: ko })}
             </p>
-            <p className="text-sm text-primary font-medium">{selectedTime} 시작</p>
+            <p className="text-xs md:text-sm text-primary font-medium">{selectedTime} 시작</p>
           </div>
         </div>
       )}
 
-      {/* Buttons */}
-      <div className="flex gap-3">
+      {/* Desktop Buttons */}
+      <div className="hidden md:flex gap-3">
         <button
           onClick={onBack}
-          className="flex-1 py-3.5 border border-card-border text-foreground rounded-xl font-semibold cursor-pointer hover:bg-secondary transition-colors"
+          className="flex-1 py-3.5 border border-card-border text-foreground rounded-xl font-semibold cursor-pointer hover:bg-secondary transition-colors min-h-[48px]"
         >
           이전
         </button>
         <button
           onClick={onNext}
           disabled={!selectedDate || !selectedTime}
-          className="flex-1 py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px]"
         >
           다음
         </button>
       </div>
+
+      {/* Mobile sticky CTA */}
+      <StickyBottomCTA>
+        <div className="flex gap-3">
+          <button
+            onClick={onBack}
+            className="flex-1 py-3 border border-card-border text-foreground rounded-xl font-semibold cursor-pointer hover:bg-secondary transition-colors min-h-[48px] active:scale-[0.98]"
+          >
+            이전
+          </button>
+          <button
+            onClick={onNext}
+            disabled={!selectedDate || !selectedTime}
+            className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px] active:scale-[0.98]"
+          >
+            다음
+          </button>
+        </div>
+      </StickyBottomCTA>
     </div>
   );
 }
@@ -510,14 +586,14 @@ function StepBookingInfo({
   const showFileUpload = product.type === "document_review" || product.type === "mock_interview";
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">신청 정보</h2>
+    <div className="max-w-lg mx-auto pb-28 md:pb-8">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">신청 정보</h2>
 
-      <div className="space-y-5">
+      <div className="space-y-4 md:space-y-5">
         {/* Intro */}
-        <div className="bg-card-bg border border-card-border rounded-2xl p-5">
+        <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-5">
           <label className="block mb-2">
-            <span className="font-semibold">간단 자기소개</span>
+            <span className="font-semibold text-sm md:text-base">간단 자기소개</span>
             <span className="text-red-500 ml-1">*</span>
           </label>
           <textarea
@@ -527,7 +603,7 @@ function StepBookingInfo({
             }
             placeholder="현재 직무, 경력 등을 간단히 소개해주세요 (최소 10자)"
             rows={4}
-            className="w-full p-3.5 bg-secondary/50 border border-card-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+            className="w-full p-3 md:p-3.5 bg-secondary/50 border border-card-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all min-h-[100px]"
           />
           <div className="flex justify-between mt-1.5">
             <p
@@ -546,9 +622,9 @@ function StepBookingInfo({
         </div>
 
         {/* Goal */}
-        <div className="bg-card-bg border border-card-border rounded-2xl p-5">
+        <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-5">
           <label className="block mb-2">
-            <span className="font-semibold">상담에서 얻고 싶은 것</span>
+            <span className="font-semibold text-sm md:text-base">상담에서 얻고 싶은 것</span>
             <span className="text-red-500 ml-1">*</span>
           </label>
           <textarea
@@ -558,7 +634,7 @@ function StepBookingInfo({
             }
             placeholder="멘토에게 궁금한 점이나 얻고 싶은 조언을 작성해주세요 (최소 10자)"
             rows={4}
-            className="w-full p-3.5 bg-secondary/50 border border-card-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+            className="w-full p-3 md:p-3.5 bg-secondary/50 border border-card-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all min-h-[100px]"
           />
           <div className="flex justify-between mt-1.5">
             <p
@@ -578,19 +654,19 @@ function StepBookingInfo({
 
         {/* File Attachment (UI only) */}
         {showFileUpload && (
-          <div className="bg-card-bg border border-card-border rounded-2xl p-5">
+          <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-5">
             <label className="block mb-2">
-              <span className="font-semibold">
+              <span className="font-semibold text-sm md:text-base">
                 {product.type === "document_review"
                   ? "서류 첨부"
                   : "면접 관련 자료"}
               </span>
               <span className="text-xs text-muted ml-2">(선택사항)</span>
             </label>
-            <div className="border-2 border-dashed border-card-border rounded-xl p-8 text-center hover:border-primary/40 transition-colors">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-secondary flex items-center justify-center">
+            <div className="border-2 border-dashed border-card-border rounded-xl p-6 md:p-8 text-center hover:border-primary/40 transition-colors active:bg-secondary/30">
+              <div className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 rounded-full bg-secondary flex items-center justify-center">
                 <svg
-                  className="w-6 h-6 text-muted"
+                  className="w-5 h-5 md:w-6 md:h-6 text-muted"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -603,7 +679,7 @@ function StepBookingInfo({
                   />
                 </svg>
               </div>
-              <p className="text-sm text-muted mb-1">
+              <p className="text-xs md:text-sm text-muted mb-1">
                 파일을 드래그하거나 클릭하여 업로드
               </p>
               <p className="text-xs text-muted/60">
@@ -614,22 +690,41 @@ function StepBookingInfo({
         )}
       </div>
 
-      {/* Buttons */}
-      <div className="flex gap-3 mt-6">
+      {/* Desktop Buttons */}
+      <div className="hidden md:flex gap-3 mt-6">
         <button
           onClick={onBack}
-          className="flex-1 py-3.5 border border-card-border text-foreground rounded-xl font-semibold cursor-pointer hover:bg-secondary transition-colors"
+          className="flex-1 py-3.5 border border-card-border text-foreground rounded-xl font-semibold cursor-pointer hover:bg-secondary transition-colors min-h-[48px]"
         >
           이전
         </button>
         <button
           onClick={onNext}
           disabled={!canProceed}
-          className="flex-1 py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px]"
         >
           다음
         </button>
       </div>
+
+      {/* Mobile sticky CTA */}
+      <StickyBottomCTA>
+        <div className="flex gap-3">
+          <button
+            onClick={onBack}
+            className="flex-1 py-3 border border-card-border text-foreground rounded-xl font-semibold cursor-pointer hover:bg-secondary transition-colors min-h-[48px] active:scale-[0.98]"
+          >
+            이전
+          </button>
+          <button
+            onClick={onNext}
+            disabled={!canProceed}
+            className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px] active:scale-[0.98]"
+          >
+            다음
+          </button>
+        </div>
+      </StickyBottomCTA>
     </div>
   );
 }
@@ -658,63 +753,62 @@ function StepPaymentConfirm({
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
   const [showRefundPolicy, setShowRefundPolicy] = useState(false);
 
-  const platformFee = Math.round(product.price * PLATFORM_FEE_RATE);
   const totalAmount = product.price;
   const productInfo = PRODUCT_INFO[product.type];
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">결제 확인</h2>
+    <div className="max-w-lg mx-auto pb-28 md:pb-8">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">결제 확인</h2>
 
       {/* Booking Summary */}
-      <div className="bg-card-bg border border-card-border rounded-2xl p-6 mb-5">
-        <h3 className="font-semibold mb-4 text-lg">예약 정보</h3>
+      <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-6 mb-4 md:mb-5">
+        <h3 className="font-semibold mb-3 md:mb-4 text-base md:text-lg">예약 정보</h3>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5 md:space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-muted text-sm">멘토</span>
-            <span className="font-medium">{mentor.name}</span>
+            <span className="text-muted text-xs md:text-sm">멘토</span>
+            <span className="font-medium text-sm md:text-base">{mentor.name}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted text-sm">상품</span>
-            <span className="font-medium">
+            <span className="text-muted text-xs md:text-sm">상품</span>
+            <span className="font-medium text-sm md:text-base">
               {productInfo.icon} {product.title}
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted text-sm">시간</span>
-            <span className="font-medium">{product.duration_minutes}분</span>
+            <span className="text-muted text-xs md:text-sm">시간</span>
+            <span className="font-medium text-sm md:text-base">{product.duration_minutes}분</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted text-sm">일정</span>
-            <span className="font-medium">
+            <span className="text-muted text-xs md:text-sm">일정</span>
+            <span className="font-medium text-sm md:text-base">
               {format(selectedDate, "yyyy.MM.dd (EEEE)", { locale: ko })}
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted text-sm">시작 시간</span>
-            <span className="font-medium text-primary">{selectedTime}</span>
+            <span className="text-muted text-xs md:text-sm">시작 시간</span>
+            <span className="font-medium text-primary text-sm md:text-base">{selectedTime}</span>
           </div>
         </div>
       </div>
 
       {/* Price Breakdown */}
-      <div className="bg-card-bg border border-card-border rounded-2xl p-6 mb-5">
-        <h3 className="font-semibold mb-4 text-lg">결제 금액</h3>
+      <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-6 mb-4 md:mb-5">
+        <h3 className="font-semibold mb-3 md:mb-4 text-base md:text-lg">결제 금액</h3>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5 md:space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-muted text-sm">상품 가격</span>
-            <span className="font-medium">{product.price.toLocaleString()}원</span>
+            <span className="text-muted text-xs md:text-sm">상품 가격</span>
+            <span className="font-medium text-sm md:text-base">{product.price.toLocaleString()}원</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted text-sm">플랫폼 수수료 ({Math.round(PLATFORM_FEE_RATE * 100)}%)</span>
+            <span className="text-muted text-xs md:text-sm">플랫폼 수수료 ({Math.round(PLATFORM_FEE_RATE * 100)}%)</span>
             <span className="text-xs text-muted">(가격에 포함)</span>
           </div>
           <div className="border-t border-card-border my-2" />
           <div className="flex justify-between items-center">
-            <span className="font-bold text-lg">총 결제 금액</span>
-            <span className="font-bold text-xl text-primary">
+            <span className="font-bold text-base md:text-lg">총 결제 금액</span>
+            <span className="font-bold text-lg md:text-xl text-primary">
               {totalAmount.toLocaleString()}원
             </span>
           </div>
@@ -722,28 +816,28 @@ function StepPaymentConfirm({
       </div>
 
       {/* Refund Policy Agreement */}
-      <div className="bg-card-bg border border-card-border rounded-2xl p-5 mb-6">
-        <label className="flex items-start gap-3 cursor-pointer">
+      <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-5 mb-4 md:mb-6">
+        <label className="flex items-start gap-3 cursor-pointer min-h-[44px] py-1">
           <input
             type="checkbox"
             checked={agreedToPolicy}
             onChange={(e) => setAgreedToPolicy(e.target.checked)}
             className="mt-0.5 w-5 h-5 rounded border-card-border text-primary focus:ring-primary/30 cursor-pointer accent-primary"
           />
-          <span className="text-sm leading-relaxed">
+          <span className="text-xs md:text-sm leading-relaxed">
             <span className="font-medium">취소/환불 규정</span>에 동의합니다.
           </span>
         </label>
 
         <button
           onClick={() => setShowRefundPolicy(!showRefundPolicy)}
-          className="mt-2 ml-8 text-xs text-primary hover:underline cursor-pointer"
+          className="mt-2 ml-8 text-xs text-primary hover:underline cursor-pointer min-h-[32px] flex items-center"
         >
           {showRefundPolicy ? "환불 규정 닫기" : "환불 규정 보기"}
         </button>
 
         {showRefundPolicy && (
-          <div className="mt-3 ml-8 p-4 bg-secondary/50 rounded-xl text-xs space-y-2 text-muted">
+          <div className="mt-3 ml-8 p-3 md:p-4 bg-secondary/50 rounded-xl text-xs space-y-2 text-muted">
             <p className="font-semibold text-foreground mb-2">멘티 취소/환불 규정</p>
             <div className="space-y-1.5">
               <div className="flex justify-between">
@@ -775,19 +869,19 @@ function StepPaymentConfirm({
         )}
       </div>
 
-      {/* Buttons */}
-      <div className="flex gap-3">
+      {/* Desktop Buttons */}
+      <div className="hidden md:flex gap-3">
         <button
           onClick={onBack}
           disabled={isSubmitting}
-          className="flex-1 py-3.5 border border-card-border text-foreground rounded-xl font-semibold cursor-pointer hover:bg-secondary transition-colors disabled:opacity-40"
+          className="flex-1 py-3.5 border border-card-border text-foreground rounded-xl font-semibold cursor-pointer hover:bg-secondary transition-colors disabled:opacity-40 min-h-[48px]"
         >
           이전
         </button>
         <button
           onClick={onSubmit}
           disabled={!agreedToPolicy || isSubmitting}
-          className="flex-1 py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="flex-1 py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px]"
         >
           {isSubmitting ? (
             <>
@@ -799,6 +893,33 @@ function StepPaymentConfirm({
           )}
         </button>
       </div>
+
+      {/* Mobile sticky CTA */}
+      <StickyBottomCTA>
+        <div className="flex gap-3">
+          <button
+            onClick={onBack}
+            disabled={isSubmitting}
+            className="flex-1 py-3 border border-card-border text-foreground rounded-xl font-semibold cursor-pointer hover:bg-secondary transition-colors disabled:opacity-40 min-h-[48px] active:scale-[0.98]"
+          >
+            이전
+          </button>
+          <button
+            onClick={onSubmit}
+            disabled={!agreedToPolicy || isSubmitting}
+            className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px] active:scale-[0.98]"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                처리 중...
+              </>
+            ) : (
+              "결제하기"
+            )}
+          </button>
+        </div>
+      </StickyBottomCTA>
     </div>
   );
 }
@@ -823,23 +944,23 @@ function BookingSuccess({
   const productInfo = PRODUCT_INFO[product.type];
 
   return (
-    <div className="max-w-lg mx-auto text-center">
+    <div className="max-w-lg mx-auto text-center px-4">
       {/* Success Icon */}
-      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center">
-        <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 md:mb-6 rounded-full bg-green-500/20 flex items-center justify-center">
+        <svg className="w-8 h-8 md:w-10 md:h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
         </svg>
       </div>
 
-      <h2 className="text-2xl font-bold mb-2">예약이 완료되었어요!</h2>
-      <p className="text-muted mb-6">
+      <h2 className="text-xl md:text-2xl font-bold mb-2">예약이 완료되었어요!</h2>
+      <p className="text-muted text-sm md:text-base mb-4 md:mb-6">
         멘토님의 확인 후 결제가 진행돼요.
       </p>
 
       {/* Booking Details */}
-      <div className="bg-card-bg border border-card-border rounded-2xl p-6 mb-6 text-left">
-        <h3 className="font-semibold mb-4 text-center">예약 상세</h3>
-        <div className="space-y-3 text-sm">
+      <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-6 mb-4 md:mb-6 text-left">
+        <h3 className="font-semibold mb-3 md:mb-4 text-center text-sm md:text-base">예약 상세</h3>
+        <div className="space-y-2.5 md:space-y-3 text-xs md:text-sm">
           <div className="flex justify-between">
             <span className="text-muted">예약 번호</span>
             <span className="font-mono text-xs">{bookingId.slice(0, 8)}...</span>
@@ -881,13 +1002,13 @@ function BookingSuccess({
       <div className="flex flex-col sm:flex-row gap-3">
         <Link
           href="/mypage"
-          className="flex-1 inline-flex items-center justify-center py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
+          className="flex-1 inline-flex items-center justify-center py-3 md:py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold hover:opacity-90 transition-opacity min-h-[48px]"
         >
           마이페이지로 이동
         </Link>
         <Link
           href="/"
-          className="flex-1 inline-flex items-center justify-center py-3.5 border border-card-border text-foreground rounded-xl font-semibold hover:bg-secondary transition-colors"
+          className="flex-1 inline-flex items-center justify-center py-3 md:py-3.5 border border-card-border text-foreground rounded-xl font-semibold hover:bg-secondary transition-colors min-h-[48px]"
         >
           홈으로 이동
         </Link>
@@ -929,6 +1050,29 @@ export default function BookingPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Load saved progress on mount
+  useEffect(() => {
+    const saved = loadProgress(productId);
+    if (saved) {
+      setCurrentStep(saved.step);
+      setSelectedDate(saved.selectedDate ? new Date(saved.selectedDate) : null);
+      setSelectedTime(saved.selectedTime);
+      setFormData(saved.formData);
+    }
+  }, [productId]);
+
+  // Save progress when state changes
+  useEffect(() => {
+    if (!isLoading && product) {
+      saveProgress(productId, {
+        step: currentStep,
+        selectedDate: selectedDate ? selectedDate.toISOString() : null,
+        selectedTime,
+        formData,
+      });
+    }
+  }, [currentStep, selectedDate, selectedTime, formData, productId, isLoading, product]);
 
   // Fetch product, mentor, and schedules
   useEffect(() => {
@@ -997,7 +1141,7 @@ export default function BookingPage({
     };
 
     fetchData();
-  }, [isInitialized, productId]);
+  }, [isInitialized, productId, user]);
 
   // Submit booking
   const handleSubmit = async () => {
@@ -1048,6 +1192,19 @@ export default function BookingPage({
         return;
       }
 
+      // 멘토에게 새 예약 이메일 알림 발송 (비동기, 에러 무시)
+      fetch("/api/email/booking-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "new_booking",
+          bookingId: data.id,
+        }),
+      }).catch(() => {});
+
+      // Clear saved progress on success
+      clearProgress(productId);
+
       setBookingId(data.id);
       setIsSuccess(true);
       showToast("예약이 완료되었어요!", "success");
@@ -1074,9 +1231,9 @@ export default function BookingPage({
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-8 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center">
-            <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-6 md:p-8 text-center">
+          <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center">
+            <svg className="w-7 h-7 md:w-8 md:h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -1085,18 +1242,18 @@ export default function BookingPage({
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-2">로그인이 필요해요</h2>
-          <p className="text-muted mb-6">예약을 진행하려면 로그인해주세요.</p>
+          <h2 className="text-xl md:text-2xl font-bold mb-2">로그인이 필요해요</h2>
+          <p className="text-muted text-sm md:text-base mb-4 md:mb-6">예약을 진행하려면 로그인해주세요.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/login"
-              className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
+              className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium min-h-[44px] flex items-center justify-center"
             >
               로그인하기
             </Link>
             <Link
               href="/"
-              className="px-6 py-2.5 border border-card-border text-foreground rounded-full font-medium"
+              className="px-6 py-2.5 border border-card-border text-foreground rounded-full font-medium min-h-[44px] flex items-center justify-center"
             >
               홈으로 돌아가기
             </Link>
@@ -1110,24 +1267,24 @@ export default function BookingPage({
   if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-8 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-6 md:p-8 text-center">
+          <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+            <svg className="w-7 h-7 md:w-8 md:h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-2">오류가 발생했어요</h2>
-          <p className="text-muted mb-6">{error}</p>
+          <h2 className="text-xl md:text-2xl font-bold mb-2">오류가 발생했어요</h2>
+          <p className="text-muted text-sm md:text-base mb-4 md:mb-6">{error}</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/mentors"
-              className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
+              className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium min-h-[44px] flex items-center justify-center"
             >
               멘토 목록으로
             </Link>
             <Link
               href="/"
-              className="px-6 py-2.5 border border-card-border text-foreground rounded-full font-medium"
+              className="px-6 py-2.5 border border-card-border text-foreground rounded-full font-medium min-h-[44px] flex items-center justify-center"
             >
               홈으로 이동
             </Link>
@@ -1156,7 +1313,7 @@ export default function BookingPage({
           </div>
         </header>
 
-        <main className="max-w-3xl mx-auto px-4 py-10">
+        <main className="max-w-3xl mx-auto px-4 py-6 md:py-10">
           <BookingSuccess
             product={product}
             mentor={mentor}
@@ -1170,32 +1327,37 @@ export default function BookingPage({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
-      <header className="border-b border-card-border bg-card-bg">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="border-b border-card-border bg-card-bg sticky top-0 z-40">
+        <div className="max-w-3xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <span className="text-white text-sm">☕</span>
               </div>
-              <span className="font-bold">커피챗</span>
+              <span className="font-bold hidden sm:inline">커피챗</span>
             </Link>
-            <span className="text-muted">/</span>
+            <span className="text-muted hidden sm:inline">/</span>
             <span className="font-medium text-sm sm:text-base">예약하기</span>
           </div>
           <button
             onClick={() => router.back()}
-            className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer"
+            className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             취소
           </button>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        {/* Step Indicator */}
-        <StepIndicator currentStep={currentStep} />
+      {/* Mobile Step Indicator */}
+      <div className="md:hidden">
+        <MobileStepIndicator steps={STEPS} currentStep={currentStep} />
+      </div>
+
+      <main className="max-w-3xl mx-auto px-4 py-4 md:py-8">
+        {/* Desktop Step Indicator */}
+        <DesktopStepIndicator currentStep={currentStep} />
 
         {/* Step Content */}
         {currentStep === 1 && (
