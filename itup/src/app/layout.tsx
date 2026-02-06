@@ -25,11 +25,11 @@ export const metadata: Metadata = {
   keywords: ["게임 개발", "멘토링", "게임 업계 취업", "게임 프로그래머", "게임 기획자", "게임 아티스트", "커피챗", "게임 회사", "커리어 상담"],
   authors: [{ name: "커피챗" }],
   creator: "커피챗",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://coffeechat-six.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://coffeechat-kr.vercel.app"),
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://coffeechat-six.vercel.app",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://coffeechat-kr.vercel.app",
     siteName: "커피챗",
     title: "커피챗 | 게임 업계 멘토링 플랫폼",
     description: "현직 게임 개발자와 1:1 멘토링으로 게임 업계 취업과 커리어 성장을 도와드립니다.",
