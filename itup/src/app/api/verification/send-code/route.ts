@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { saveVerificationCode } from "@/lib/verification-store";
 import { verificationLimiter } from "@/lib/rate-limit";
+import { getEmailFrom, SITE_CONFIG } from "@/lib/site-config";
 
 // 게임 회사 도메인 목록
 const GAME_COMPANY_DOMAINS = [
@@ -81,9 +82,9 @@ export async function POST(request: NextRequest) {
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: "커피챗 <noreply@itup.kr>",
+        from: getEmailFrom("noreply"),
         to: email,
-        subject: "[커피챗] 멘토 인증 코드",
+        subject: `[${SITE_CONFIG.name}] 멘토 인증 코드`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #A0714F;">커피챗 멘토 인증</h2>

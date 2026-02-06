@@ -1,7 +1,8 @@
 import { MetadataRoute } from "next";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://itup.vercel.app";
+  const baseUrl = SITE_CONFIG.url;
 
   return [
     {
@@ -35,13 +36,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     },
     {
-      url: `${baseUrl}/mentor/register`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/mentor/recruit`,
+      url: `${baseUrl}/mentor/apply`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.7,

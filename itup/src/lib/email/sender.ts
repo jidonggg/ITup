@@ -2,6 +2,7 @@
 // 실제 운영 시 RESEND_API_KEY 또는 SENDGRID_API_KEY 환경변수 설정 필요
 
 import { EmailTemplate } from "./templates";
+import { getEmailFrom } from "@/lib/site-config";
 
 interface SendEmailParams {
   to: string;
@@ -30,7 +31,7 @@ async function sendWithResend(params: SendEmailParams): Promise<SendEmailResult>
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "커피챗 <noreply@itup.kr>",
+        from: getEmailFrom("noreply"),
         to: params.to,
         subject: params.template.subject,
         html: params.template.html,

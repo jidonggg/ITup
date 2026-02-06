@@ -6,11 +6,12 @@ import {
   consultationConfirmedTemplate,
   mentorApprovedTemplate,
 } from "@/lib/email/templates";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 // 내부 API 시크릿 (서버-서버 통신용)
 const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://itup.vercel.app";
+const SITE_URL = SITE_CONFIG.url;
 
 // 서버사이드 Supabase 클라이언트
 function getServiceSupabase() {

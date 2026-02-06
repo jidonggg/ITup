@@ -137,7 +137,7 @@ export default function Image() {
             display: "flex",
           }}
         >
-          itup.vercel.app
+          coffeechat.kr
         </div>
       </div>
     ),

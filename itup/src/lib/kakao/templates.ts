@@ -80,7 +80,9 @@ export type AlimtalkVariables =
 // 템플릿 정의
 // =============================================
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://itup.vercel.app";
+import { SITE_CONFIG } from "@/lib/site-config";
+
+const SITE_URL = SITE_CONFIG.url;
 
 export const ALIMTALK_TEMPLATES: Record<AlimtalkTemplateCode, AlimtalkTemplate> = {
   booking_confirmed: {

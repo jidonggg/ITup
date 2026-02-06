@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 // =============================================
 // Configuration
@@ -20,8 +21,8 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const CRON_SECRET = process.env.CRON_SECRET;
 const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://itup.vercel.app";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@itup.kr";
+const SITE_URL = SITE_CONFIG.url;
+const ADMIN_EMAIL = SITE_CONFIG.email.admin;
 
 // Reminder windows (in minutes)
 const REMINDER_24H_WINDOW_MIN = 23 * 60 + 30; // 23.5 hours

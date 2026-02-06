@@ -9,10 +9,11 @@ import {
   reviewRequestTemplate,
   feedbackReceivedTemplate,
 } from "@/lib/email/templates";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 // 내부 API 시크릿 (서버-서버 통신용)
 const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://itup.vercel.app";
+const SITE_URL = SITE_CONFIG.url;
 
 // 지원하는 알림 타입
 type NotificationType =

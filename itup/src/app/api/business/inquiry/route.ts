@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/sender";
 import { businessInquiryTemplate } from "@/lib/email/templates";
 import { inquiryLimiter, getClientIp } from "@/lib/rate-limit";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send admin notification email
-    const adminEmail = process.env.ADMIN_EMAIL || "support@itup.kr";
+    const adminEmail = SITE_CONFIG.email.admin;
     await sendEmail({
       to: adminEmail,
       template: businessInquiryTemplate({
