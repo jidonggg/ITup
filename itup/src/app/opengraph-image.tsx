@@ -137,7 +137,7 @@ export default function Image() {
             display: "flex",
           }}
         >
-          coffeechat.kr
+          coffeechat-six.vercel.app
         </div>
       </div>
     ),

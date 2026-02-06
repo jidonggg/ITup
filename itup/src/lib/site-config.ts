@@ -13,7 +13,7 @@ export const SITE_CONFIG = {
   shortDescription: "게임 업계 멘토링 플랫폼",
 
   // URL (환경변수 우선, 없으면 기본값 사용)
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://itup.vercel.app",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://coffeechat-six.vercel.app",
 
   // 이메일 주소
   email: {
