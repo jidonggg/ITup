@@ -57,13 +57,17 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 1. session_confirmations 업데이트
+    // [H11] 분쟁 유지(disputed) 시에는 resolved_at/resolved_by를 설정하지 않음
+    const updateData: Record<string, unknown> = {
+      final_status: finalStatus,
+    };
+    if (finalStatus !== "disputed") {
+      updateData.resolved_at = new Date().toISOString();
+      updateData.resolved_by = admin.id;
+    }
     const { error: scError } = await supabase
       .from("session_confirmations")
-      .update({
-        final_status: finalStatus,
-        resolved_at: new Date().toISOString(),
-        resolved_by: admin.id,
-      })
+      .update(updateData)
       .eq("id", confirmationId);
 
     if (scError) {
@@ -72,10 +76,19 @@ export async function PATCH(request: NextRequest) {
 
     // 2. booking 상태 업데이트 (완료/노쇼 판정 시)
     if (bookingId && (finalStatus === "completed" || finalStatus === "mentor_noshow" || finalStatus === "mentee_noshow")) {
-      await supabase
-        .from("bookings")
-        .update({ status: "completed" })
-        .eq("id", bookingId);
+      if (finalStatus === "mentor_noshow") {
+        // [C5] 멘토 노쇼 시 환불 처리 - booking을 cancelled로 설정
+        // TODO: 실제 PG 환불 트리거 연동 필요
+        await supabase
+          .from("bookings")
+          .update({ status: "cancelled" })
+          .eq("id", bookingId);
+      } else {
+        await supabase
+          .from("bookings")
+          .update({ status: "completed" })
+          .eq("id", bookingId);
+      }
     }
 
     // 3. 노쇼 판정 시 noshow_records에 기록

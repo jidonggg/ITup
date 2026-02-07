@@ -4,7 +4,7 @@ import { isAdmin } from "@/lib/admin";
 
 // 유효한 상태 전이 맵
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  pending: ["processing"],
+  pending: ["processing", "failed"],
   processing: ["completed", "failed"],
 };
 
@@ -48,6 +48,20 @@ export async function POST(request: NextRequest) {
 
       if (!mentorId || !totalAmount) {
         return NextResponse.json({ error: "필수 정보가 누락되었습니다." }, { status: 400 });
+      }
+
+      // 서버사이드 금액 유효성 검증
+      if (typeof totalAmount !== "number" || totalAmount <= 0) {
+        return NextResponse.json({ error: "totalAmount는 0보다 커야 합니다." }, { status: 400 });
+      }
+      if (typeof platformFee !== "number" || platformFee < 0) {
+        return NextResponse.json({ error: "platformFee는 0 이상이어야 합니다." }, { status: 400 });
+      }
+      if (typeof settlementAmount !== "number" || settlementAmount !== totalAmount - platformFee) {
+        return NextResponse.json(
+          { error: "settlementAmount가 totalAmount - platformFee와 일치하지 않습니다." },
+          { status: 400 },
+        );
       }
 
       const { data: settlement, error } = await supabase

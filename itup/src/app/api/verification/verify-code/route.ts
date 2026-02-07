@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
           verified_at: new Date().toISOString(),
           verification_method: "email",
           verified_company: requestedDomain,
+          verification_status: "verified" as const,
         })
         .eq("id", mentorId);
     }

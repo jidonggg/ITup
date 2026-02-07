@@ -8,6 +8,7 @@ import {
   mentorRejectedTemplate,
 } from "@/lib/email/templates";
 import { SITE_CONFIG } from "@/lib/site-config";
+import { isAdmin } from "@/lib/admin";
 
 // 내부 API 시크릿 (서버-서버 통신용)
 const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
@@ -26,12 +27,17 @@ function getServiceSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+// 인증 검증 결과
+type AuthResult =
+  | { authorized: false }
+  | { authorized: true; userEmail: string | null; viaApiSecret: boolean };
+
 // 인증 검증: 관리자 토큰, 인증된 사용자 토큰, 또는 내부 API 시크릿 필요
-async function verifyAuth(request: NextRequest): Promise<boolean> {
+async function verifyAuth(request: NextRequest): Promise<AuthResult> {
   // 1. 내부 API 시크릿 확인 (서버-서버 통신)
   const apiSecret = request.headers.get("x-api-secret");
   if (INTERNAL_API_SECRET && apiSecret === INTERNAL_API_SECRET) {
-    return true;
+    return { authorized: true, userEmail: null, viaApiSecret: true };
   }
 
   // 2. 인증된 사용자 세션 토큰 확인 (관리자 또는 멘토)
@@ -42,19 +48,19 @@ async function verifyAuth(request: NextRequest): Promise<boolean> {
     if (supabase) {
       const { data: { user } } = await supabase.auth.getUser(token);
       if (user) {
-        return true;
+        return { authorized: true, userEmail: user.email ?? null, viaApiSecret: false };
       }
     }
   }
 
-  return false;
+  return { authorized: false };
 }
 
 export async function POST(request: NextRequest) {
   try {
     // 인증 검증
-    const isAuthorized = await verifyAuth(request);
-    if (!isAuthorized) {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authorized) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -69,6 +75,18 @@ export async function POST(request: NextRequest) {
         { error: "type and data are required" },
         { status: 400 }
       );
+    }
+
+    // 관리자 전용 이메일 타입: mentor_approved, mentor_rejected
+    // 내부 API 시크릿이 아닌 사용자 토큰인 경우 관리자 권한 확인
+    const adminOnlyTypes = ["mentor_approved", "mentor_rejected"];
+    if (adminOnlyTypes.includes(type) && !authResult.viaApiSecret) {
+      if (!isAdmin(authResult.userEmail)) {
+        return NextResponse.json(
+          { error: "Forbidden: admin access required" },
+          { status: 403 }
+        );
+      }
     }
 
     const supabase = getServiceSupabase();

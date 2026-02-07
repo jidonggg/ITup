@@ -153,33 +153,7 @@ export async function POST(request: NextRequest) {
     const refundAmount = Math.round((booking.amount * refundRate) / 100);
     const now = new Date().toISOString();
 
-    // 7. Update booking status to "cancelled"
-    const updateData: Record<string, unknown> = {
-      status: "cancelled",
-      cancelled_at: now,
-      cancelled_by: cancelledBy,
-      cancel_reason: reason || null,
-      refund_amount: refundAmount,
-    };
-
-    if (refundAmount > 0) {
-      updateData.refunded_at = now;
-    }
-
-    const { error: updateError } = await supabase
-      .from("bookings")
-      .update(updateData)
-      .eq("id", bookingId)
-      .in("status", cancellableStatuses);
-
-    if (updateError) {
-      return NextResponse.json(
-        { error: "예약 취소 처리 중 오류가 발생했어요." },
-        { status: 500 },
-      );
-    }
-
-    // 8. 실제 PG 환불 처리 (paid/confirmed 상태에서 결제가 있는 경우)
+    // 7. PG 환불을 먼저 처리 (DB 상태 변경 전에 수행하여 데이터 불일치 방지)
     if (refundAmount > 0 && booking.amount > 0) {
       // 해당 booking의 payment_key 조회
       const { data: payment } = await supabase
@@ -208,22 +182,56 @@ export async function POST(request: NextRequest) {
 
           if (!tossResponse.ok) {
             console.error(`[환불 실패] bookingId: ${bookingId}, payment_key: ${payment.payment_key}`);
-          } else {
-            // 환불 성공 시 payments 테이블 상태 업데이트
-            const newPaymentStatus = refundAmount >= booking.amount ? "refunded" : "partial_refunded";
-            await supabase
-              .from("payments")
-              .update({
-                status: newPaymentStatus,
-                refund_reason: reason || (cancelledBy === "mentor" ? "멘토 취소" : "멘티 취소"),
-                refunded_at: now,
-              })
-              .eq("payment_key", payment.payment_key);
+            return NextResponse.json(
+              { error: "PG 환불 처리에 실패했어요. 예약 취소가 중단되었어요." },
+              { status: 502 },
+            );
           }
+
+          // 환불 성공 시 payments 테이블 상태 업데이트
+          const newPaymentStatus = refundAmount >= booking.amount ? "refunded" : "partial_refunded";
+          await supabase
+            .from("payments")
+            .update({
+              status: newPaymentStatus,
+              refund_reason: reason || (cancelledBy === "mentor" ? "멘토 취소" : "멘티 취소"),
+              refunded_at: now,
+            })
+            .eq("payment_key", payment.payment_key);
         } catch (e) {
           console.error(`[환불 예외] bookingId: ${bookingId}`, e);
+          return NextResponse.json(
+            { error: "PG 환불 처리 중 오류가 발생했어요. 예약 취소가 중단되었어요." },
+            { status: 502 },
+          );
         }
       }
+    }
+
+    // 8. PG 환불 성공 후 booking 상태를 "cancelled"로 업데이트
+    const updateData: Record<string, unknown> = {
+      status: "cancelled",
+      cancelled_at: now,
+      cancelled_by: cancelledBy,
+      cancel_reason: reason || null,
+      refund_amount: refundAmount,
+    };
+
+    if (refundAmount > 0) {
+      updateData.refunded_at = now;
+    }
+
+    const { error: updateError } = await supabase
+      .from("bookings")
+      .update(updateData)
+      .eq("id", bookingId)
+      .in("status", cancellableStatuses);
+
+    if (updateError) {
+      return NextResponse.json(
+        { error: "예약 취소 처리 중 오류가 발생했어요." },
+        { status: 500 },
+      );
     }
 
     // 9. If mentor cancels, insert a noshow_record as warning

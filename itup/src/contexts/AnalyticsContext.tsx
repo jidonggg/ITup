@@ -35,10 +35,10 @@ function getDeviceInfo() {
   else if (/Tablet|iPad/i.test(ua)) deviceType = "tablet";
 
   let browser = "unknown";
-  if (ua.includes("Chrome")) browser = "Chrome";
+  if (ua.includes("Edg")) browser = "Edge";
+  else if (ua.includes("Chrome")) browser = "Chrome";
   else if (ua.includes("Firefox")) browser = "Firefox";
   else if (ua.includes("Safari")) browser = "Safari";
-  else if (ua.includes("Edge")) browser = "Edge";
 
   let os = "unknown";
   if (ua.includes("Windows")) os = "Windows";

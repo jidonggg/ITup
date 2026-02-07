@@ -42,37 +42,42 @@ async function verifyAdmin(request: NextRequest) {
 
 // GET: 멘토 목록 조회
 export async function GET(request: NextRequest) {
-  const adminCheck = await verifyAdmin(request);
-  if ("error" in adminCheck) {
-    return NextResponse.json(
-      { error: adminCheck.error },
-      { status: adminCheck.status }
-    );
+  try {
+    const adminCheck = await verifyAdmin(request);
+    if ("error" in adminCheck) {
+      return NextResponse.json(
+        { error: adminCheck.error },
+        { status: adminCheck.status }
+      );
+    }
+
+    const supabase = getServiceSupabase();
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status"); // "pending" | "approved" | "all"
+
+    let query = supabase.from("mentors").select("*").order("created_at", { ascending: false });
+
+    if (status === "pending") {
+      query = query.eq("is_approved", false);
+    } else if (status === "approved") {
+      query = query.eq("is_approved", true);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ mentors: data });
+  } catch {
+    return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
   }
-
-  const supabase = getServiceSupabase();
-  const { searchParams } = new URL(request.url);
-  const status = searchParams.get("status"); // "pending" | "approved" | "all"
-
-  let query = supabase.from("mentors").select("*").order("created_at", { ascending: false });
-
-  if (status === "pending") {
-    query = query.eq("is_approved", false);
-  } else if (status === "approved") {
-    query = query.eq("is_approved", true);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ mentors: data });
 }
 
 // PATCH: 멘토 승인/거절
 export async function PATCH(request: NextRequest) {
+  try {
   const adminCheck = await verifyAdmin(request);
   if ("error" in adminCheck) {
     return NextResponse.json(
@@ -97,7 +102,7 @@ export async function PATCH(request: NextRequest) {
     // 승인 전 경력 최소 조건 검증
     const { data: mentor } = await supabase
       .from("mentors")
-      .select("experience")
+      .select("user_id, name, experience")
       .eq("id", mentorId)
       .single();
 
@@ -125,6 +130,35 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // 승인 이메일 발송 (비동기)
+    if (mentor?.user_id) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      if (siteUrl) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", mentor.user_id)
+          .single();
+
+        if (profile?.email) {
+          fetch(`${siteUrl}/api/email/notify`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-secret": process.env.INTERNAL_API_SECRET || "",
+            },
+            body: JSON.stringify({
+              type: "mentor_approved",
+              data: {
+                mentorName: mentor.name,
+                email: profile.email,
+              },
+            }),
+          }).catch((e) => console.error("[멘토승인 이메일 실패]", e));
+        }
+      }
+    }
+
     return NextResponse.json({ success: true, message: "Mentor approved" });
   }
 
@@ -146,9 +180,25 @@ export async function PATCH(request: NextRequest) {
     // 멘토 정보 조회
     const { data: mentor } = await supabase
       .from("mentors")
-      .select("user_id, name")
+      .select("user_id, name, experience")
       .eq("id", mentorId)
       .single();
+
+    if (!mentor) {
+      return NextResponse.json(
+        { error: "멘토를 찾을 수 없습니다." },
+        { status: 404 }
+      );
+    }
+
+    // 경력 최소 조건 검증
+    const years = getYearsFromExperience(mentor.experience);
+    if (years < MIN_MENTOR_EXPERIENCE_YEARS) {
+      return NextResponse.json(
+        { error: `경력 ${MIN_MENTOR_EXPERIENCE_YEARS}년 이상만 승인 가능합니다 (현재: ${mentor.experience})` },
+        { status: 400 }
+      );
+    }
 
     const { error } = await supabase
       .from("mentors")
@@ -252,38 +302,45 @@ export async function PATCH(request: NextRequest) {
   }
 
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
+  }
 }
 
 // DELETE: 멘토 삭제
 export async function DELETE(request: NextRequest) {
-  const adminCheck = await verifyAdmin(request);
-  if ("error" in adminCheck) {
-    return NextResponse.json(
-      { error: adminCheck.error },
-      { status: adminCheck.status }
-    );
+  try {
+    const adminCheck = await verifyAdmin(request);
+    if ("error" in adminCheck) {
+      return NextResponse.json(
+        { error: adminCheck.error },
+        { status: adminCheck.status }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const mentorId = searchParams.get("mentorId");
+
+    if (!mentorId) {
+      return NextResponse.json(
+        { error: "mentorId is required" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getServiceSupabase();
+
+    const { error } = await supabase
+      .from("mentors")
+      .delete()
+      .eq("id", mentorId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: "Mentor deleted" });
+  } catch {
+    return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
   }
-
-  const { searchParams } = new URL(request.url);
-  const mentorId = searchParams.get("mentorId");
-
-  if (!mentorId) {
-    return NextResponse.json(
-      { error: "mentorId is required" },
-      { status: 400 }
-    );
-  }
-
-  const supabase = getServiceSupabase();
-
-  const { error } = await supabase
-    .from("mentors")
-    .delete()
-    .eq("id", mentorId);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true, message: "Mentor deleted" });
 }

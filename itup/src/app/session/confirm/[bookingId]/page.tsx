@@ -827,7 +827,10 @@ export default function SessionConfirmPage({
 
           let shouldUpdateBookingToCompleted = false;
 
-          if (mentorStatus === "completed" && menteeStatus === "completed") {
+          // 양측이 서로 노쇼를 주장하는 경우 → 분쟁으로 처리
+          if (mentorStatus === "mentee_noshow" && menteeStatus === "mentor_noshow") {
+            updateData.final_status = "disputed";
+          } else if (mentorStatus === "completed" && menteeStatus === "completed") {
             updateData.final_status = "completed";
             updateData.resolved_at = now;
             shouldUpdateBookingToCompleted = true;

@@ -37,6 +37,9 @@ function getServiceSupabase() {
 }
 
 // 인증 검증: 내부 API 시크릿 또는 인증된 사용자 토큰 필요
+// NOTE: 예약 알림은 멘토/멘티 모두 트리거 가능하므로 인증된 사용자라면 허용합니다.
+// 실제 이메일 발송 대상은 bookingId 기반으로 서버에서 조회하므로,
+// 인증된 사용자가 임의의 주소로 이메일을 보낼 수는 없습니다.
 async function verifyAuth(request: NextRequest): Promise<boolean> {
   // 1. 내부 API 시크릿 확인 (서버-서버 통신)
   const apiSecret = request.headers.get("x-api-secret");

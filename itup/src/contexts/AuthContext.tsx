@@ -46,9 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", userId)
       .single();
 
-    // TODO: 디버그 로그 - 관리자 페이지 접근 문제 해결 후 제거
-    console.log("[AuthContext] fetchProfile:", { userId, data, error });
-
     setProfile(data);
   }, [supabase]);
 

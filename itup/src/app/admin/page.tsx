@@ -139,7 +139,7 @@ export default function AdminPage() {
     }
 
     fetchAllData();
-  }, [isInitialized, user]);
+  }, [isInitialized, user, profile]);
 
   const fetchAllData = async () => {
     if (!isSupabaseConfigured()) {
@@ -259,12 +259,13 @@ export default function AdminPage() {
       const { data: dailyData } = await supabase
         .from("page_views")
         .select("created_at, session_id")
-        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .limit(5000);
 
       if (dailyData) {
         const dailyCounts: Record<string, { views: number; sessions: Set<string> }> = {};
         dailyData.forEach((pv) => {
-          const date = new Date(pv.created_at).toLocaleDateString("ko-KR");
+          const date = new Date(pv.created_at).toISOString().split("T")[0];
           if (!dailyCounts[date]) {
             dailyCounts[date] = { views: 0, sessions: new Set() };
           }
@@ -286,7 +287,9 @@ export default function AdminPage() {
       // Page stats (top pages)
       const { data: pageData } = await supabase
         .from("page_views")
-        .select("path");
+        .select("path")
+        .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+        .limit(1000);
 
       if (pageData) {
         const pageCounts: Record<string, number> = {};
@@ -306,7 +309,9 @@ export default function AdminPage() {
       // Click stats (top actions)
       const { data: clickData } = await supabase
         .from("analytics_events")
-        .select("event_name");
+        .select("event_name")
+        .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+        .limit(1000);
 
       if (clickData) {
         const clickCounts: Record<string, number> = {};
@@ -539,6 +544,8 @@ export default function AdminPage() {
       }
 
     } catch (error) {
+      console.error("[Admin] fetchAllData error:", error);
+      showToast("데이터를 불러오는 중 오류가 발생했습니다.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -552,6 +559,7 @@ export default function AdminPage() {
   };
 
   const handleApproveMentor = async (mentorId: string, approve: boolean) => {
+    if (!confirm(approve ? "이 멘토를 승인하시겠습니까?" : "이 멘토를 보류 처리하시겠습니까?")) return;
     setUpdatingMentorId(mentorId);
 
     try {
@@ -601,20 +609,6 @@ export default function AdminPage() {
         }));
       }
 
-      // 멘토 승인 시 이메일 알림 발송
-      if (approve && token) {
-        fetch("/api/email/notify", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            type: "mentor_approved",
-            data: { mentorId },
-          }),
-        }).catch((e) => console.error("[멘토승인 이메일 실패]", e));
-      }
     } catch (error) {
       showToast("오류가 발생했습니다.", "error");
     } finally {
@@ -716,6 +710,14 @@ export default function AdminPage() {
   // v2: Mentor Verification Handlers
   // =============================================
   const handleVerifyMentor = async (mentorId: string, action: "approve" | "reject") => {
+    if (!confirm(action === "approve" ? "이 멘토의 검증을 승인하시겠습니까?" : "이 멘토의 검증을 거절하시겠습니까?")) return;
+
+    let reason = "";
+    if (action === "reject") {
+      reason = prompt("거절 사유를 입력해주세요:") || "";
+      if (!reason) return; // 사유 미입력 시 취소
+    }
+
     setVerifyingMentorId(mentorId);
     try {
       const token = await getAuthToken();
@@ -731,10 +733,7 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          mentorId,
-          action: action === "approve" ? "verify_approve" : "verify_reject",
-        }),
+        body: JSON.stringify({ mentorId, action: action === "approve" ? "verify_approve" : "verify_reject", reason }),
       });
 
       const result = await response.json();
@@ -927,9 +926,6 @@ export default function AdminPage() {
     );
   };
 
-  // TODO: 디버그 로그 - 관리자 페이지 접근 문제 해결 후 제거
-  console.log("[AdminPage] auth state:", { userId: user?.id, profile, role: profile?.role, isInitialized, isLoading });
-
   if (!isInitialized || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -949,13 +945,6 @@ export default function AdminPage() {
           </div>
           <h2 className="text-2xl font-bold mb-2">접근 권한이 없어요</h2>
           <p className="text-muted mb-6">관리자만 접근할 수 있어요.</p>
-          {/* TODO: 디버그 정보 - 문제 해결 후 제거 */}
-          <div className="mb-4 p-3 bg-secondary rounded-lg text-left text-xs text-muted break-all">
-            <p>user: {user?.id || "null"}</p>
-            <p>email: {user?.email || "null"}</p>
-            <p>profile: {profile ? JSON.stringify(profile) : "null"}</p>
-            <p>role: {profile?.role || "null"}</p>
-          </div>
           <Link
             href="/"
             className="inline-block px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
@@ -1126,7 +1115,7 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   {dailyStats.map((day) => (
                     <div key={day.date} className="flex items-center gap-4">
-                      <span className="w-24 text-sm text-muted">{day.date}</span>
+                      <span className="w-24 text-sm text-muted">{new Date(day.date).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}</span>
                       <div className="flex-1 h-6 bg-secondary rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-primary to-accent"
@@ -1437,7 +1426,7 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   {dailyStats.map((day) => (
                     <div key={day.date} className="flex items-center gap-4">
-                      <span className="w-28 text-sm text-muted">{day.date}</span>
+                      <span className="w-28 text-sm text-muted">{new Date(day.date).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}</span>
                       <div className="flex-1 h-6 bg-secondary rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-primary to-accent"
@@ -1602,6 +1591,7 @@ export default function AdminPage() {
                     <th className="px-4 py-3 text-left text-sm font-medium">예약일시</th>
                     <th className="px-4 py-3 text-right text-sm font-medium">금액</th>
                     <th className="px-4 py-3 text-center text-sm font-medium">상태</th>
+                    <th className="text-right px-4 py-3 text-sm font-medium text-muted">액션</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1633,11 +1623,38 @@ export default function AdminPage() {
                       <td className="px-4 py-3 text-center">
                         {getBookingStatusBadge(booking.status)}
                       </td>
+                      <td className="px-4 py-3 text-right">
+                        {(booking.status === "pending" || booking.status === "paid") && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm("이 예약을 취소하시겠습니까?")) return;
+                              try {
+                                const token = await getAuthToken();
+                                const res = await fetch("/api/booking/cancel", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                  body: JSON.stringify({ bookingId: booking.id, reason: "관리자 취소" }),
+                                });
+                                if (res.ok) {
+                                  showToast("예약이 취소되었습니다.", "success");
+                                  fetchAllData();
+                                } else {
+                                  const data = await res.json();
+                                  showToast(data.error || "취소 실패", "error");
+                                }
+                              } catch { showToast("취소 중 오류가 발생했습니다.", "error"); }
+                            }}
+                            className="px-3 py-1 bg-red-500/20 text-red-500 rounded text-xs hover:bg-red-500/30"
+                          >
+                            취소
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                   {paginatedBookings.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                      <td colSpan={7} className="px-4 py-8 text-center text-muted">
                         예약이 없습니다.
                       </td>
                     </tr>
