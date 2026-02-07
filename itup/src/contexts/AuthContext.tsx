@@ -40,11 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (userId: string) => {
     if (!supabase) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
+
+    // TODO: 디버그 로그 - 관리자 페이지 접근 문제 해결 후 제거
+    console.log("[AuthContext] fetchProfile:", { userId, data, error });
 
     setProfile(data);
   }, [supabase]);

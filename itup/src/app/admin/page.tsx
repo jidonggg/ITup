@@ -927,6 +927,9 @@ export default function AdminPage() {
     );
   };
 
+  // TODO: 디버그 로그 - 관리자 페이지 접근 문제 해결 후 제거
+  console.log("[AdminPage] auth state:", { userId: user?.id, profile, role: profile?.role, isInitialized, isLoading });
+
   if (!isInitialized || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
