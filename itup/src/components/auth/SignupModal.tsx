@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -115,24 +114,9 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
     setError("네이버 로그인은 준비 중이에요. 다른 방법으로 가입해주세요.");
   };
 
-  // Google 로그인
-  const handleGoogleLogin = async () => {
-    if (!isSupabaseConfigured()) {
-      setError("서비스 연결에 문제가 있어요.");
-      return;
-    }
-
-    try {
-      const supabase = createClient();
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-    } catch {
-      setError("Google 로그인 중 오류가 발생했어요.");
-    }
+  // Google 로그인 (개발 중)
+  const handleGoogleLogin = () => {
+    setError("Google 로그인은 현재 개발 중이에요. 곧 이용 가능합니다.");
   };
 
   if (!isOpen) return null;

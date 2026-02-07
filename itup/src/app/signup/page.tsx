@@ -131,23 +131,9 @@ export default function SignupPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    if (!isSupabaseConfigured()) {
-      setError("서비스 연결에 문제가 있어요.");
-      return;
-    }
-
-    try {
-      const supabase = createClient();
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-    } catch {
-      setError("Google 로그인 중 오류가 발생했어요.");
-    }
+  // Google 로그인 (개발 중)
+  const handleGoogleLogin = () => {
+    setError("Google 로그인은 현재 개발 중이에요. 곧 이용 가능합니다.");
   };
 
   // 카카오 로그인 (사업자 등록 심사 중)
