@@ -150,27 +150,9 @@ export default function SignupPage() {
     }
   };
 
-  // 카카오 로그인
-  // 환경변수 설정 필요:
-  // - Supabase Dashboard > Authentication > Providers > Kakao 활성화
-  // - KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET 설정
-  const handleKakaoLogin = async () => {
-    if (!isSupabaseConfigured()) {
-      setError("서비스 연결에 문제가 있어요.");
-      return;
-    }
-
-    try {
-      const supabase = createClient();
-      await supabase.auth.signInWithOAuth({
-        provider: "kakao",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-    } catch {
-      setError("카카오 로그인 중 오류가 발생했어요.");
-    }
+  // 카카오 로그인 (사업자 등록 심사 중)
+  const handleKakaoLogin = () => {
+    setError("카카오 로그인은 현재 사업자 등록 심사 중이에요. 승인 후 이용 가능합니다.");
   };
 
   // 네이버 로그인 (준비 중 — Supabase Custom OIDC Provider 설정 필요)
