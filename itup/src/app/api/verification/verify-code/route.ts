@@ -60,13 +60,37 @@ export async function POST(request: NextRequest) {
         process.env.SUPABASE_SERVICE_ROLE_KEY
       );
 
+      // mentorId와 인증 이메일 도메인의 연관성 검증
+      const { data: mentor } = await supabase
+        .from("mentors")
+        .select("id, company_email")
+        .eq("id", mentorId)
+        .single();
+
+      if (!mentor) {
+        return NextResponse.json(
+          { error: "멘토 정보를 찾을 수 없습니다." },
+          { status: 404 }
+        );
+      }
+
+      // 인증 요청된 이메일과 멘토가 등록한 회사 이메일의 도메인이 일치하는지 확인
+      const requestedDomain = email.split("@")[1]?.toLowerCase();
+      const mentorEmailDomain = mentor.company_email?.split("@")[1]?.toLowerCase();
+      if (mentorEmailDomain && requestedDomain !== mentorEmailDomain) {
+        return NextResponse.json(
+          { error: "멘토 등록 시 사용한 회사 이메일과 일치하지 않습니다." },
+          { status: 403 }
+        );
+      }
+
       await supabase
         .from("mentors")
         .update({
           is_verified: true,
           verified_at: new Date().toISOString(),
           verification_method: "email",
-          verified_company: email.split("@")[1],
+          verified_company: requestedDomain,
         })
         .eq("id", mentorId);
     }

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getTossAuthHeader, TOSS_API_BASE } from "@/lib/payment/toss";
 
 // =============================================
 // POST /api/booking/cancel
 // 예약 취소 + 환불 처리
 // =============================================
-
 const HOURS_48 = 48 * 60 * 60 * 1000;
 const HOURS_24 = 24 * 60 * 60 * 1000;
 
@@ -14,7 +14,7 @@ const HOURS_24 = 24 * 60 * 60 * 1000;
  *
  * Mentee cancellation:
  *   - More than 48h before scheduled_at  -> 100%
- *   - 24-48h before                      -> 100%
+ *   - 24-48h before                      -> 50%
  *   - Less than 24h                      -> 0%
  *
  * Mentor cancellation:
@@ -32,12 +32,15 @@ function calculateRefundRate(
   const scheduledTime = new Date(scheduledAt).getTime();
   const timeUntilSession = scheduledTime - now;
 
+  // 48시간 초과: 100% 환불
   if (timeUntilSession > HOURS_48) {
     return 100;
   }
-  if (timeUntilSession > HOURS_24) {
-    return 100;
+  // 24시간 이상 48시간 이하: 50% 환불
+  if (timeUntilSession >= HOURS_24) {
+    return 50;
   }
+  // 24시간 미만: 환불 불가
   return 0;
 }
 
@@ -166,7 +169,8 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from("bookings")
       .update(updateData)
-      .eq("id", bookingId);
+      .eq("id", bookingId)
+      .in("status", cancellableStatuses);
 
     if (updateError) {
       return NextResponse.json(
@@ -175,7 +179,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 8. If mentor cancels, insert a noshow_record as warning
+    // 8. 실제 PG 환불 처리 (paid/confirmed 상태에서 결제가 있는 경우)
+    if (refundAmount > 0 && booking.amount > 0) {
+      // 해당 booking의 payment_key 조회
+      const { data: payment } = await supabase
+        .from("payments")
+        .select("payment_key, status")
+        .eq("order_id", booking.order_id)
+        .eq("status", "completed")
+        .maybeSingle();
+
+      if (payment?.payment_key) {
+        try {
+          const tossResponse = await fetch(
+            `${TOSS_API_BASE}/${payment.payment_key}/cancel`,
+            {
+              method: "POST",
+              headers: {
+                "Authorization": getTossAuthHeader(),
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                cancelReason: reason || (cancelledBy === "mentor" ? "멘토 취소" : "멘티 취소"),
+                cancelAmount: refundAmount,
+              }),
+            }
+          );
+
+          if (!tossResponse.ok) {
+            console.error(`[환불 실패] bookingId: ${bookingId}, payment_key: ${payment.payment_key}`);
+          } else {
+            // 환불 성공 시 payments 테이블 상태 업데이트
+            const newPaymentStatus = refundAmount >= booking.amount ? "refunded" : "partial_refunded";
+            await supabase
+              .from("payments")
+              .update({
+                status: newPaymentStatus,
+                refund_reason: reason || (cancelledBy === "mentor" ? "멘토 취소" : "멘티 취소"),
+                refunded_at: now,
+              })
+              .eq("payment_key", payment.payment_key);
+          }
+        } catch (e) {
+          console.error(`[환불 예외] bookingId: ${bookingId}`, e);
+        }
+      }
+    }
+
+    // 9. If mentor cancels, insert a noshow_record as warning
     if (cancelledBy === "mentor") {
       const { data: mentor } = await supabase
         .from("mentors")

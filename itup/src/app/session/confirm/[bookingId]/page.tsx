@@ -825,9 +825,12 @@ export default function SessionConfirmPage({
           const menteeStatus =
             userRole === "mentee" ? status : confirmation.mentee_confirmed;
 
+          let shouldUpdateBookingToCompleted = false;
+
           if (mentorStatus === "completed" && menteeStatus === "completed") {
             updateData.final_status = "completed";
             updateData.resolved_at = now;
+            shouldUpdateBookingToCompleted = true;
           } else if (mentorStatus === "issue" || menteeStatus === "issue") {
             // Any "issue" response → dispute for admin review
             updateData.final_status = "disputed";
@@ -843,14 +846,24 @@ export default function SessionConfirmPage({
             } else if (mentorStatus === "mentee_noshow") {
               updateData.final_status = "mentee_noshow";
               updateData.resolved_at = now;
+              shouldUpdateBookingToCompleted = true; // noshow도 세션은 "완료" 처리
             } else if (menteeStatus === "mentor_noshow") {
               updateData.final_status = "mentor_noshow";
               updateData.resolved_at = now;
+              shouldUpdateBookingToCompleted = true; // noshow도 세션은 "완료" 처리
             } else {
               updateData.final_status = "disputed";
             }
           } else {
             updateData.final_status = "disputed";
+          }
+
+          // 양측 모두 확인 완료 시 booking 상태도 completed로 업데이트
+          if (shouldUpdateBookingToCompleted) {
+            await supabase
+              .from("bookings")
+              .update({ status: "completed" })
+              .eq("id", bookingId);
           }
         }
 

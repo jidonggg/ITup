@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { ADMIN_EMAILS } from "@/lib/admin";
-
-const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY;
+import { getTossAuthHeader, isTossConfigured, TOSS_API_BASE } from "@/lib/payment/toss";
 
 function getServiceSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,7 +20,7 @@ async function verifyAdmin(request: NextRequest) {
     return { error: "Unauthorized", status: 401 };
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.substring(7);
   const supabase = getServiceSupabase();
 
   const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -47,7 +46,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!TOSS_SECRET_KEY) {
+  if (!isTossConfigured()) {
     return NextResponse.json(
       { error: "결제 시스템이 설정되지 않았어요." },
       { status: 503 }
@@ -122,11 +121,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const tossResponse = await fetch(
-      `https://api.tosspayments.com/v1/payments/${payment.payment_key}/cancel`,
+      `${TOSS_API_BASE}/${payment.payment_key}/cancel`,
       {
         method: "POST",
         headers: {
-          Authorization: `Basic ${Buffer.from(TOSS_SECRET_KEY + ":").toString("base64")}`,
+          Authorization: getTossAuthHeader(),
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

@@ -98,9 +98,10 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold mb-4 text-foreground">제7조 (결제 및 환불)</h2>
             <ol className="list-decimal list-inside space-y-2">
               <li>유료 서비스의 결제는 회사가 정한 방법에 따릅니다.</li>
-              <li>멘토링 시작 24시간 전까지 취소 시 전액 환불됩니다.</li>
-              <li>멘토링 시작 24시간 이내 취소 시 50% 환불됩니다.</li>
-              <li>멘토링 시작 후에는 환불이 불가합니다. 단, 멘토의 귀책사유인 경우 전액 환불됩니다.</li>
+              <li>멘토링 시작 48시간 전까지 취소 시 전액 환불됩니다.</li>
+              <li>멘토링 시작 24~48시간 전 취소 시 50% 환불됩니다.</li>
+              <li>멘토링 시작 24시간 이내 취소 시 환불이 불가합니다.</li>
+              <li>멘토의 귀책사유(노쇼 등)인 경우 전액 환불됩니다.</li>
             </ol>
           </section>
 

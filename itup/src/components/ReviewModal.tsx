@@ -133,6 +133,7 @@ export default function ReviewModal({
                     onMouseEnter={() => setHoveredRating(star)}
                     onMouseLeave={() => setHoveredRating(0)}
                     className="p-1 transition-transform hover:scale-110 cursor-pointer"
+                    aria-label={`${star}점`}
                   >
                     <svg
                       className={`w-10 h-10 ${

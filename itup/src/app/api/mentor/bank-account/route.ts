@@ -9,7 +9,7 @@ async function getMentorFromToken(request: NextRequest) {
     return { error: "Unauthorized", status: 401 };
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.substring(7);
   const { data: { user }, error } = await supabase.auth.getUser(token);
 
   if (error || !user) {

@@ -193,14 +193,19 @@ export default function MentorDashboardPage() {
 
       // 예약 확정 시 멘티에게 이메일 알림 발송 (비동기, 에러 무시)
       if (newStatus === "confirmed") {
+        const session = await supabase.auth.getSession();
+        const accessToken = session.data.session?.access_token;
         fetch("/api/email/booking-notification", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
+          },
           body: JSON.stringify({
             type: "confirmed",
             bookingId,
           }),
-        }).catch(() => {});
+        }).catch((e) => console.error("[이메일 알림 실패]", e));
       }
 
       setBookings((prev) =>

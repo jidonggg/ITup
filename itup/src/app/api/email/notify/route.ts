@@ -5,6 +5,7 @@ import {
   consultationRequestTemplate,
   consultationConfirmedTemplate,
   mentorApprovedTemplate,
+  mentorRejectedTemplate,
 } from "@/lib/email/templates";
 import { SITE_CONFIG } from "@/lib/site-config";
 
@@ -159,8 +160,20 @@ export async function POST(request: NextRequest) {
 
       case "mentor_approved": {
         // 멘토 승인 시 멘토에게 알림
-        const { mentorId } = data;
+        const { mentorId, mentorName, email } = data;
 
+        // 직접 이메일과 이름이 전달된 경우 (admin API에서 호출)
+        if (mentorName && email) {
+          const template = mentorApprovedTemplate({
+            mentorName,
+            siteUrl: SITE_URL,
+          });
+
+          const result = await sendEmail({ to: email, template });
+          return NextResponse.json({ success: result.success, messageId: result.messageId });
+        }
+
+        // 기존 방식: mentorId로 조회
         if (!mentorId || !supabase) {
           return NextResponse.json({ success: true, message: "Skipped" });
         }
@@ -192,6 +205,24 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ success: true, message: "Email skipped" });
+      }
+
+      case "mentor_rejected": {
+        // 멘토 검증 거절 시 멘토에게 알림
+        const { mentorName, email, reason } = data;
+
+        if (!mentorName || !email) {
+          return NextResponse.json({ success: true, message: "Skipped - missing data" });
+        }
+
+        const template = mentorRejectedTemplate({
+          mentorName,
+          reason,
+          siteUrl: SITE_URL,
+        });
+
+        const result = await sendEmail({ to: email, template });
+        return NextResponse.json({ success: result.success, messageId: result.messageId });
       }
 
       default:

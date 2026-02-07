@@ -195,14 +195,19 @@ export default function MentorFeedbackPage({
         }
 
         // 멘티에게 피드백 도착 이메일 알림 발송 (비동기, 에러 무시)
+        const feedbackSession = await supabase.auth.getSession();
+        const feedbackToken = feedbackSession.data.session?.access_token;
         fetch("/api/email/booking-notification", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(feedbackToken ? { "Authorization": `Bearer ${feedbackToken}` } : {}),
+          },
           body: JSON.stringify({
             type: "feedback_received",
             bookingId,
           }),
-        }).catch(() => {});
+        }).catch((e) => console.error("[피드백 이메일 알림 실패]", e));
 
         showToast("피드백이 작성되었어요!", "success");
       }

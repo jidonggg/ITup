@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
-// TossPayments API 시크릿 키 (미설정 시 결제 처리 차단)
-const TOSS_SECRET_KEY = process.env.TOSS_PAYMENTS_SECRET_KEY;
+import { getTossAuthHeader, isTossConfigured, TOSS_API_BASE } from "@/lib/payment/toss";
 
 // 상품 가격 (서버에서 검증용)
 const PRODUCT_PRICES: Record<string, number> = {
@@ -45,18 +43,25 @@ function getOrderPrefix(orderId: string): string {
   return parts[0].toUpperCase();
 }
 
-// orderId에서 userId 추출
+// orderId에서 userId 추출 + UUID 형식 검증
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function getUserIdFromOrder(orderId: string): string | null {
   const parts = orderId.split("_");
+  let userId: string | null = null;
   // 번들: BUNDLE_TYPE_userId_ts_rand (index 2)
   if (parts[0] === "BUNDLE" && parts.length > 4) {
-    return parts[2];
+    userId = parts[2];
   }
   // 상품: TYPE_userId_ts_rand (index 1)
-  if (parts.length > 3) {
-    return parts[1];
+  else if (parts.length > 3) {
+    userId = parts[1];
   }
-  return null;
+  // UUID 형식 검증
+  if (userId && !UUID_REGEX.test(userId)) {
+    return null;
+  }
+  return userId;
 }
 
 // 사용자 인증 검증
@@ -66,7 +71,7 @@ async function verifyUser(request: NextRequest) {
     return null;
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.substring(7);
   const serviceSupabase = getServiceSupabase();
   if (!serviceSupabase) return null;
 
@@ -78,7 +83,7 @@ async function verifyUser(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!TOSS_SECRET_KEY) {
+    if (!isTossConfigured()) {
       return NextResponse.json(
         { error: "결제 시스템이 설정되지 않았어요." },
         { status: 503 }
@@ -107,9 +112,9 @@ export async function POST(request: NextRequest) {
     const supabase = getServiceSupabase();
     const prefix = getOrderPrefix(orderId);
 
-    // orderId의 userId와 인증된 사용자 일치 검증
+    // orderId의 userId와 인증된 사용자 일치 검증 (파싱 실패 시에도 차단)
     const orderUserId = getUserIdFromOrder(orderId);
-    if (orderUserId && orderUserId !== user.id) {
+    if (!orderUserId || orderUserId !== user.id) {
       return NextResponse.json(
         { error: "결제 요청자와 로그인 사용자가 일치하지 않아요." },
         { status: 403 }
@@ -155,12 +160,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. 결제 중복 확인 (payment_key)
+    // 2. 결제 중복 확인 (payment_key + order_id)
     if (supabase) {
       const { data: existingPayment } = await supabase
         .from("payments")
         .select("id")
-        .eq("payment_key", paymentKey)
+        .or(`payment_key.eq.${paymentKey},order_id.eq.${orderId}`)
         .limit(1)
         .maybeSingle();
 
@@ -173,12 +178,10 @@ export async function POST(request: NextRequest) {
     }
 
     // TossPayments 결제 승인 API 호출
-    const encryptedSecretKey = Buffer.from(TOSS_SECRET_KEY + ":").toString("base64");
-
-    const tossResponse = await fetch("https://api.tosspayments.com/v1/payments/confirm", {
+    const tossResponse = await fetch(`${TOSS_API_BASE}/confirm`, {
       method: "POST",
       headers: {
-        "Authorization": `Basic ${encryptedSecretKey}`,
+        "Authorization": getTossAuthHeader(),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -191,12 +194,10 @@ export async function POST(request: NextRequest) {
     const tossResult = await tossResponse.json();
 
     if (!tossResponse.ok) {
+      console.error("[payment/confirm] TossPayments error:", tossResult.code, tossResult.message);
       return NextResponse.json(
-        {
-          error: tossResult.message || "Payment confirmation failed",
-          code: tossResult.code,
-        },
-        { status: tossResponse.status }
+        { error: "결제 승인에 실패했어요. 다시 시도해주세요." },
+        { status: 400 }
       );
     }
 
@@ -235,8 +236,24 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (paymentError) {
+        // DB 저장 실패 시 TossPayments 결제 자동 취소 (보상 트랜잭션)
+        try {
+          await fetch(`${TOSS_API_BASE}/${paymentKey}/cancel`, {
+            method: "POST",
+            headers: {
+              "Authorization": getTossAuthHeader(),
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cancelReason: "DB 저장 실패로 인한 자동 취소",
+            }),
+          });
+        } catch {
+          // 자동 취소도 실패한 경우 로깅
+          console.error(`[CRITICAL] 결제 승인 후 DB 저장 실패 & 자동 취소도 실패. paymentKey: ${paymentKey}, orderId: ${orderId}`);
+        }
         return NextResponse.json(
-          { error: "결제는 완료되었으나 기록 저장에 실패했어요. 고객센터에 문의해주세요." },
+          { error: "결제 처리 중 오류가 발생했어요. 결제가 자동 취소되었으니 다시 시도해주세요." },
           { status: 500 }
         );
       }
@@ -252,6 +269,7 @@ export async function POST(request: NextRequest) {
           .eq("id", consultationId);
 
         if (consultError) {
+          console.error("[payment/confirm] 상담 상태 업데이트 실패:", consultError.message);
         }
 
         // 이메일 알림 발송 (비동기)
@@ -270,7 +288,7 @@ export async function POST(request: NextRequest) {
               type: "consultation_confirmed",
               data: { consultationId },
             }),
-          }).catch(() => {});
+          }).catch((e) => console.error("[결제확인-상담확정 이메일 실패]", e));
 
           // 2. 멘토에게 새 상담 신청 알림
           const { data: consultInfo } = await supabase
@@ -295,7 +313,7 @@ export async function POST(request: NextRequest) {
                   message: consultInfo.message,
                 },
               }),
-            }).catch(() => {});
+            }).catch((e) => console.error("[결제확인-상담요청 이메일 실패]", e));
           }
         }
       }

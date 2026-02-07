@@ -1146,6 +1146,7 @@ export default function BookingPage({
   // Submit booking
   const handleSubmit = async () => {
     if (!user || !product || !mentor || !selectedDate || !selectedTime) return;
+    if (isSubmitting) return; // 중복 제출 방지
     if (!isSupabaseConfigured()) {
       showToast("데이터베이스 연결이 필요해요.", "error");
       return;
@@ -1167,8 +1168,8 @@ export default function BookingPage({
           mentor_id: mentor.id,
           product_id: product.id,
           scheduled_at: scheduledAt,
-          mentee_intro: formData.menteeIntro.trim(),
-          mentee_goal: formData.menteeGoal.trim(),
+          mentee_intro: formData.menteeIntro.trim().replace(/[<>]/g, (c) => c === "<" ? "&lt;" : "&gt;"),
+          mentee_goal: formData.menteeGoal.trim().replace(/[<>]/g, (c) => c === "<" ? "&lt;" : "&gt;"),
           amount: product.price,
           platform_fee: platformFee,
           mentor_amount: mentorAmount,
@@ -1193,14 +1194,19 @@ export default function BookingPage({
       }
 
       // 멘토에게 새 예약 이메일 알림 발송 (비동기, 에러 무시)
+      const bookingSession = await supabase.auth.getSession();
+      const bookingToken = bookingSession.data.session?.access_token;
       fetch("/api/email/booking-notification", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(bookingToken ? { "Authorization": `Bearer ${bookingToken}` } : {}),
+        },
         body: JSON.stringify({
           type: "new_booking",
           bookingId: data.id,
         }),
-      }).catch(() => {});
+      }).catch((e) => console.error("[새예약 이메일 알림 실패]", e));
 
       // Clear saved progress on success
       clearProgress(productId);

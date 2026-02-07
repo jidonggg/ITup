@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ eligible: true, used: 0, limit: FREE_TRIAL_LIMIT });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.substring(7);
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {

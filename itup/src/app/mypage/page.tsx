@@ -211,7 +211,7 @@ export default function MyPage() {
 
   const handleLogout = async () => {
     await signOut();
-    router.push("/");
+    // signOut 내부에서 window.location.href = "/" 처리됨
   };
 
   const getBookingStatusBadge = (status: string) => {
@@ -251,10 +251,13 @@ export default function MyPage() {
     return null;
   };
 
+  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+
   const handleCancelBooking = async (bookingId: string) => {
-    if (!user) return;
+    if (!user || cancellingBookingId) return;
     if (!confirm("정말 예약을 취소하시겠어요?\n\n환불 규정:\n• 48시간 전: 전액 환불\n• 24~48시간: 50% 환불\n• 24시간 이내: 환불 불가")) return;
 
+    setCancellingBookingId(bookingId);
     try {
       const res = await fetch("/api/booking/cancel", {
         method: "POST",
@@ -276,8 +279,10 @@ export default function MyPage() {
           : "예약이 취소되었어요. 환불 규정에 따라 환불이 불가합니다.";
         showToast(refundMsg, "success");
       }
-    } catch (error) {
+    } catch {
       showToast("취소에 실패했어요.", "error");
+    } finally {
+      setCancellingBookingId(null);
     }
   };
 
@@ -419,7 +424,7 @@ export default function MyPage() {
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={handleSaveProfile}
-                    disabled={isSaving}
+                    disabled={isSaving || !editName.trim()}
                     className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {isSaving ? "저장 중..." : "저장"}
@@ -636,9 +641,10 @@ export default function MyPage() {
                         {(booking.status === "pending" || booking.status === "paid" || booking.status === "confirmed") && (
                           <button
                             onClick={() => handleCancelBooking(booking.id)}
-                            className="px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors cursor-pointer"
+                            disabled={cancellingBookingId === booking.id}
+                            className="px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            취소하기
+                            {cancellingBookingId === booking.id ? "취소 중..." : "취소하기"}
                           </button>
                         )}
                       </div>

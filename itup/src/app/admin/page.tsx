@@ -613,7 +613,7 @@ export default function AdminPage() {
             type: "mentor_approved",
             data: { mentorId },
           }),
-        }).catch(() => {});
+        }).catch((e) => console.error("[멘토승인 이메일 실패]", e));
       }
     } catch (error) {
       showToast("오류가 발생했습니다.", "error");
@@ -782,29 +782,26 @@ export default function AdminPage() {
         return;
       }
 
-      const supabase = createClient();
-
-      const { error } = await supabase
-        .from("session_confirmations")
-        .update({
-          final_status: finalStatus,
-          resolved_at: new Date().toISOString(),
-          resolved_by: user?.id || "admin",
-        })
-        .eq("id", confirmationId);
-
-      if (error) {
-        showToast("분쟁 해결 중 오류가 발생했습니다.", "error");
-        return;
-      }
-
-      // Update booking status based on resolution
       const dispute = disputes.find(d => d.confirmation.id === confirmationId);
-      if (dispute && (finalStatus === "completed" || finalStatus === "mentor_noshow" || finalStatus === "mentee_noshow")) {
-        await supabase
-          .from("bookings")
-          .update({ status: "completed" as const })
-          .eq("id", dispute.booking.id);
+
+      const res = await fetch("/api/admin/disputes", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          confirmationId,
+          finalStatus,
+          bookingId: dispute?.booking.id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.error || "분쟁 해결 중 오류가 발생했습니다.", "error");
+        return;
       }
 
       showToast("분쟁이 해결되었습니다.", "success");
@@ -816,7 +813,7 @@ export default function AdminPage() {
         disputeCount: Math.max(0, prev.disputeCount - 1),
       }));
       setDisputeResolution(null);
-    } catch (error) {
+    } catch {
       showToast("오류가 발생했습니다.", "error");
     } finally {
       setResolvingDisputeId(null);

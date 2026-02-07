@@ -58,6 +58,11 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
     return sendWithResend(params);
   }
 
-  // API 키가 없으면 조용히 성공 처리 (개발 모드)
+  // API 키가 없으면 개발 모드로 처리
+  if (process.env.NODE_ENV === "production") {
+    console.warn("[email] RESEND_API_KEY 미설정 — 프로덕션에서 이메일 발송 불가");
+    return { success: false, error: "Email service not configured" };
+  }
+  console.log(`[email-dev] To: ${params.to}, Subject: ${params.template.subject}`);
   return { success: true, messageId: "dev-mode-" + Date.now() };
 }

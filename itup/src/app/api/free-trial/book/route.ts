@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.substring(7);
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         meeting_link: null,
         attached_files: [],
         payment_key: null,
-        order_id: `FREE_${Date.now()}`,
+        order_id: `FREE_${user.id}_${Date.now()}`,
         amount: 0,
         payment_method: "free_trial",
         paid_at: new Date().toISOString(),
@@ -124,9 +124,7 @@ export async function POST(request: NextRequest) {
           type: "new_booking",
           bookingId: booking.id,
         }),
-      }).catch(() => {
-        // 이메일 발송 실패해도 메인 플로우 중단하지 않음
-      });
+      }).catch((e) => console.error("[무료체험 이메일 알림 실패]", e));
     }
 
     return NextResponse.json({

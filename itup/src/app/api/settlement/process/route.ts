@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.substring(7);
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user || !isAdmin(user.email)) {
@@ -136,14 +136,18 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase
       .from("settlements")
       .update(updateData)
-      .eq("id", settlementId);
+      .eq("id", settlementId)
+      .eq("status", current.status);
 
     if (error) {
+      console.error(`[settlement/process] 상태 변경 실패 (${settlementId}):`, error);
       return NextResponse.json({ error: "상태 변경에 실패했습니다." }, { status: 500 });
     }
 
+    console.log(`[settlement/process] 정산 상태 변경: ${settlementId} ${current.status}→${newStatus} by ${user.email}`);
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error("[settlement/process] Error:", error);
     return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
   }
 }

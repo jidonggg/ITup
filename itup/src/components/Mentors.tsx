@@ -58,7 +58,8 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
         if (data && data.length > 0) {
           setMentors(data.map(convertToMentorData));
         }
-      } catch (error) {
+      } catch {
+        // 멘토 목록 로드 실패 시 폴백 데이터 유지
       } finally {
         setIsLoading(false);
       }
@@ -98,7 +99,7 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
           ) : (
             mentors.map((mentor, index) => (
               <MentorCard
-                key={`mentor-${index}`}
+                key={mentor.id}
                 mentor={mentor}
                 index={index}
                 onClick={() => onMentorClick(mentor)}

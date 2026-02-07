@@ -11,7 +11,7 @@ function getServiceSupabase() {
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error("Supabase configuration missing");
+    throw new Error("Service unavailable: database not configured");
   }
 
   return createClient(supabaseUrl, supabaseServiceKey);
@@ -24,7 +24,7 @@ async function verifyAdmin(request: NextRequest) {
     return { error: "Unauthorized", status: 401 };
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.substring(7);
   const supabase = getServiceSupabase();
 
   const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -143,6 +143,13 @@ export async function PATCH(request: NextRequest) {
 
   // 멘토 검증 승인 (verification_status 업데이트)
   if (action === "verify_approve") {
+    // 멘토 정보 조회
+    const { data: mentor } = await supabase
+      .from("mentors")
+      .select("user_id, name")
+      .eq("id", mentorId)
+      .single();
+
     const { error } = await supabase
       .from("mentors")
       .update({
@@ -156,20 +163,89 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // 승인 이메일 발송 (비동기)
+    if (mentor?.user_id) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      if (siteUrl) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", mentor.user_id)
+          .single();
+
+        if (profile?.email) {
+          fetch(`${siteUrl}/api/email/notify`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-secret": process.env.INTERNAL_API_SECRET || "",
+            },
+            body: JSON.stringify({
+              type: "mentor_approved",
+              data: {
+                mentorName: mentor.name,
+                email: profile.email,
+              },
+            }),
+          }).catch((e) => console.error("[멘토승인 이메일 실패]", e));
+        }
+      }
+    }
+
     return NextResponse.json({ success: true, message: "Mentor verification approved" });
   }
 
   // 멘토 검증 거절
   if (action === "verify_reject") {
+    const { reason } = body; // 거절 사유 (선택사항)
+
+    // 멘토 정보 조회
+    const { data: mentor } = await supabase
+      .from("mentors")
+      .select("user_id, name")
+      .eq("id", mentorId)
+      .single();
+
     const { error } = await supabase
       .from("mentors")
       .update({
         verification_status: "rejected",
+        rejection_reason: reason || null,
       })
       .eq("id", mentorId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // 거절 이메일 발송 (비동기)
+    if (mentor?.user_id) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      if (siteUrl) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", mentor.user_id)
+          .single();
+
+        if (profile?.email) {
+          fetch(`${siteUrl}/api/email/notify`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-secret": process.env.INTERNAL_API_SECRET || "",
+            },
+            body: JSON.stringify({
+              type: "mentor_rejected",
+              data: {
+                mentorName: mentor.name,
+                email: profile.email,
+                reason: reason || undefined,
+              },
+            }),
+          }).catch((e) => console.error("[멘토거절 이메일 실패]", e));
+        }
+      }
     }
 
     return NextResponse.json({ success: true, message: "Mentor verification rejected" });

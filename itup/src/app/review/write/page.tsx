@@ -40,6 +40,7 @@ function StarRating({
             onMouseEnter={() => onHover(star)}
             onMouseLeave={onLeave}
             className="p-1 transition-transform hover:scale-110 cursor-pointer"
+            aria-label={`${star}점`}
           >
             <svg
               className={`w-10 h-10 ${
@@ -424,7 +425,7 @@ function ReviewWriteContent() {
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-sm">&#9749;</span>
+                <span className="text-white text-sm">☕</span>
               </div>
               <span className="font-bold">커피챗</span>
             </Link>

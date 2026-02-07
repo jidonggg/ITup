@@ -245,7 +245,7 @@ async function sendWithRetry(
 
     // 성공
     if (response.ok && result.code === 0) {
-      console.log(`[Alimtalk] 발송 성공: ${result.data?.messageId}`);
+      console.info(`[Alimtalk] 발송 성공: ${result.data?.messageId}`);
       return {
         success: true,
         messageId: result.data?.messageId,

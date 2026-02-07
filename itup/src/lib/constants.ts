@@ -81,7 +81,7 @@ export const COMMISSION_RATE = PLATFORM_FEE_RATE;
 export const REFUND_POLICY = {
   mentee: {
     before_48h: { rate: 100, description: "전액 환불" },
-    before_24h: { rate: 100, description: "전액 환불" },
+    before_24h: { rate: 50, description: "50% 환불" },
     within_24h: { rate: 0, description: "환불 불가" },
     noshow: { rate: 0, description: "환불 불가 + 노쇼 기록" },
   },

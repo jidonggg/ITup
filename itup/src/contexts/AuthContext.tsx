@@ -56,11 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // 0.5초 타임아웃 - 강제로 로딩 완료
+    // 5초 타임아웃 - Supabase 응답 없을 시 안전 장치
     const timeout = setTimeout(() => {
       setIsLoading(false);
       setIsInitialized(true);
-    }, 500);
+    }, 5000);
 
     if (!supabase) {
       setIsLoading(false);
@@ -78,10 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           try {
             await fetchProfile(session.user.id);
-          } catch (e) {
+          } catch {
+            // 프로필 로드 실패 시 무시 - 인증 자체는 정상 처리
           }
         }
-      } catch (error) {
+      } catch {
+        // 세션 초기화 실패 시 무시 - 미인증 상태로 진행
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
@@ -99,7 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         try {
           await fetchProfile(session.user.id);
-        } catch (e) {
+        } catch {
+          // 프로필 갱신 실패 시 무시 - 기존 프로필 유지
         }
       } else {
         setProfile(null);
@@ -144,13 +147,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     if (!supabase) return;
 
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setSession(null);
+    try {
+      // scope: 'local'로 현재 브라우저 세션만 종료 (쿠키/스토리지 확실히 제거)
+      // 'global'은 서버 API 호출이 실패하면 로컬 세션이 남는 문제가 있음
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
 
-    // 로그아웃 후 홈으로 리다이렉트
-    window.location.href = "/";
+      if (error) {
+        console.error("로그아웃 에러:", error);
+      }
+    } catch (e) {
+      console.error("로그아웃 중 예외:", e);
+    } finally {
+      // 에러가 발생해도 로컬 상태는 초기화
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+
+      // 로그아웃 후 홈으로 리다이렉트 (full reload로 모든 상태 초기화)
+      window.location.href = "/";
+    }
   };
 
   return (

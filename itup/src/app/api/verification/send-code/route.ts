@@ -51,8 +51,13 @@ export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
 
-    if (!email) {
+    if (!email || typeof email !== "string") {
       return NextResponse.json({ error: "이메일이 필요합니다." }, { status: 400 });
+    }
+
+    // 이메일 길이 제한 (RFC 5321: 최대 254자)
+    if (email.length > 254) {
+      return NextResponse.json({ error: "이메일 주소가 너무 길어요." }, { status: 400 });
     }
 
     // Rate limit — 3 req / 5min per email

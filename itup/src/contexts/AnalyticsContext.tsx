@@ -111,7 +111,8 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         }, { onConflict: "id" });
 
         sessionInitialized.current = true;
-      } catch (error) {
+      } catch {
+        // 세션 초기화 실패 시 무시 - 분석 데이터 누락은 허용
       }
     };
 
@@ -150,7 +151,8 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         } catch {
           // RPC가 없으면 무시
         }
-      } catch (error) {
+      } catch {
+        // 페이지뷰 기록 실패 시 무시 - 분석 데이터 누락은 허용
       }
 
       lastPath.current = pathname;
@@ -197,7 +199,8 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         event_data: eventData || null,
         path: pathname,
       });
-    } catch (error) {
+    } catch {
+      // 이벤트 기록 실패 시 무시 - 분석 데이터 누락은 허용
     }
   };
 

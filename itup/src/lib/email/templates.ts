@@ -254,6 +254,63 @@ export function settlementCompletedTemplate(data: {
   };
 }
 
+// 멘토 검증 거절 알림
+export function mentorRejectedTemplate(data: {
+  mentorName: string;
+  reason?: string;
+  siteUrl: string;
+}): EmailTemplate {
+  return {
+    subject: `[커피챗] 멘토 검증 결과 안내`,
+    html: `
+      <div style="font-family: 'Apple SD Gothic Neo', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #6B7280, #4B5563); padding: 30px; border-radius: 16px 16px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">멘토 검증 결과 안내</h1>
+        </div>
+        <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E8DED4; border-top: none;">
+          <p style="margin-bottom: 20px;">안녕하세요, <strong>${escapeHtml(data.mentorName)}</strong>님!</p>
+          <p style="margin-bottom: 20px;">
+            멘토 검증 신청을 검토한 결과, 아쉽게도 현재 기준에 부합하지 않아 승인이 어렵게 되었습니다.
+          </p>
+
+          ${data.reason ? `
+          <div style="background: #FEF3C7; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #FCD34D;">
+            <h3 style="color: #D97706; margin-top: 0;">검토 결과</h3>
+            <p style="margin: 0; color: #92400E;">${escapeHtml(data.reason)}</p>
+          </div>
+          ` : ""}
+
+          <p style="margin-bottom: 20px;">
+            더 자세한 내용이 궁금하시면 고객센터로 문의해 주세요.<br/>
+            추후 다시 신청하실 수 있으며, 기준을 충족하시면 언제든 재신청 가능합니다.
+          </p>
+
+          <a href="${data.siteUrl}/mentor/apply"
+             style="display: inline-block; background: linear-gradient(135deg, #A0714F, #7D5636); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+            다시 신청하기
+          </a>
+
+          <p style="margin-top: 30px; color: #9CA3AF; font-size: 12px;">
+            이 이메일은 커피챗 멘토링 서비스에서 발송되었습니다.
+          </p>
+        </div>
+      </div>
+    `,
+    text: `
+커피챗 - 멘토 검증 결과 안내
+
+안녕하세요, ${data.mentorName}님!
+
+멘토 검증 신청을 검토한 결과, 아쉽게도 현재 기준에 부합하지 않아 승인이 어렵게 되었습니다.
+${data.reason ? `\n검토 결과: ${data.reason}\n` : ""}
+더 자세한 내용이 궁금하시면 고객센터로 문의해 주세요.
+추후 다시 신청하실 수 있으며, 기준을 충족하시면 언제든 재신청 가능합니다.
+
+다시 신청하기: ${data.siteUrl}/mentor/apply
+    `.trim(),
+  };
+}
+
 // 멘토 승인 알림
 export function mentorApprovedTemplate(data: {
   mentorName: string;

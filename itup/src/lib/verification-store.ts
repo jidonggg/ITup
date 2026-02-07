@@ -48,7 +48,10 @@ export async function saveVerificationCode(email: string, code: string, ttlMs: n
       memoryStore.set(email, { code, expires, email });
     }
   } else {
-    // 메모리에 저장 (개발 환경)
+    // 메모리에 저장 (개발 환경 — 서버리스 인스턴스 간 공유 안 됨)
+    if (process.env.NODE_ENV === "production") {
+      console.warn("[verification-store] Supabase 미설정 — 메모리 저장소 사용 중 (인스턴스 간 공유 안 됨)");
+    }
     memoryStore.set(email, { code, expires, email });
 
     // TTL 후 자동 삭제
@@ -96,6 +99,7 @@ export async function deleteVerificationCode(email: string): Promise<void> {
         .delete()
         .eq("email", email);
     } catch (error) {
+      console.error("[verification-store] 인증 코드 삭제 실패:", error);
     }
   }
 

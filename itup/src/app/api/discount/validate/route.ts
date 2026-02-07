@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     let userId: string | null = null;
 
     if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.split(" ")[1];
+      const token = authHeader.substring(7);
       const supabase = await createClient();
       const {
         data: { user },

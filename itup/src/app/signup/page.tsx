@@ -173,31 +173,9 @@ export default function SignupPage() {
     }
   };
 
-  // 네이버 로그인
-  // 환경변수 설정 필요:
-  // - Supabase Dashboard > Authentication > Providers에서 Custom OIDC Provider 설정
-  // - 네이버 개발자 센터에서 애플리케이션 등록 후 Client ID/Secret 발급
-  // - NAVER_CLIENT_ID, NAVER_CLIENT_SECRET 설정
-  // - Callback URL: {SUPABASE_URL}/auth/v1/callback
-  const handleNaverLogin = async () => {
-    if (!isSupabaseConfigured()) {
-      setError("서비스 연결에 문제가 있어요.");
-      return;
-    }
-
-    try {
-      const supabase = createClient();
-      // 네이버는 Supabase에서 기본 지원하지 않으므로
-      // Custom OIDC Provider로 설정 필요
-      await supabase.auth.signInWithOAuth({
-        provider: "naver" as "google", // Supabase Custom Provider 설정 필요
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-    } catch {
-      setError("네이버 로그인 중 오류가 발생했어요.");
-    }
+  // 네이버 로그인 (준비 중 — Supabase Custom OIDC Provider 설정 필요)
+  const handleNaverLogin = () => {
+    setError("네이버 로그인은 준비 중이에요. 다른 방법으로 가입해주세요.");
   };
 
   if (authLoading) {

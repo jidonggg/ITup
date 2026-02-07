@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.substring(7);
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user || !isAdmin(user.email)) {
@@ -101,7 +101,8 @@ export async function POST(request: NextRequest) {
       periodStart,
       periodEnd,
     });
-  } catch {
+  } catch (error) {
+    console.error("[settlement/calculate] Error:", error);
     return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
   }
 }
