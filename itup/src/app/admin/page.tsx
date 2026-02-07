@@ -949,6 +949,13 @@ export default function AdminPage() {
           </div>
           <h2 className="text-2xl font-bold mb-2">접근 권한이 없어요</h2>
           <p className="text-muted mb-6">관리자만 접근할 수 있어요.</p>
+          {/* TODO: 디버그 정보 - 문제 해결 후 제거 */}
+          <div className="mb-4 p-3 bg-secondary rounded-lg text-left text-xs text-muted break-all">
+            <p>user: {user?.id || "null"}</p>
+            <p>email: {user?.email || "null"}</p>
+            <p>profile: {profile ? JSON.stringify(profile) : "null"}</p>
+            <p>role: {profile?.role || "null"}</p>
+          </div>
           <Link
             href="/"
             className="inline-block px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
