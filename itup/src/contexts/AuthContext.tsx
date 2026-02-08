@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (userId: string, userMetadataName?: string) => {
     if (!supabase) return;
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
@@ -59,9 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       setProfile(data);
-    } else {
-      setProfile(null);
     }
+    // data가 null이면 기존 profile 유지 (덮어쓰지 않음)
   }, [supabase]);
 
   const refreshProfile = async () => {
@@ -84,31 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const initialize = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          try {
-            await fetchProfile(session.user.id, session.user.user_metadata?.name);
-          } catch {
-            // 프로필 로드 실패 시 무시 - 인증 자체는 정상 처리
-          }
-        }
-      } catch {
-        // 세션 초기화 실패 시 무시 - 미인증 상태로 진행
-      } finally {
-        setIsLoading(false);
-        setIsInitialized(true);
-        clearTimeout(timeout);
-      }
-    };
-
-    initialize();
-
-    // Auth state change listener
+    // onAuthStateChange가 INITIAL_SESSION 이벤트로 초기화를 처리
+    // initialize에서 별도로 프로필을 fetch하지 않음 (race condition 방지)
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -117,10 +93,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           await fetchProfile(session.user.id, session.user.user_metadata?.name);
         } catch {
-          // 프로필 갱신 실패 시 무시 - 기존 프로필 유지
+          // 프로필 갱신 실패 시 무시
         }
       } else {
         setProfile(null);
+      }
+
+      // 초기화 완료 처리 (INITIAL_SESSION 이벤트)
+      if (event === "INITIAL_SESSION") {
+        setIsLoading(false);
+        setIsInitialized(true);
+        clearTimeout(timeout);
       }
     });
 
@@ -159,16 +142,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
-  const signOut = async () => {
-    // 클라이언트 상태 초기화
+  const signOut = useCallback(async () => {
+    // 1. Supabase 클라이언트 세션 무효화 (refresh token 폐기 + 내부 상태 정리)
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // 무시
+      }
+    }
+    // 2. React 상태 초기화
     setUser(null);
     setProfile(null);
     setSession(null);
-
-    // 서버 API로 이동: 쿠키 삭제 + 세션 무효화 + 홈 리다이렉트를
-    // 하나의 HTTP 응답에서 처리 (쿠키 삭제와 리다이렉트가 동시에 적용됨)
+    // 3. 서버 사이드 쿠키 정리 + 리디렉트
     window.location.href = "/api/auth/signout";
-  };
+  }, [supabase]);
 
   return (
     <AuthContext.Provider
