@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = useCallback(async () => {
-    // 1. Supabase 클라이언트 세션 무효화 (refresh token 폐기 + 내부 상태 정리)
+    // 1. Supabase 클라이언트 세션 무효화 (refresh token 폐기 + 쿠키 삭제)
     if (supabase) {
       try {
         await supabase.auth.signOut();
@@ -151,12 +151,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 무시
       }
     }
-    // 2. React 상태 초기화
+    // 2. document.cookie로 Supabase 쿠키 수동 삭제 (httpOnly: false이므로 접근 가능)
+    // 쿠키 이름: "supabase.auth.token", "supabase.auth.token.0", "sb-*" 등
+    try {
+      document.cookie.split(";").forEach((c) => {
+        const name = c.trim().split("=")[0];
+        if (name && (name.startsWith("supabase.") || name.startsWith("sb-"))) {
+          document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0;`;
+        }
+      });
+    } catch {
+      // 무시
+    }
+    // 3. localStorage/sessionStorage 정리
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith("supabase.") || key.startsWith("sb-") || key.includes("supabase"))) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch {
+      // 무시
+    }
+    try {
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const key = sessionStorage.key(i);
+        if (key && (key.startsWith("supabase.") || key.startsWith("sb-") || key.includes("supabase"))) {
+          sessionStorage.removeItem(key);
+        }
+      }
+    } catch {
+      // 무시
+    }
+    // 4. React 상태 초기화
     setUser(null);
     setProfile(null);
     setSession(null);
-    // 3. 서버 사이드 쿠키 정리 + 리디렉트
-    window.location.href = "/api/auth/signout";
+    // 5. 홈으로 전체 페이지 리로드
+    window.location.replace("/");
   }, [supabase]);
 
   return (
