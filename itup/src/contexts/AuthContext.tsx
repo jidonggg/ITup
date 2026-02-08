@@ -150,34 +150,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    if (!supabase) return;
-
-    try {
-      await supabase.auth.signOut({ scope: 'local' });
-    } catch (e) {
-      console.error("로그아웃 중 예외:", e);
+    // 1. Supabase 클라이언트 로그아웃 (메모리/로컬스토리지 정리)
+    if (supabase) {
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch (e) {
+        console.error("로그아웃 중 예외:", e);
+      }
     }
 
-    // 로컬 상태 초기화
+    // 2. 로컬 상태 초기화
     setUser(null);
     setProfile(null);
     setSession(null);
 
-    // Supabase SSR 쿠키 강제 삭제 (미들웨어가 세션을 복원하지 못하도록)
-    const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(
-      /\/\/([^.]+)\./
-    )?.[1];
-    if (projectRef) {
-      const cookiePrefix = `sb-${projectRef}-auth-token`;
-      // 청크 쿠키 포함 모두 삭제 (base + .0 ~ .9)
-      const names = [cookiePrefix];
-      for (let i = 0; i < 10; i++) names.push(`${cookiePrefix}.${i}`);
-      names.forEach((name) => {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
-      });
+    // 3. 서버 API로 httpOnly 쿠키 삭제 (미들웨어가 세션 복원 못하도록)
+    try {
+      await fetch("/api/auth/signout", { method: "POST" });
+    } catch {
+      // API 실패해도 리다이렉트 진행
     }
 
-    // 로그아웃 후 홈으로 리다이렉트 (full reload로 모든 상태 초기화)
+    // 4. 홈으로 리다이렉트 (full reload)
     window.location.href = "/";
   };
 
