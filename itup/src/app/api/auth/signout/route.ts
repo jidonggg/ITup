@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+function isSupabaseCookie(name: string): boolean {
+  return name.startsWith("sb-") || name.startsWith("supabase.");
+}
+
 export async function GET(request: NextRequest) {
   const headers = new Headers();
   headers.set("Content-Type", "text/html; charset=utf-8");
@@ -17,26 +21,27 @@ export async function GET(request: NextRequest) {
           getAll() {
             return request.cookies.getAll();
           },
-          setAll() {
-            // 쿠키 삭제는 아래에서 수동으로 처리
+          setAll(cookiesToSet) {
+            // Supabase signOut이 설정하는 삭제 쿠키를 응답 헤더에 반영
+            cookiesToSet.forEach(({ name, value, options }) => {
+              const parts = [`${name}=${value}`, `Path=${options?.path || "/"}`];
+              if (options?.maxAge !== undefined) parts.push(`Max-Age=${options.maxAge}`);
+              if (options?.sameSite) parts.push(`SameSite=${options.sameSite}`);
+              headers.append("Set-Cookie", parts.join("; "));
+            });
           },
         },
       });
       await supabase.auth.signOut();
     } catch {
-      // 무시 - 쿠키 삭제로 대체
+      // 무시 - 수동 쿠키 삭제로 대체
     }
   }
 
-  // 2. 서버에서 Set-Cookie 헤더로 모든 sb-* 쿠키 삭제 (HttpOnly 포함)
+  // 2. 모든 Supabase 관련 쿠키를 Set-Cookie 헤더로 강제 삭제
+  // 쿠키 이름: "supabase.auth.token", "supabase.auth.token.0", "sb-*" 등
   for (const cookie of request.cookies.getAll()) {
-    if (cookie.name.startsWith("sb-")) {
-      // HttpOnly 쿠키 삭제용
-      headers.append(
-        "Set-Cookie",
-        `${cookie.name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; Secure; SameSite=Lax`
-      );
-      // non-HttpOnly 쿠키 삭제용 (같은 이름이지만 다른 속성으로 설정된 경우 대비)
+    if (isSupabaseCookie(cookie.name)) {
       headers.append(
         "Set-Cookie",
         `${cookie.name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax`
@@ -50,30 +55,26 @@ export async function GET(request: NextRequest) {
 <body>
 <script>
 try {
-  // localStorage에서 Supabase 관련 데이터 삭제
   for (var i = localStorage.length - 1; i >= 0; i--) {
     var key = localStorage.key(i);
-    if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
+    if (key && (key.startsWith('sb-') || key.startsWith('supabase.') || key.includes('supabase'))) {
       localStorage.removeItem(key);
     }
   }
 } catch(e) {}
 try {
-  // sessionStorage에서 Supabase 관련 데이터 삭제
   for (var j = sessionStorage.length - 1; j >= 0; j--) {
     var skey = sessionStorage.key(j);
-    if (skey && (skey.startsWith('sb-') || skey.includes('supabase'))) {
+    if (skey && (skey.startsWith('sb-') || skey.startsWith('supabase.') || skey.includes('supabase'))) {
       sessionStorage.removeItem(skey);
     }
   }
 } catch(e) {}
 try {
-  // document.cookie로 접근 가능한 쿠키 삭제
   document.cookie.split(';').forEach(function(c) {
     var name = c.trim().split('=')[0];
-    if (name.startsWith('sb-')) {
+    if (name.startsWith('sb-') || name.startsWith('supabase.')) {
       document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0;';
-      document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; Secure;';
     }
   });
 } catch(e) {}
