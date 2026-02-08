@@ -119,61 +119,69 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check user-specific conditions (if authenticated)
+    // 인증 필수: 할인코드 검증은 로그인 사용자만 가능
     const authHeader = request.headers.get("authorization");
-    let userId: string | null = null;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { valid: false, error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
 
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser(token);
-      userId = user?.id || null;
+    const token = authHeader.substring(7);
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser(token);
+    const userId = user?.id || null;
 
-      if (userId) {
-        // Check if user has completed a free trial (for FIRST10)
-        if (discountCode.requiresFreeTrial) {
-          const { data: freeTrialBookings } = await supabase
-            .from("bookings")
-            .select("id")
-            .eq("mentee_id", userId)
-            .eq("payment_method", "free_trial")
-            .eq("status", "completed")
-            .limit(1);
+    if (!userId) {
+      return NextResponse.json(
+        { valid: false, error: "인증에 실패했습니다." },
+        { status: 401 }
+      );
+    }
 
-          if (!freeTrialBookings || freeTrialBookings.length === 0) {
-            return NextResponse.json(
-              {
-                valid: false,
-                error: "이 할인 코드는 무료 체험을 완료한 사용자만 사용할 수 있습니다.",
-              },
-              { status: 400 }
-            );
-          }
-        }
+    // Check if user has completed a free trial (for FIRST10)
+    if (discountCode.requiresFreeTrial) {
+      const { data: freeTrialBookings } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("mentee_id", userId)
+        .eq("payment_method", "free_trial")
+        .eq("status", "completed")
+        .limit(1);
 
-        // Check if user has already made a paid booking (for firstTimeOnly codes)
-        if (discountCode.firstTimeOnly) {
-          const { data: paidBookings } = await supabase
-            .from("bookings")
-            .select("id")
-            .eq("mentee_id", userId)
-            .neq("payment_method", "free_trial")
-            .not("status", "eq", "cancelled")
-            .gt("amount", 0)
-            .limit(1);
+      if (!freeTrialBookings || freeTrialBookings.length === 0) {
+        return NextResponse.json(
+          {
+            valid: false,
+            error: "이 할인 코드는 무료 체험을 완료한 사용자만 사용할 수 있습니다.",
+          },
+          { status: 400 }
+        );
+      }
+    }
 
-          if (paidBookings && paidBookings.length > 0) {
-            return NextResponse.json(
-              {
-                valid: false,
-                error: "이 할인 코드는 첫 유료 예약에만 사용할 수 있습니다.",
-              },
-              { status: 400 }
-            );
-          }
-        }
+    // Check if user has already made a paid booking (for firstTimeOnly codes)
+    if (discountCode.firstTimeOnly) {
+      const { data: paidBookings } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("mentee_id", userId)
+        .neq("payment_method", "free_trial")
+        .not("status", "eq", "cancelled")
+        .gt("amount", 0)
+        .limit(1);
+
+      if (paidBookings && paidBookings.length > 0) {
+        return NextResponse.json(
+          {
+            valid: false,
+            error: "이 할인 코드는 첫 유료 예약에만 사용할 수 있습니다.",
+          },
+          { status: 400 }
+        );
       }
     }
 

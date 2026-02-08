@@ -87,11 +87,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // API_SECRET 인증 시 허용되는 타입 제한 (내부 서비스 호출용)
+    const apiSecretAllowedTypes = ["consultation_request", "consultation_confirmed"];
+    if (authResult.viaApiSecret && !apiSecretAllowedTypes.includes(type)) {
+      return NextResponse.json(
+        { error: "Forbidden: this type is not allowed via API secret" },
+        { status: 403 }
+      );
+    }
+
     // 관리자 전용 이메일 타입: mentor_approved, mentor_rejected
-    // 내부 API 시크릿이 아닌 사용자 토큰인 경우 관리자 권한 확인
     const adminOnlyTypes = ["mentor_approved", "mentor_rejected"];
-    if (adminOnlyTypes.includes(type) && !authResult.viaApiSecret) {
-      if (!isAdmin(authResult.userEmail)) {
+    if (adminOnlyTypes.includes(type)) {
+      if (!authResult.viaApiSecret && !isAdmin(authResult.userEmail)) {
         return NextResponse.json(
           { error: "Forbidden: admin access required" },
           { status: 403 }

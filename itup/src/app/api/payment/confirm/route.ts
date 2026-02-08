@@ -149,13 +149,22 @@ export async function POST(request: NextRequest) {
     const isBundleOrder = !!BUNDLE_PRICES[prefix];
 
     if (isProductOrder) {
-      // 상품 결제: DB에서 expected_amount 조회 (더 안전)
+      // 상품 결제: DB에서 expected_amount 조회 + 소유권 검증
       if (supabase && consultationId && consultationId !== "local") {
         const { data: consultation } = await supabase
           .from("consultations")
-          .select("expected_amount")
+          .select("expected_amount, user_id")
           .eq("id", consultationId)
           .single();
+
+        // consultation 소유권 검증
+        if (consultation && consultation.user_id !== user.id) {
+          return NextResponse.json(
+            { error: "본인의 상담 건만 결제할 수 있어요." },
+            { status: 403 }
+          );
+        }
+
         expectedAmount = consultation?.expected_amount ?? null;
       }
       if (!expectedAmount) {
@@ -317,11 +326,32 @@ export async function POST(request: NextRequest) {
           }
 
           if (!cancelSuccess) {
-            // 자동 취소도 실패 → 수동 처리 필요 기록
+            // 자동 취소도 실패 → 수동 처리 필요 기록 + 관리자 알림
             console.error(
               `[CRITICAL] 결제 승인 후 DB 저장 실패 & 자동 취소도 실패. 수동 처리 필요!`,
               { paymentKey, orderId, amount, userId }
             );
+
+            // 관리자 긴급 알림 (비동기)
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+            if (siteUrl) {
+              fetch(`${siteUrl}/api/email/notify`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-api-secret": process.env.INTERNAL_API_SECRET || "",
+                },
+                body: JSON.stringify({
+                  type: "consultation_request",
+                  data: {
+                    mentorId: null,
+                    menteeName: `[CRITICAL] 결제 오류 - paymentKey: ${paymentKey}`,
+                    menteeEmail: `orderId: ${orderId}, amount: ${amount}`,
+                  },
+                }),
+              }).catch(() => {});
+            }
+
             return NextResponse.json(
               { error: "결제 처리 중 오류가 발생했어요. 고객센터에 문의해주세요." },
               { status: 500 }

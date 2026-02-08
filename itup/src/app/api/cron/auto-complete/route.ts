@@ -12,24 +12,12 @@ import { createClient } from "@supabase/supabase-js";
 import { AUTO_COMPLETE_HOURS } from "@/lib/constants";
 
 const CRON_SECRET = process.env.CRON_SECRET;
-const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
 
 function verifyCronAuth(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
   if (authHeader === `Bearer ${CRON_SECRET}` && CRON_SECRET) {
     return true;
   }
-
-  const cronSecret = request.headers.get("x-cron-secret");
-  if (cronSecret === CRON_SECRET && CRON_SECRET) {
-    return true;
-  }
-
-  const apiSecret = request.headers.get("x-api-secret");
-  if (apiSecret === INTERNAL_API_SECRET && INTERNAL_API_SECRET) {
-    return true;
-  }
-
   return false;
 }
 

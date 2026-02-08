@@ -20,7 +20,7 @@ import { SITE_CONFIG } from "@/lib/site-config";
 // =============================================
 
 const CRON_SECRET = process.env.CRON_SECRET;
-const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
+const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET; // outgoing calls only
 const SITE_URL = SITE_CONFIG.url;
 const ADMIN_EMAIL = SITE_CONFIG.email.admin;
 
@@ -88,27 +88,13 @@ function getServiceSupabase(): SupabaseClient | null {
 }
 
 /**
- * Verify cron request authentication
+ * Verify cron request authentication (Authorization: Bearer CRON_SECRET only)
  */
 function verifyCronAuth(request: NextRequest): boolean {
-  // Check for Vercel Cron header
   const authHeader = request.headers.get("authorization");
   if (authHeader === `Bearer ${CRON_SECRET}` && CRON_SECRET) {
     return true;
   }
-
-  // Also accept x-cron-secret header (alternative)
-  const cronSecret = request.headers.get("x-cron-secret");
-  if (cronSecret === CRON_SECRET && CRON_SECRET) {
-    return true;
-  }
-
-  // Accept internal API secret (for manual triggers)
-  const apiSecret = request.headers.get("x-api-secret");
-  if (apiSecret === INTERNAL_API_SECRET && INTERNAL_API_SECRET) {
-    return true;
-  }
-
   return false;
 }
 

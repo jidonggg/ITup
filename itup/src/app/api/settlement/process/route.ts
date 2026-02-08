@@ -75,6 +75,25 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "정산 금액이 0원 이하입니다." }, { status: 400 });
       }
 
+      // 이중 정산 방지: 이미 정산에 포함된 예약인지 확인
+      const { data: existingWithBookings } = await supabase
+        .from("settlements")
+        .select("id, booking_ids, status")
+        .in("status", ["pending", "processing", "completed"]);
+
+      if (existingWithBookings) {
+        const alreadySettled = existingWithBookings.some((s) => {
+          const settled = s.booking_ids as string[] | null;
+          return settled?.some((bid: string) => bookingIds.includes(bid));
+        });
+        if (alreadySettled) {
+          return NextResponse.json(
+            { error: "이미 정산에 포함된 예약이 있습니다." },
+            { status: 409 }
+          );
+        }
+      }
+
       // 멘토 누적 수익 조회 (수수료율 결정용)
       const { data: existingSettlements } = await supabase
         .from("settlements")
@@ -171,7 +190,7 @@ export async function POST(request: NextRequest) {
       updateData.failure_reason = body.failureReason || "관리자에 의해 실패 처리";
     }
 
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from("settlements")
       .update(updateData)
       .eq("id", settlementId)
@@ -180,6 +199,14 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error(`[settlement/process] 상태 변경 실패 (${settlementId}):`, error);
       return NextResponse.json({ error: "상태 변경에 실패했습니다." }, { status: 500 });
+    }
+
+    // 낙관적 잠금: 동시 요청으로 이미 상태가 변경된 경우
+    if (count === 0) {
+      return NextResponse.json(
+        { error: "이미 다른 요청에 의해 상태가 변경되었습니다. 새로고침 후 다시 시도해주세요." },
+        { status: 409 }
+      );
     }
 
     console.log(`[settlement/process] 정산 상태 변경: ${settlementId} ${current.status}→${newStatus} by ${user.email}`);

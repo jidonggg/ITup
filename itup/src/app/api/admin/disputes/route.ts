@@ -64,7 +64,66 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "DB 연결 실패" }, { status: 503 });
     }
 
-    // 1. session_confirmations 업데이트
+    // 2. 멘토 노쇼 시 PG 환불을 먼저 시도 (실패하면 전체 롤백)
+    if (bookingId && finalStatus === "mentor_noshow") {
+      const { data: booking } = await supabase
+        .from("bookings")
+        .select("amount, order_id")
+        .eq("id", bookingId)
+        .single();
+
+      if (booking && booking.amount > 0) {
+        const { data: payment } = await supabase
+          .from("payments")
+          .select("payment_key, status")
+          .eq("order_id", booking.order_id)
+          .eq("status", "completed")
+          .maybeSingle();
+
+        if (payment?.payment_key && isTossConfigured()) {
+          try {
+            const tossResponse = await fetch(
+              `${TOSS_API_BASE}/${payment.payment_key}/cancel`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: getTossAuthHeader(),
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  cancelReason: "멘토 노쇼 - 관리자 환불 처리",
+                }),
+              }
+            );
+
+            if (!tossResponse.ok) {
+              console.error(`[disputes] 멘토 노쇼 환불 실패: bookingId=${bookingId}`);
+              return NextResponse.json(
+                { error: "PG 환불에 실패했습니다. 환불 처리 후 다시 시도해주세요." },
+                { status: 502 }
+              );
+            }
+
+            await supabase
+              .from("payments")
+              .update({
+                status: "refunded",
+                refund_reason: "멘토 노쇼 - 관리자 환불 처리",
+                refunded_at: new Date().toISOString(),
+              })
+              .eq("payment_key", payment.payment_key);
+          } catch (e) {
+            console.error(`[disputes] 멘토 노쇼 환불 예외: bookingId=${bookingId}`, e);
+            return NextResponse.json(
+              { error: "PG 환불 중 오류가 발생했습니다. 다시 시도해주세요." },
+              { status: 502 }
+            );
+          }
+        }
+      }
+    }
+
+    // 1. session_confirmations 업데이트 (PG 환불 성공 후)
     // [H11] 분쟁 유지(disputed) 시에는 resolved_at/resolved_by를 설정하지 않음
     const updateData: Record<string, unknown> = {
       final_status: finalStatus,
@@ -82,59 +141,9 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "분쟁 해결 처리 중 오류가 발생했습니다." }, { status: 500 });
     }
 
-    // 2. booking 상태 업데이트 (완료/노쇼 판정 시)
+    // 3. booking 상태 업데이트 (완료/노쇼 판정 시)
     if (bookingId && (finalStatus === "completed" || finalStatus === "mentor_noshow" || finalStatus === "mentee_noshow")) {
       if (finalStatus === "mentor_noshow") {
-        // 멘토 노쇼: 멘티에게 전액 환불 + booking cancelled
-        const { data: booking } = await supabase
-          .from("bookings")
-          .select("amount, order_id")
-          .eq("id", bookingId)
-          .single();
-
-        if (booking && booking.amount > 0) {
-          // PG 환불 처리
-          const { data: payment } = await supabase
-            .from("payments")
-            .select("payment_key, status")
-            .eq("order_id", booking.order_id)
-            .eq("status", "completed")
-            .maybeSingle();
-
-          if (payment?.payment_key && isTossConfigured()) {
-            try {
-              const tossResponse = await fetch(
-                `${TOSS_API_BASE}/${payment.payment_key}/cancel`,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: getTossAuthHeader(),
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    cancelReason: "멘토 노쇼 - 관리자 환불 처리",
-                  }),
-                }
-              );
-
-              if (tossResponse.ok) {
-                await supabase
-                  .from("payments")
-                  .update({
-                    status: "refunded",
-                    refund_reason: "멘토 노쇼 - 관리자 환불 처리",
-                    refunded_at: new Date().toISOString(),
-                  })
-                  .eq("payment_key", payment.payment_key);
-              } else {
-                console.error(`[disputes] 멘토 노쇼 환불 실패: bookingId=${bookingId}`);
-              }
-            } catch (e) {
-              console.error(`[disputes] 멘토 노쇼 환불 예외: bookingId=${bookingId}`, e);
-            }
-          }
-        }
-
         await supabase
           .from("bookings")
           .update({ status: "cancelled" })

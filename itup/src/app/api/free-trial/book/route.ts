@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
         meeting_link: null,
         attached_files: [],
         payment_key: null,
-        order_id: `FREE_${user.id}_${Date.now()}`,
+        order_id: `FREE_${user.id}_${crypto.randomUUID()}`,
         amount: 0,
         payment_method: "free_trial",
         paid_at: new Date().toISOString(),
