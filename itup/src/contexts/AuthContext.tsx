@@ -150,29 +150,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // 1. Supabase 클라이언트 로그아웃 (메모리/로컬스토리지 정리)
-    if (supabase) {
-      try {
-        await supabase.auth.signOut({ scope: 'local' });
-      } catch (e) {
-        console.error("로그아웃 중 예외:", e);
-      }
-    }
-
-    // 2. 로컬 상태 초기화
+    // 클라이언트 상태 초기화
     setUser(null);
     setProfile(null);
     setSession(null);
 
-    // 3. 서버 API로 httpOnly 쿠키 삭제 (미들웨어가 세션 복원 못하도록)
-    try {
-      await fetch("/api/auth/signout", { method: "POST" });
-    } catch {
-      // API 실패해도 리다이렉트 진행
-    }
-
-    // 4. 홈으로 리다이렉트 (full reload)
-    window.location.href = "/";
+    // 서버 API로 이동: 쿠키 삭제 + 세션 무효화 + 홈 리다이렉트를
+    // 하나의 HTTP 응답에서 처리 (쿠키 삭제와 리다이렉트가 동시에 적용됨)
+    window.location.href = "/api/auth/signout";
   };
 
   return (
