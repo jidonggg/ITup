@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
 import { calculateSettlement } from "@/lib/settlement/calculate";
+import { settlementLimiter } from "@/lib/rate-limit";
 
 // 유효한 상태 전이 맵
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -24,6 +25,12 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user || !isAdmin(user.email)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Rate limiting
+    const { success: rateLimitOk } = settlementLimiter.check(user.id);
+    if (!rateLimitOk) {
+      return NextResponse.json({ error: "요청이 너무 많아요." }, { status: 429 });
     }
 
     const body = await request.json();

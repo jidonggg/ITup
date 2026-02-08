@@ -114,6 +114,60 @@ export const alimtalkLimiter = new RateLimiter({
   maxKeys: 500,
 });
 
+/** /api/payment/confirm — 5 req / 60s per user */
+export const paymentConfirmLimiter = new RateLimiter({
+  limit: 5,
+  windowMs: 60 * 1000,
+});
+
+/** /api/payment/refund — 5 req / 60s per admin */
+export const paymentRefundLimiter = new RateLimiter({
+  limit: 5,
+  windowMs: 60 * 1000,
+});
+
+/** /api/booking/cancel — 5 req / 60s per user */
+export const bookingCancelLimiter = new RateLimiter({
+  limit: 5,
+  windowMs: 60 * 1000,
+});
+
+/** /api/free-trial/book — 3 req / 60s per user */
+export const freeTrialBookLimiter = new RateLimiter({
+  limit: 3,
+  windowMs: 60 * 1000,
+});
+
+/** /api/discount/validate — 10 req / 60s per IP */
+export const discountValidateLimiter = new RateLimiter({
+  limit: 10,
+  windowMs: 60 * 1000,
+});
+
+/** /api/mentor/bank-account — 10 req / 60s per user */
+export const bankAccountLimiter = new RateLimiter({
+  limit: 10,
+  windowMs: 60 * 1000,
+});
+
+/** /api/email/* — 10 req / 60s per IP */
+export const emailLimiter = new RateLimiter({
+  limit: 10,
+  windowMs: 60 * 1000,
+});
+
+/** /api/admin/* — 30 req / 60s per admin */
+export const adminLimiter = new RateLimiter({
+  limit: 30,
+  windowMs: 60 * 1000,
+});
+
+/** /api/settlement/* — 10 req / 60s per admin */
+export const settlementLimiter = new RateLimiter({
+  limit: 10,
+  windowMs: 60 * 1000,
+});
+
 export function getClientIp(request: Request): string {
   const headers = new Headers(request.headers);
   const forwarded = headers.get("x-forwarded-for");

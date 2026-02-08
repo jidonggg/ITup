@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getTossAuthHeader, TOSS_API_BASE } from "@/lib/payment/toss";
+import { bookingCancelLimiter } from "@/lib/rate-limit";
 
 // =============================================
 // POST /api/booking/cancel
@@ -73,6 +74,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 취소 사유 길이 제한
+    if (reason && reason.length > 500) {
+      return NextResponse.json(
+        { error: "취소 사유는 500자 이내로 작성해주세요." },
+        { status: 400 },
+      );
+    }
+
     // 2. Authenticate the user via Supabase server client
     const supabase = await createClient();
     const {
@@ -84,6 +93,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "로그인이 필요해요." },
         { status: 401 },
+      );
+    }
+
+    // Rate limiting
+    const { success: allowed } = bookingCancelLimiter.check(user.id);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "요청이 너무 많아요. 잠시 후 다시 시도해주세요." },
+        { status: 429 },
       );
     }
 

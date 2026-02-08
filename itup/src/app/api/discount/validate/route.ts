@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { FIRST_BOOKING_DISCOUNT } from "@/lib/constants";
+import { discountValidateLimiter, getClientIp } from "@/lib/rate-limit";
 
 // =============================================
 // Discount Code Configuration
@@ -53,10 +54,20 @@ const DISCOUNT_CODES: DiscountCode[] = [
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = discountValidateLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { valid: false, error: "요청이 너무 많아요. 잠시 후 다시 시도해주세요." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { code, amount } = body;
 
-    if (!code || typeof code !== "string") {
+    if (!code || typeof code !== "string" || code.length > 50) {
       return NextResponse.json(
         { valid: false, error: "할인 코드를 입력해주세요." },
         { status: 400 }

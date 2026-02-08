@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { FREE_TRIAL_LIMIT } from "@/lib/constants";
+import { freeTrialBookLimiter } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "인증에 실패했습니다." }, { status: 401 });
     }
 
+    // Rate limiting
+    const { success: allowed } = freeTrialBookLimiter.check(user.id);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "요청이 너무 많아요. 잠시 후 다시 시도해주세요." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { mentorId, scheduledAt, menteeIntro, menteeGoal } = body;
 
@@ -27,6 +37,20 @@ export async function POST(request: NextRequest) {
         { error: "필수 정보가 누락되었습니다." },
         { status: 400 }
       );
+    }
+
+    // 입력값 검증
+    if (typeof mentorId !== "string" || mentorId.length > 100) {
+      return NextResponse.json({ error: "유효하지 않은 mentorId입니다." }, { status: 400 });
+    }
+    if (typeof scheduledAt !== "string" || isNaN(new Date(scheduledAt).getTime())) {
+      return NextResponse.json({ error: "유효하지 않은 날짜 형식입니다." }, { status: 400 });
+    }
+    if (menteeIntro && (typeof menteeIntro !== "string" || menteeIntro.length > 500)) {
+      return NextResponse.json({ error: "자기소개는 500자 이내로 작성해주세요." }, { status: 400 });
+    }
+    if (menteeGoal && (typeof menteeGoal !== "string" || menteeGoal.length > 500)) {
+      return NextResponse.json({ error: "목표는 500자 이내로 작성해주세요." }, { status: 400 });
     }
 
     // 1. Verify mentee hasn't already used free trial (payment_method 기준)

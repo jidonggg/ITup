@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isAdmin } from "@/lib/admin";
 import { getTossAuthHeader, isTossConfigured, TOSS_API_BASE } from "@/lib/payment/toss";
+import { paymentRefundLimiter } from "@/lib/rate-limit";
 
 function getServiceSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -48,6 +49,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: adminCheck.error },
       { status: adminCheck.status }
+    );
+  }
+
+  // Rate limiting
+  const { success: allowed } = paymentRefundLimiter.check(adminCheck.user.id);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "요청이 너무 많아요. 잠시 후 다시 시도해주세요." },
+      { status: 429 }
     );
   }
 
@@ -115,9 +125,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (refundAmount > payment.amount) {
+  // 이미 부분 환불된 금액 확인 (누적 환불 금액 검증)
+  const alreadyRefunded = payment.refunded_amount || 0;
+  const remainingRefundable = payment.amount - alreadyRefunded;
+
+  if (refundAmount > remainingRefundable) {
     return NextResponse.json(
-      { error: `환불 금액(${refundAmount}원)이 결제 금액(${payment.amount}원)을 초과할 수 없어요.` },
+      { error: `환불 가능 금액(${remainingRefundable}원)을 초과할 수 없어요. (총 결제: ${payment.amount}원, 기 환불: ${alreadyRefunded}원)` },
       { status: 400 }
     );
   }
@@ -150,8 +164,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. DB 업데이트 — payments
-    const isPartial = cancelAmount && cancelAmount < payment.amount;
-    const newStatus = isPartial ? "partial_refunded" : "refunded";
+    const totalRefunded = alreadyRefunded + refundAmount;
+    const isFullRefund = totalRefunded >= payment.amount;
+    const newStatus = isFullRefund ? "refunded" : "partial_refunded";
 
     const { error: updateError } = await supabase
       .from("payments")
@@ -159,6 +174,7 @@ export async function POST(request: NextRequest) {
         status: newStatus,
         refund_reason: reason || "관리자 환불 처리",
         refunded_at: new Date().toISOString(),
+        refunded_amount: totalRefunded,
       })
       .eq("id", paymentId);
 
@@ -170,7 +186,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. DB 업데이트 — consultations (전액 환불 시 취소 처리)
-    if (!isPartial && payment.consultation_id) {
+    if (isFullRefund && payment.consultation_id) {
       const { error: consultError } = await supabase
         .from("consultations")
         .update({ status: "cancelled" })
@@ -182,8 +198,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: isPartial ? "부분 환불이 완료됐어요." : "전액 환불이 완료됐어요.",
+      message: isFullRefund ? "전액 환불이 완료됐어요." : "부분 환불이 완료됐어요.",
       refundAmount,
+      totalRefunded,
     });
   } catch (error) {
     return NextResponse.json(

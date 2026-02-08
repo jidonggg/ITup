@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
 import { calculateSettlement } from "@/lib/settlement/calculate";
 import { SETTLEMENT } from "@/lib/constants";
+import { settlementLimiter } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,12 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user || !isAdmin(user.email)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Rate limiting
+    const { success: allowed } = settlementLimiter.check(user.id);
+    if (!allowed) {
+      return NextResponse.json({ error: "요청이 너무 많아요." }, { status: 429 });
     }
 
     const body = await request.json();

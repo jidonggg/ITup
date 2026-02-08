@@ -94,11 +94,12 @@ export default function ReviewModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]"
         onClick={handleClose}
+        aria-hidden="true"
       />
 
       {/* Modal */}
@@ -115,7 +116,7 @@ export default function ReviewModal({
         </button>
 
         <div className="p-6 md:p-8">
-          <h2 className="text-xl font-bold mb-2">리뷰 작성</h2>
+          <h2 id="review-modal-title" className="text-xl font-bold mb-2">리뷰 작성</h2>
           <p className="text-muted text-sm mb-6">
             {mentorName} 멘토님과의 상담은 어떠셨나요?
           </p>

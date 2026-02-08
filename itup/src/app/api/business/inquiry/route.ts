@@ -28,6 +28,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 입력값 길이 검증
+    if (typeof companyName !== "string" || companyName.length > 100) {
+      return NextResponse.json({ error: "회사명은 100자 이내로 입력해주세요." }, { status: 400 });
+    }
+    if (typeof contactName !== "string" || contactName.length > 50) {
+      return NextResponse.json({ error: "담당자명은 50자 이내로 입력해주세요." }, { status: 400 });
+    }
+    if (typeof email !== "string" || email.length > 254) {
+      return NextResponse.json({ error: "이메일은 254자 이내로 입력해주세요." }, { status: 400 });
+    }
+    if (message && (typeof message !== "string" || message.length > 2000)) {
+      return NextResponse.json({ error: "문의 내용은 2000자 이내로 입력해주세요." }, { status: 400 });
+    }
+
     // Basic email validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { bankAccountLimiter } from "@/lib/rate-limit";
 
 async function getMentorFromToken(request: NextRequest) {
   const supabase = await createClient();
@@ -24,6 +25,12 @@ async function getMentorFromToken(request: NextRequest) {
 
   if (!mentor) {
     return { error: "Mentor not found", status: 404 };
+  }
+
+  // Rate limiting
+  const { success: allowed } = bankAccountLimiter.check(user.id);
+  if (!allowed) {
+    return { error: "요청이 너무 많아요. 잠시 후 다시 시도해주세요.", status: 429 };
   }
 
   return { user, mentor, supabase };
@@ -69,6 +76,11 @@ export async function POST(request: NextRequest) {
 
     if (!bank_name || !account_number || !account_holder) {
       return NextResponse.json({ error: "필수 정보가 누락되었습니다." }, { status: 400 });
+    }
+
+    // bank_name 길이 및 형식 검증
+    if (typeof bank_name !== "string" || bank_name.length > 20) {
+      return NextResponse.json({ error: "은행명은 20자 이내여야 합니다." }, { status: 400 });
     }
 
     // 계좌번호 유효성 검사: 숫자만 허용, 10~16자리

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isAdmin } from "@/lib/admin";
+import { adminLimiter } from "@/lib/rate-limit";
+import { getTossAuthHeader, TOSS_API_BASE, isTossConfigured } from "@/lib/payment/toss";
 
 // =============================================
 // PATCH /api/admin/disputes
@@ -37,6 +39,12 @@ export async function PATCH(request: NextRequest) {
     const admin = await verifyAdmin(request);
     if (!admin) {
       return NextResponse.json({ error: "관리자 권한이 필요합니다." }, { status: 403 });
+    }
+
+    // Rate limiting
+    const { success: allowed } = adminLimiter.check(admin.id);
+    if (!allowed) {
+      return NextResponse.json({ error: "요청이 너무 많아요." }, { status: 429 });
     }
 
     const body = await request.json();
@@ -77,8 +85,56 @@ export async function PATCH(request: NextRequest) {
     // 2. booking 상태 업데이트 (완료/노쇼 판정 시)
     if (bookingId && (finalStatus === "completed" || finalStatus === "mentor_noshow" || finalStatus === "mentee_noshow")) {
       if (finalStatus === "mentor_noshow") {
-        // [C5] 멘토 노쇼 시 환불 처리 - booking을 cancelled로 설정
-        // TODO: 실제 PG 환불 트리거 연동 필요
+        // 멘토 노쇼: 멘티에게 전액 환불 + booking cancelled
+        const { data: booking } = await supabase
+          .from("bookings")
+          .select("amount, order_id")
+          .eq("id", bookingId)
+          .single();
+
+        if (booking && booking.amount > 0) {
+          // PG 환불 처리
+          const { data: payment } = await supabase
+            .from("payments")
+            .select("payment_key, status")
+            .eq("order_id", booking.order_id)
+            .eq("status", "completed")
+            .maybeSingle();
+
+          if (payment?.payment_key && isTossConfigured()) {
+            try {
+              const tossResponse = await fetch(
+                `${TOSS_API_BASE}/${payment.payment_key}/cancel`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: getTossAuthHeader(),
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    cancelReason: "멘토 노쇼 - 관리자 환불 처리",
+                  }),
+                }
+              );
+
+              if (tossResponse.ok) {
+                await supabase
+                  .from("payments")
+                  .update({
+                    status: "refunded",
+                    refund_reason: "멘토 노쇼 - 관리자 환불 처리",
+                    refunded_at: new Date().toISOString(),
+                  })
+                  .eq("payment_key", payment.payment_key);
+              } else {
+                console.error(`[disputes] 멘토 노쇼 환불 실패: bookingId=${bookingId}`);
+              }
+            } catch (e) {
+              console.error(`[disputes] 멘토 노쇼 환불 예외: bookingId=${bookingId}`, e);
+            }
+          }
+        }
+
         await supabase
           .from("bookings")
           .update({ status: "cancelled" })

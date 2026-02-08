@@ -121,6 +121,8 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
 
     if (!formData.name.trim()) {
       newErrors.name = "이름을 입력해주세요";
+    } else if (formData.name.trim().length > 50) {
+      newErrors.name = "이름은 50자 이내로 입력해주세요";
     }
 
     if (!formData.phone.trim()) {
@@ -131,6 +133,8 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
 
     if (!formData.email.trim()) {
       newErrors.email = "이메일을 입력해주세요";
+    } else if (formData.email.length > 254) {
+      newErrors.email = "이메일은 254자 이내로 입력해주세요";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "올바른 이메일 형식이 아닙니다";
     }
@@ -499,6 +503,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                     onChange={handleChange}
                     placeholder="편하게 적어주세요 (선택사항)"
                     rows={3}
+                    maxLength={1000}
                     className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors resize-none"
                   />
                 </div>

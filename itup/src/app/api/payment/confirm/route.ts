@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getTossAuthHeader, isTossConfigured, TOSS_API_BASE } from "@/lib/payment/toss";
+import { paymentConfirmLimiter } from "@/lib/rate-limit";
 
 // 상품 가격 (서버에서 검증용)
 const PRODUCT_PRICES: Record<string, number> = {
@@ -99,6 +100,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Rate limiting
+    const { success: allowed, retryAfterMs } = paymentConfirmLimiter.check(user.id);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "요청이 너무 많아요. 잠시 후 다시 시도해주세요." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(retryAfterMs / 1000)) } }
+      );
+    }
+
     const body = await request.json();
     const { paymentKey, orderId, amount } = body;
 
@@ -107,6 +117,14 @@ export async function POST(request: NextRequest) {
         { error: "Missing required parameters" },
         { status: 400 }
       );
+    }
+
+    // 입력값 길이 검증
+    if (typeof paymentKey !== "string" || paymentKey.length > 200) {
+      return NextResponse.json({ error: "유효하지 않은 paymentKey" }, { status: 400 });
+    }
+    if (typeof orderId !== "string" || orderId.length > 200) {
+      return NextResponse.json({ error: "유효하지 않은 orderId" }, { status: 400 });
     }
 
     const supabase = getServiceSupabase();
@@ -230,7 +248,13 @@ export async function POST(request: NextRequest) {
           payment_method: tossResult.method || "card",
           approved_at: tossResult.approvedAt,
           receipt_url: tossResult.receipt?.url,
-          raw_response: tossResult,
+          raw_response: {
+            orderId: tossResult.orderId,
+            totalAmount: tossResult.totalAmount,
+            method: tossResult.method,
+            approvedAt: tossResult.approvedAt,
+            status: tossResult.status,
+          },
         })
         .select("id")
         .single();
@@ -256,7 +280,13 @@ export async function POST(request: NextRequest) {
               payment_method: tossResult.method || "card",
               approved_at: tossResult.approvedAt,
               receipt_url: tossResult.receipt?.url,
-              raw_response: tossResult,
+              raw_response: {
+                orderId: tossResult.orderId,
+                totalAmount: tossResult.totalAmount,
+                method: tossResult.method,
+                approvedAt: tossResult.approvedAt,
+                status: tossResult.status,
+              },
             })
             .select("id")
             .single();

@@ -10,6 +10,7 @@ import {
   feedbackReceivedTemplate,
 } from "@/lib/email/templates";
 import { SITE_CONFIG } from "@/lib/site-config";
+import { emailLimiter, getClientIp } from "@/lib/rate-limit";
 
 // 내부 API 시크릿 (서버-서버 통신용)
 const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
@@ -84,6 +85,13 @@ export async function POST(request: NextRequest) {
     const isAuthorized = await verifyAuth(request);
     if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = emailLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json({ error: "요청이 너무 많아요." }, { status: 429 });
     }
 
     const body = await request.json();

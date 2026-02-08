@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { ADMIN_EMAILS } from "@/lib/admin";
+import { ADMIN_EMAILS, isAdmin } from "@/lib/admin";
 import { getYearsFromExperience } from "@/lib/pricing/tiers";
+import { adminLimiter } from "@/lib/rate-limit";
 
 const MIN_MENTOR_EXPERIENCE_YEARS = 3;
 
@@ -33,8 +34,14 @@ async function verifyAdmin(request: NextRequest) {
     return { error: "Invalid token", status: 401 };
   }
 
-  if (!ADMIN_EMAILS.includes(user.email?.toLowerCase() || "")) {
+  if (!isAdmin(user.email)) {
     return { error: "Forbidden - Admin access required", status: 403 };
+  }
+
+  // Rate limiting
+  const { success: allowed } = adminLimiter.check(user.id);
+  if (!allowed) {
+    return { error: "요청이 너무 많아요. 잠시 후 다시 시도해주세요.", status: 429 };
   }
 
   return { user };
@@ -53,7 +60,13 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceSupabase();
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status"); // "pending" | "approved" | "all"
+    const status = searchParams.get("status");
+
+    // status 파라미터 검증
+    const validStatuses = ["pending", "approved", "all", null];
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json({ error: "유효하지 않은 status 값입니다." }, { status: 400 });
+    }
 
     let query = supabase.from("mentors").select("*").order("created_at", { ascending: false });
 
@@ -66,7 +79,8 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[admin/mentors] DB error:", error.message);
+      return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
     }
 
     return NextResponse.json({ mentors: data });
@@ -94,6 +108,12 @@ export async function PATCH(request: NextRequest) {
       { error: "mentorId and action are required" },
       { status: 400 }
     );
+  }
+
+  // action 값 검증
+  const validActions = ["approve", "reject", "verify_approve", "verify_reject"];
+  if (!validActions.includes(action)) {
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }
 
   const supabase = getServiceSupabase();
@@ -127,7 +147,8 @@ export async function PATCH(request: NextRequest) {
       .eq("id", mentorId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[admin/mentors] DB error:", error.message);
+      return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
     }
 
     // 승인 이메일 발송 (비동기)
@@ -169,7 +190,8 @@ export async function PATCH(request: NextRequest) {
       .eq("id", mentorId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[admin/mentors] DB error:", error.message);
+      return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: "Mentor rejected" });
@@ -210,7 +232,8 @@ export async function PATCH(request: NextRequest) {
       .eq("id", mentorId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[admin/mentors] DB error:", error.message);
+      return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
     }
 
     // 승인 이메일 발송 (비동기)
@@ -265,7 +288,8 @@ export async function PATCH(request: NextRequest) {
       .eq("id", mentorId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[admin/mentors] DB error:", error.message);
+      return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
     }
 
     // 거절 이메일 발송 (비동기)
@@ -336,7 +360,8 @@ export async function DELETE(request: NextRequest) {
       .eq("id", mentorId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[admin/mentors] DB error:", error.message);
+      return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: "Mentor deleted" });
