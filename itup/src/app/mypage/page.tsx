@@ -445,10 +445,10 @@ export default function MyPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-2xl font-bold">
-                    {(profile?.name || user.email)?.[0]?.toUpperCase() || "U"}
+                    {(profile?.name || user.user_metadata?.name || user.email)?.[0]?.toUpperCase() || "U"}
                   </div>
                   <div>
-                    <p className="font-semibold text-lg">{profile?.name || "이름 미설정"}</p>
+                    <p className="font-semibold text-lg">{profile?.name || user.user_metadata?.name || "이름 미설정"}</p>
                     <p className="text-muted text-sm">{user.email}</p>
                   </div>
                 </div>

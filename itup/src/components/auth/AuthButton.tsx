@@ -41,7 +41,7 @@ export default function AuthButton({ onLoginClick, onSignupClick, variant = "des
   }
 
   if (user) {
-    const displayName = profile?.name || user.email?.split("@")[0] || "사용자";
+    const displayName = profile?.name || user.user_metadata?.name || user.email?.split("@")[0] || "사용자";
 
     if (variant === "mobile") {
       return (
