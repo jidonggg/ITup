@@ -71,16 +71,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initialize = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
+        // getUser()로 서버 검증 (getSession()은 쿠키만 읽어 만료 세션도 유효하게 보임)
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-        if (session?.user) {
+        if (currentUser) {
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          setSession(currentSession);
+          setUser(currentUser);
           try {
-            await fetchProfile(session.user.id);
+            await fetchProfile(currentUser.id);
           } catch {
             // 프로필 로드 실패 시 무시 - 인증 자체는 정상 처리
           }
+        } else {
+          setSession(null);
+          setUser(null);
         }
       } catch {
         // 세션 초기화 실패 시 무시 - 미인증 상태로 진행
@@ -148,24 +153,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
 
     try {
-      // scope: 'local'로 현재 브라우저 세션만 종료 (쿠키/스토리지 확실히 제거)
-      // 'global'은 서버 API 호출이 실패하면 로컬 세션이 남는 문제가 있음
-      const { error } = await supabase.auth.signOut({ scope: 'local' });
-
-      if (error) {
-        console.error("로그아웃 에러:", error);
-      }
+      await supabase.auth.signOut({ scope: 'local' });
     } catch (e) {
       console.error("로그아웃 중 예외:", e);
-    } finally {
-      // 에러가 발생해도 로컬 상태는 초기화
-      setUser(null);
-      setProfile(null);
-      setSession(null);
-
-      // 로그아웃 후 홈으로 리다이렉트 (full reload로 모든 상태 초기화)
-      window.location.href = "/";
     }
+
+    // 로컬 상태 초기화
+    setUser(null);
+    setProfile(null);
+    setSession(null);
+
+    // Supabase SSR 쿠키 강제 삭제 (미들웨어가 세션을 복원하지 못하도록)
+    const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(
+      /\/\/([^.]+)\./
+    )?.[1];
+    if (projectRef) {
+      const cookiePrefix = `sb-${projectRef}-auth-token`;
+      // 청크 쿠키 포함 모두 삭제 (base + .0 ~ .9)
+      const names = [cookiePrefix];
+      for (let i = 0; i < 10; i++) names.push(`${cookiePrefix}.${i}`);
+      names.forEach((name) => {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+      });
+    }
+
+    // 로그아웃 후 홈으로 리다이렉트 (full reload로 모든 상태 초기화)
+    window.location.href = "/";
   };
 
   return (
