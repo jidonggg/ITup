@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
+import { calculateSettlement } from "@/lib/settlement/calculate";
 
 // 유효한 상태 전이 맵
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -33,36 +34,52 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create") {
-      // create는 settlementId 불필요
       const {
         mentorId,
         periodStart,
         periodEnd,
         bookingIds,
-        totalAmount,
-        platformFee,
-        settlementAmount,
-        commissionRate,
         bankAccountId,
       } = body;
 
-      if (!mentorId || !totalAmount) {
-        return NextResponse.json({ error: "필수 정보가 누락되었습니다." }, { status: 400 });
+      if (!mentorId) {
+        return NextResponse.json({ error: "멘토 ID가 필요합니다." }, { status: 400 });
       }
 
-      // 서버사이드 금액 유효성 검증
-      if (typeof totalAmount !== "number" || totalAmount <= 0) {
-        return NextResponse.json({ error: "totalAmount는 0보다 커야 합니다." }, { status: 400 });
+      if (!bookingIds || !Array.isArray(bookingIds) || bookingIds.length === 0) {
+        return NextResponse.json({ error: "정산 대상 예약이 필요합니다." }, { status: 400 });
       }
-      if (typeof platformFee !== "number" || platformFee < 0) {
-        return NextResponse.json({ error: "platformFee는 0 이상이어야 합니다." }, { status: 400 });
+
+      // 서버에서 직접 예약 금액 조회하여 재계산 (클라이언트 값 무시)
+      const { data: bookings, error: bookingsError } = await supabase
+        .from("bookings")
+        .select("id, amount")
+        .eq("mentor_id", mentorId)
+        .eq("status", "completed")
+        .in("id", bookingIds);
+
+      if (bookingsError || !bookings || bookings.length === 0) {
+        return NextResponse.json({ error: "정산 대상 예약을 찾을 수 없습니다." }, { status: 400 });
       }
-      if (typeof settlementAmount !== "number" || settlementAmount !== totalAmount - platformFee) {
-        return NextResponse.json(
-          { error: "settlementAmount가 totalAmount - platformFee와 일치하지 않습니다." },
-          { status: 400 },
-        );
+
+      // 서버에서 금액 재계산
+      const serverTotalAmount = bookings.reduce((sum, b) => sum + (b.amount || 0), 0);
+      if (serverTotalAmount <= 0) {
+        return NextResponse.json({ error: "정산 금액이 0원 이하입니다." }, { status: 400 });
       }
+
+      // 멘토 누적 수익 조회 (수수료율 결정용)
+      const { data: existingSettlements } = await supabase
+        .from("settlements")
+        .select("settlement_amount")
+        .eq("mentor_id", mentorId)
+        .eq("status", "completed");
+
+      const cumulativeEarnings = (existingSettlements || []).reduce(
+        (sum, s) => sum + (s.settlement_amount || 0), 0
+      );
+
+      const calc = calculateSettlement(serverTotalAmount, cumulativeEarnings);
 
       const { data: settlement, error } = await supabase
         .from("settlements")
@@ -71,11 +88,11 @@ export async function POST(request: NextRequest) {
           bank_account_id: bankAccountId || null,
           period_start: periodStart,
           period_end: periodEnd,
-          booking_ids: bookingIds || [],
-          total_amount: totalAmount,
-          platform_fee: platformFee,
-          settlement_amount: settlementAmount,
-          commission_rate: commissionRate,
+          booking_ids: bookingIds,
+          total_amount: calc.totalAmount,
+          platform_fee: calc.platformFee,
+          settlement_amount: calc.settlementAmount,
+          commission_rate: calc.commissionRate,
           status: "pending",
           processed_by: user.id,
         })

@@ -236,26 +236,73 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (paymentError) {
-        // DB 저장 실패 시 TossPayments 결제 자동 취소 (보상 트랜잭션)
-        try {
-          await fetch(`${TOSS_API_BASE}/${paymentKey}/cancel`, {
-            method: "POST",
-            headers: {
-              "Authorization": getTossAuthHeader(),
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              cancelReason: "DB 저장 실패로 인한 자동 취소",
-            }),
-          });
-        } catch {
-          // 자동 취소도 실패한 경우 로깅
-          console.error(`[CRITICAL] 결제 승인 후 DB 저장 실패 & 자동 취소도 실패. paymentKey: ${paymentKey}, orderId: ${orderId}`);
+        // DB 저장 실패 시 재시도 (최대 2회)
+        let dbRetrySuccess = false;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          const { error: retryError } = await supabase
+            .from("payments")
+            .insert({
+              user_id: userId,
+              consultation_id: consultationId && consultationId !== "local" ? consultationId : null,
+              order_id: orderId,
+              payment_key: paymentKey,
+              amount: Number(amount),
+              platform_fee: platformFee,
+              mentor_amount: mentorAmount,
+              status: "completed",
+              product_type: productType,
+              bundle_type: bundleType,
+              payment_method: tossResult.method || "card",
+              approved_at: tossResult.approvedAt,
+              receipt_url: tossResult.receipt?.url,
+              raw_response: tossResult,
+            })
+            .select("id")
+            .single();
+          if (!retryError) {
+            dbRetrySuccess = true;
+            break;
+          }
+          console.error(`[payment/confirm] DB 저장 재시도 ${attempt}/2 실패:`, retryError.message);
         }
-        return NextResponse.json(
-          { error: "결제 처리 중 오류가 발생했어요. 결제가 자동 취소되었으니 다시 시도해주세요." },
-          { status: 500 }
-        );
+
+        if (!dbRetrySuccess) {
+          // 재시도 모두 실패 → TossPayments 결제 자동 취소 (보상 트랜잭션)
+          let cancelSuccess = false;
+          try {
+            const cancelResponse = await fetch(`${TOSS_API_BASE}/${paymentKey}/cancel`, {
+              method: "POST",
+              headers: {
+                "Authorization": getTossAuthHeader(),
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                cancelReason: "DB 저장 실패로 인한 자동 취소",
+              }),
+            });
+            cancelSuccess = cancelResponse.ok;
+          } catch {
+            cancelSuccess = false;
+          }
+
+          if (!cancelSuccess) {
+            // 자동 취소도 실패 → 수동 처리 필요 기록
+            console.error(
+              `[CRITICAL] 결제 승인 후 DB 저장 실패 & 자동 취소도 실패. 수동 처리 필요!`,
+              { paymentKey, orderId, amount, userId }
+            );
+            return NextResponse.json(
+              { error: "결제 처리 중 오류가 발생했어요. 고객센터에 문의해주세요." },
+              { status: 500 }
+            );
+          }
+
+          return NextResponse.json(
+            { error: "결제 처리 중 오류가 발생했어요. 결제가 자동 취소되었으니 다시 시도해주세요." },
+            { status: 500 }
+          );
+        }
       }
 
       // 상품 결제인 경우: 상담 상태를 confirmed로 업데이트

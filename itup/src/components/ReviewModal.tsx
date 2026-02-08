@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient } from "@/lib/supabase/client";
@@ -32,15 +32,15 @@ export default function ReviewModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hoveredRating, setHoveredRating] = useState(0);
 
-  useModalClose(isOpen, handleClose);
-  useBodyScrollLock(isOpen);
-
-  function handleClose() {
+  const handleClose = useCallback(() => {
     setRating(5);
     setContent("");
     setHoveredRating(0);
     onClose();
-  }
+  }, [onClose]);
+
+  useModalClose(isOpen, handleClose);
+  useBodyScrollLock(isOpen);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

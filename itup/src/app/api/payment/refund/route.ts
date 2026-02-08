@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { ADMIN_EMAILS } from "@/lib/admin";
+import { isAdmin } from "@/lib/admin";
 import { getTossAuthHeader, isTossConfigured, TOSS_API_BASE } from "@/lib/payment/toss";
 
 function getServiceSupabase() {
@@ -20,7 +20,11 @@ async function verifyAdmin(request: NextRequest) {
     return { error: "Unauthorized", status: 401 };
   }
 
-  const token = authHeader.substring(7);
+  const token = authHeader.substring(7).trim();
+  if (!token) {
+    return { error: "Unauthorized", status: 401 };
+  }
+
   const supabase = getServiceSupabase();
 
   const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -29,7 +33,8 @@ async function verifyAdmin(request: NextRequest) {
     return { error: "Invalid token", status: 401 };
   }
 
-  if (!ADMIN_EMAILS.includes(user.email?.toLowerCase() || "")) {
+  if (!isAdmin(user.email)) {
+    console.warn(`[SECURITY] Unauthorized refund attempt by: ${user.email}`);
     return { error: "Forbidden - Admin access required", status: 403 };
   }
 
@@ -137,8 +142,9 @@ export async function POST(request: NextRequest) {
 
     if (!tossResponse.ok) {
       const tossError = await tossResponse.json();
+      console.error("[payment/refund] TossPayments error:", { code: tossError.code, message: tossError.message, paymentId });
       return NextResponse.json(
-        { error: `환불 처리 실패: ${tossError.message || "알 수 없는 오류"}` },
+        { error: "환불 처리에 실패했어요. 다시 시도해주세요." },
         { status: 500 }
       );
     }

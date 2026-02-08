@@ -20,7 +20,7 @@ export const SITE_CONFIG = {
     support: "support@itup.kr",
     noreply: "noreply@itup.kr",
     privacy: "privacy@itup.kr",
-    admin: process.env.ADMIN_EMAIL || "admin@itup.kr",
+    admin: (process.env.ADMIN_EMAILS?.split(",")[0]?.trim()) || "admin@itup.kr",
   },
 
   // 소셜/연락처

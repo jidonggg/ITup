@@ -926,7 +926,7 @@ export default function AdminPage() {
     );
   };
 
-  if (!isInitialized || isLoading) {
+  if (!isInitialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -951,6 +951,17 @@ export default function AdminPage() {
           >
             홈으로 돌아가기
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-muted text-sm">관리자 데이터 로딩 중...</p>
         </div>
       </div>
     );

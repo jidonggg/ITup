@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -11,6 +11,7 @@ function PaymentSuccessContent() {
   const [isVerified, setIsVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mentorContact, setMentorContact] = useState<{ name: string; contactMethod: string } | null>(null);
+  const isProcessedRef = useRef(false);
 
   const paymentKey = searchParams.get("paymentKey");
   const orderId = searchParams.get("orderId");
@@ -18,17 +19,18 @@ function PaymentSuccessContent() {
   const consultationId = searchParams.get("consultationId");
 
   useEffect(() => {
-    // 중복 호출 방지를 위한 플래그
-    let isProcessed = false;
+    // ref로 중복 호출 방지 (StrictMode 재실행에도 유지)
+    if (isProcessedRef.current) return;
+    isProcessedRef.current = true;
+
+    let isMounted = true;
 
     const verifyPayment = async () => {
-      // 이미 처리 중이거나 처리 완료된 경우 스킵
-      if (isProcessed) return;
-      isProcessed = true;
-
       if (!paymentKey || !orderId || !amount) {
-        setError("결제 정보가 올바르지 않아요.");
-        setIsVerifying(false);
+        if (isMounted) {
+          setError("결제 정보가 올바르지 않아요.");
+          setIsVerifying(false);
+        }
         return;
       }
 
@@ -55,6 +57,8 @@ function PaymentSuccessContent() {
           body: JSON.stringify({ paymentKey, orderId, amount }),
         });
 
+        if (!isMounted) return;
+
         const result = await response.json();
 
         if (!response.ok) {
@@ -75,14 +79,14 @@ function PaymentSuccessContent() {
               .eq("id", consultationId)
               .single();
 
-            if (consultation?.mentor_id) {
+            if (consultation?.mentor_id && isMounted) {
               const { data: mentor } = await supabase
                 .from("mentors")
                 .select("name, contact_method")
                 .eq("id", consultation.mentor_id)
                 .single();
 
-              if (mentor?.contact_method) {
+              if (mentor?.contact_method && isMounted) {
                 setMentorContact({
                   name: mentor.name,
                   contactMethod: mentor.contact_method,
@@ -94,14 +98,20 @@ function PaymentSuccessContent() {
           }
         }
 
-        setIsVerifying(false);
+        if (isMounted) setIsVerifying(false);
       } catch {
-        setError("결제 검증 중 오류가 발생했어요.");
-        setIsVerifying(false);
+        if (isMounted) {
+          setError("결제 검증 중 오류가 발생했어요.");
+          setIsVerifying(false);
+        }
       }
     };
 
     verifyPayment();
+
+    return () => {
+      isMounted = false;
+    };
   }, [paymentKey, orderId, amount, consultationId]);
 
   if (isVerifying) {
