@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [isConfigured]);
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string, userMetadataName?: string) => {
     if (!supabase) return;
 
     const { data, error } = await supabase
@@ -46,12 +46,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", userId)
       .single();
 
-    setProfile(data);
+    if (data) {
+      // 프로필에 이름이 없고 user_metadata에 이름이 있으면 자동 업데이트
+      if (!data.name && userMetadataName) {
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ name: userMetadataName })
+          .eq("id", userId);
+
+        if (!updateError) {
+          data.name = userMetadataName;
+        }
+      }
+      setProfile(data);
+    } else {
+      setProfile(null);
+    }
   }, [supabase]);
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.id);
+      await fetchProfile(user.id, user.user_metadata?.name);
     }
   };
 
@@ -79,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(currentSession);
           setUser(currentUser);
           try {
-            await fetchProfile(currentUser.id);
+            await fetchProfile(currentUser.id, currentUser.user_metadata?.name);
           } catch {
             // 프로필 로드 실패 시 무시 - 인증 자체는 정상 처리
           }
@@ -105,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (session?.user) {
         try {
-          await fetchProfile(session.user.id);
+          await fetchProfile(session.user.id, session.user.user_metadata?.name);
         } catch {
           // 프로필 갱신 실패 시 무시 - 기존 프로필 유지
         }
