@@ -86,21 +86,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initialize = async () => {
       try {
-        // getUser()로 서버 검증 (getSession()은 쿠키만 읽어 만료 세션도 유효하게 보임)
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
 
-        if (currentUser) {
-          const { data: { session: currentSession } } = await supabase.auth.getSession();
-          setSession(currentSession);
-          setUser(currentUser);
+        if (session?.user) {
           try {
-            await fetchProfile(currentUser.id, currentUser.user_metadata?.name);
+            await fetchProfile(session.user.id, session.user.user_metadata?.name);
           } catch {
             // 프로필 로드 실패 시 무시 - 인증 자체는 정상 처리
           }
-        } else {
-          setSession(null);
-          setUser(null);
         }
       } catch {
         // 세션 초기화 실패 시 무시 - 미인증 상태로 진행
