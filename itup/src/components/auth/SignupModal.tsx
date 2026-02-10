@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
+import PasswordStrength from "@/components/PasswordStrength";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -172,67 +173,76 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 text-sm">
+                  <div role="alert" className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 text-sm">
                     {error}
                   </div>
                 )}
 
                 {/* 이름 */}
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">
+                  <label htmlFor="modal-signup-name" className="block text-sm font-medium mb-1.5">
                     이름 <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="modal-signup-name"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="홍길동"
                     required
+                    autoComplete="name"
                     className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
                   />
                 </div>
 
                 {/* 이메일 */}
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">
+                  <label htmlFor="modal-signup-email" className="block text-sm font-medium mb-1.5">
                     이메일 <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="modal-signup-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="example@email.com"
                     required
+                    autoComplete="email"
                     className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
                   />
                 </div>
 
                 {/* 비밀번호 */}
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">
+                  <label htmlFor="modal-signup-password" className="block text-sm font-medium mb-1.5">
                     비밀번호 <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="modal-signup-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="8자 이상, 영문+숫자 포함"
                     required
+                    autoComplete="new-password"
                     className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
                   />
+                  <PasswordStrength password={password} />
                 </div>
 
                 {/* 비밀번호 확인 */}
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">
+                  <label htmlFor="modal-signup-confirm-password" className="block text-sm font-medium mb-1.5">
                     비밀번호 확인 <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="modal-signup-confirm-password"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="비밀번호를 다시 입력하세요"
                     required
+                    autoComplete="new-password"
                     className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
                   />
                 </div>

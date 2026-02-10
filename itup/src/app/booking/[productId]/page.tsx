@@ -1074,6 +1074,18 @@ export default function BookingPage({
     }
   }, [currentStep, selectedDate, selectedTime, formData, productId, isLoading, product]);
 
+  // 진행 중 페이지 이탈 방지
+  useEffect(() => {
+    const hasProgress = currentStep > 1 || selectedDate || selectedTime || formData.menteeIntro || formData.menteeGoal;
+    if (!hasProgress || isSuccess) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [currentStep, selectedDate, selectedTime, formData, isSuccess]);
+
   // Fetch product, mentor, and schedules
   useEffect(() => {
     if (!isInitialized) return;

@@ -563,11 +563,7 @@ export default function MentorApplyPage() {
         }
       }
 
-      // Update user profile role to mentor
-      await supabase
-        .from("profiles")
-        .update({ role: "mentor" })
-        .eq("id", user.id);
+      // 멘토 역할은 관리자 승인 시 설정됨 (신청 단계에서는 role 변경하지 않음)
 
       setIsSuccess(true);
     } catch (error) {

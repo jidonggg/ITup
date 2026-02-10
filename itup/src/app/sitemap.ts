@@ -1,10 +1,11 @@
 import { MetadataRoute } from "next";
 import { SITE_CONFIG } from "@/lib/site-config";
+import { createClient } from "@supabase/supabase-js";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = SITE_CONFIG.url;
 
-  return [
+  const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -66,4 +67,32 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.3,
     },
   ];
+
+  // 승인된 멘토 페이지 동적 추가
+  let mentorPages: MetadataRoute.Sitemap = [];
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const { data: mentors } = await supabase
+        .from("mentors")
+        .select("id, updated_at")
+        .eq("is_approved", true);
+
+      if (mentors) {
+        mentorPages = mentors.map((mentor) => ({
+          url: `${baseUrl}/mentors/${mentor.id}`,
+          lastModified: mentor.updated_at ? new Date(mentor.updated_at) : new Date(),
+          changeFrequency: "weekly" as const,
+          priority: 0.8,
+        }));
+      }
+    } catch {
+      // Supabase 연결 실패 시 정적 페이지만 반환
+    }
+  }
+
+  return [...staticPages, ...mentorPages];
 }

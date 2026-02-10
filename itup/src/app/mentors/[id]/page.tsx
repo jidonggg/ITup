@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -5,6 +6,42 @@ import { PRODUCT_INFO } from "@/lib/constants";
 import { JOB_TYPES, ENGINE_TYPES } from "@/lib/constants";
 import type { Mentor, Product, Review, ProductType } from "@/lib/supabase/types";
 import MentorDetailClient from "./MentorDetailClient";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: mentor } = await supabase
+    .from("mentors")
+    .select("name, company, position, bio, job_type")
+    .eq("id", id)
+    .eq("is_approved", true)
+    .single();
+
+  if (!mentor) {
+    return { title: "멘토를 찾을 수 없습니다" };
+  }
+
+  const jobLabel = mentor.job_type
+    ? JOB_TYPES.find((j) => j.value === mentor.job_type)?.label || mentor.job_type
+    : "";
+  const description = mentor.bio
+    ? mentor.bio.slice(0, 155) + (mentor.bio.length > 155 ? "..." : "")
+    : `${mentor.company} ${mentor.position || ""} ${jobLabel} 멘토와 1:1 커피챗을 신청하세요.`;
+
+  return {
+    title: `${mentor.name} 멘토 - ${mentor.company}`,
+    description,
+    openGraph: {
+      title: `${mentor.name} 멘토 - ${mentor.company} | 커피챗`,
+      description,
+    },
+  };
+}
 
 function StarRating({ rating, size = "md" }: { rating: number; size?: "sm" | "md" }) {
   const sizeClass = size === "sm" ? "w-4 h-4" : "w-5 h-5";

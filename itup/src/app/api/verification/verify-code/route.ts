@@ -3,8 +3,33 @@ import { createClient } from "@supabase/supabase-js";
 import { getVerificationCode, deleteVerificationCode } from "@/lib/verification-store";
 import { verifyCodeLimiter } from "@/lib/rate-limit";
 
+// 사용자 인증 검증
+async function verifyUser(request: NextRequest) {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
+
+  const token = authHeader.substring(7);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceKey) return null;
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return null;
+  return user;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // 인증 필수 - 로그인한 사용자만 멘토 인증 가능
+    const user = await verifyUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
+
     const { email, code, mentorId } = await request.json();
 
     if (!email || !code) {
@@ -63,7 +88,7 @@ export async function POST(request: NextRequest) {
       // mentorId와 인증 이메일 도메인의 연관성 검증
       const { data: mentor } = await supabase
         .from("mentors")
-        .select("id, company_email")
+        .select("id, company_email, user_id")
         .eq("id", mentorId)
         .single();
 
@@ -71,6 +96,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { error: "멘토 정보를 찾을 수 없습니다." },
           { status: 404 }
+        );
+      }
+
+      // 멘토 소유권 검증 - 본인의 멘토 프로필만 인증 가능
+      if (mentor.user_id !== user.id) {
+        return NextResponse.json(
+          { error: "본인의 멘토 프로필만 인증할 수 있습니다." },
+          { status: 403 }
         );
       }
 

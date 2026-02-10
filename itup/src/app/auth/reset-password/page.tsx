@@ -25,9 +25,9 @@ export default function ResetPasswordPage() {
       }
 
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
 
-      if (session) {
+      if (user) {
         setIsValidSession(true);
       } else {
         setError("유효하지 않거나 만료된 링크입니다. 비밀번호 찾기를 다시 시도해주세요.");
@@ -79,6 +79,9 @@ export default function ResetPasswordPage() {
         setIsLoading(false);
         return;
       }
+
+      // 다른 기기의 모든 세션 무효화
+      await supabase.auth.signOut({ scope: "others" });
 
       setIsSuccess(true);
       setIsLoading(false);
@@ -184,32 +187,35 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 text-sm">
+                <div role="alert" className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 text-sm">
                   {error}
                 </div>
               )}
 
               {/* 새 비밀번호 */}
               <div>
-                <label className="block text-sm font-medium mb-1.5">
+                <label htmlFor="reset-password" className="block text-sm font-medium mb-1.5">
                   새 비밀번호
                 </label>
                 <input
+                  id="reset-password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="8자 이상, 영문+숫자 포함"
                   required
+                  autoComplete="new-password"
                   className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
 
               {/* 비밀번호 확인 */}
               <div>
-                <label className="block text-sm font-medium mb-1.5">
+                <label htmlFor="reset-confirm-password" className="block text-sm font-medium mb-1.5">
                   비밀번호 확인
                 </label>
                 <input
+                  id="reset-confirm-password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

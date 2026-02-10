@@ -116,6 +116,7 @@ export default function MentorFeedbackPage({
         .from("mentor_feedbacks")
         .select("*")
         .eq("booking_id", bookingId)
+        .eq("mentor_id", mentorData.id)
         .single();
 
       if (feedbackData) {
@@ -170,7 +171,8 @@ export default function MentorFeedbackPage({
           .update({
             content: content.trim(),
           })
-          .eq("id", existingFeedback.id);
+          .eq("id", existingFeedback.id)
+          .eq("mentor_id", mentor.id);
 
         if (updateError) {
           showToast("피드백 수정에 실패했어요.", "error");

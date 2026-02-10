@@ -14,7 +14,7 @@ interface AuthContextType {
   isConfigured: boolean;
   signUp: (email: string, password: string, name?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<void>;
+  signOut: () => void;
   refreshProfile: () => Promise<void>;
 }
 
@@ -40,27 +40,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (userId: string, userMetadataName?: string) => {
     if (!supabase) return;
 
-    const { data } = await supabase
+    // 첫 번째 시도
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
 
-    if (data) {
+    let profileData = data;
+
+    // 실패 시 토큰 갱신 후 재시도 (INITIAL_SESSION 시 토큰이 아직 갱신되지 않았을 수 있음)
+    const PROFILE_RETRY_DELAY_MS = 300;
+    if (!profileData && error) {
+      await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY_MS));
+      const { data: retryData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      profileData = retryData;
+    }
+
+    if (profileData) {
       // 프로필에 이름이 없고 user_metadata에 이름이 있으면 자동 업데이트
-      if (!data.name && userMetadataName) {
+      if (!profileData.name && userMetadataName) {
         const { error: updateError } = await supabase
           .from("profiles")
           .update({ name: userMetadataName })
           .eq("id", userId);
 
         if (!updateError) {
-          data.name = userMetadataName;
+          profileData.name = userMetadataName;
         }
       }
-      setProfile(data);
+      setProfile(profileData);
+      // 이름을 localStorage에 캐시 (F5 시 fallback용)
+      try {
+        if (profileData.name) {
+          localStorage.setItem("cached_profile_name", profileData.name);
+        }
+      } catch { /* 무시 */ }
     }
-    // data가 null이면 기존 profile 유지 (덮어쓰지 않음)
+    // fetch 실패 시 기존 profile 유지 (캐시에서 복원된 것 포함)
   }, [supabase]);
 
   const refreshProfile = async () => {
@@ -70,11 +91,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // 5초 타임아웃 - Supabase 응답 없을 시 안전 장치
+    // Supabase 응답 없을 시 안전 장치
+    const AUTH_INIT_TIMEOUT_MS = 5000;
     const timeout = setTimeout(() => {
       setIsLoading(false);
       setIsInitialized(true);
-    }, 5000);
+    }, AUTH_INIT_TIMEOUT_MS);
 
     if (!supabase) {
       setIsLoading(false);
@@ -83,27 +105,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // onAuthStateChange가 INITIAL_SESSION 이벤트로 초기화를 처리
-    // initialize에서 별도로 프로필을 fetch하지 않음 (race condition 방지)
-    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        try {
-          await fetchProfile(session.user.id, session.user.user_metadata?.name);
-        } catch {
-          // 프로필 갱신 실패 시 무시
+        // INITIAL_SESSION: 캐시된 프로필로 즉시 표시, DB fetch는 백그라운드
+        if (event === "INITIAL_SESSION") {
+          try {
+            const cachedName = localStorage.getItem("cached_profile_name");
+            if (cachedName) {
+              setProfile({ id: session.user.id, name: cachedName } as Profile);
+            }
+          } catch { /* 무시 */ }
+          setIsLoading(false);
+          setIsInitialized(true);
+          clearTimeout(timeout);
         }
+        // 프로필을 백그라운드에서 fetch (await 없이 → UI 차단 안 함)
+        fetchProfile(session.user.id, session.user.user_metadata?.name).catch(() => {});
       } else {
         setProfile(null);
-      }
-
-      // 초기화 완료 처리 (INITIAL_SESSION 이벤트)
-      if (event === "INITIAL_SESSION") {
-        setIsLoading(false);
-        setIsInitialized(true);
-        clearTimeout(timeout);
+        if (event === "INITIAL_SESSION") {
+          setIsLoading(false);
+          setIsInitialized(true);
+          clearTimeout(timeout);
+        }
       }
     });
 
@@ -143,54 +170,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = useCallback(async () => {
-    // 1. Supabase 클라이언트 세션 무효화 (refresh token 폐기 + 쿠키 삭제)
-    if (supabase) {
-      try {
-        await supabase.auth.signOut();
-      } catch {
-        // 무시
-      }
-    }
-    // 2. document.cookie로 Supabase 쿠키 수동 삭제 (httpOnly: false이므로 접근 가능)
-    // 쿠키 이름: "supabase.auth.token", "supabase.auth.token.0", "sb-*" 등
-    try {
-      document.cookie.split(";").forEach((c) => {
-        const name = c.trim().split("=")[0];
-        if (name && (name.startsWith("supabase.") || name.startsWith("sb-"))) {
-          document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0;`;
-        }
-      });
-    } catch {
-      // 무시
-    }
-    // 3. localStorage/sessionStorage 정리
-    try {
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        if (key && (key.startsWith("supabase.") || key.startsWith("sb-") || key.includes("supabase"))) {
-          localStorage.removeItem(key);
-        }
-      }
-    } catch {
-      // 무시
-    }
-    try {
-      for (let i = sessionStorage.length - 1; i >= 0; i--) {
-        const key = sessionStorage.key(i);
-        if (key && (key.startsWith("supabase.") || key.startsWith("sb-") || key.includes("supabase"))) {
-          sessionStorage.removeItem(key);
-        }
-      }
-    } catch {
-      // 무시
-    }
-    // 4. React 상태 초기화
-    setUser(null);
-    setProfile(null);
-    setSession(null);
-    // 5. 홈으로 전체 페이지 리로드
-    window.location.replace("/");
-  }, [supabase]);
+    // 서버 사이드 로그아웃 라우트로 이동
+    // 서버에서 Set-Cookie로 쿠키 삭제 + 클라이언트에서 스토리지 정리 + 홈 리디렉트
+    window.location.href = "/api/auth/signout";
+  }, []);
 
   return (
     <AuthContext.Provider

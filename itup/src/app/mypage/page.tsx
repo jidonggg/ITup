@@ -53,7 +53,7 @@ export default function MyPage() {
           .order("created_at", { ascending: false });
 
         if (error) {
-          console.error("예약 내역 조회 실패:", error.message);
+          // 예약 내역 조회 실패
           setBookings([]);
           setIsLoadingBookings(false);
           return;
@@ -142,7 +142,7 @@ export default function MyPage() {
           }
         }
       } catch (error) {
-        console.error("예약 내역 로딩 중 오류:", error);
+        // 예약 내역 로딩 오류
         setBookings([]);
       } finally {
         setIsLoadingBookings(false);
@@ -198,6 +198,8 @@ export default function MyPage() {
       if (error) {
         showToast("프로필 수정에 실패했어요.", "error");
       } else {
+        // user_metadata도 업데이트 (F5 시 fallback으로 사용)
+        await supabase.auth.updateUser({ data: { name: trimmedName } });
         await refreshProfile();
         setIsEditing(false);
         showToast("프로필이 수정되었어요.", "success");

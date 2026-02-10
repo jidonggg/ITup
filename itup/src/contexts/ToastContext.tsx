@@ -20,6 +20,7 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 const TOAST_DURATION = TIMEOUTS.TOAST_DURATION;
+const MAX_TOASTS = 5;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -31,7 +32,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showToast = useCallback((message: string, type: ToastType = "info") => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts((prev) => {
+      const next = [...prev, { id, message, type }];
+      // 최대 개수 초과 시 가장 오래된 토스트 제거
+      if (next.length > MAX_TOASTS) {
+        return next.slice(next.length - MAX_TOASTS);
+      }
+      return next;
+    });
 
     setTimeout(() => {
       removeToast(id);

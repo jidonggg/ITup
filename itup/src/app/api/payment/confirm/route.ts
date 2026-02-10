@@ -187,16 +187,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. 결제 중복 확인 (payment_key + order_id)
+    // 2. 결제 중복 확인 (payment_key, order_id 각각 별도 쿼리 - 인젝션 방지)
     if (supabase) {
-      const { data: existingPayment } = await supabase
-        .from("payments")
-        .select("id")
-        .or(`payment_key.eq.${paymentKey},order_id.eq.${orderId}`)
-        .limit(1)
-        .maybeSingle();
+      const [{ data: byKey }, { data: byOrder }] = await Promise.all([
+        supabase
+          .from("payments")
+          .select("id")
+          .eq("payment_key", paymentKey)
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("payments")
+          .select("id")
+          .eq("order_id", orderId)
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
-      if (existingPayment) {
+      if (byKey || byOrder) {
         return NextResponse.json(
           { error: "이미 처리된 결제입니다." },
           { status: 400 }
@@ -228,7 +236,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 결제 성공 - DB에 저장
+    // Toss 응답의 실제 결제 금액 검증 (서버에서 확인한 금액과 일치하는지)
+    if (tossResult.totalAmount !== expectedAmount) {
+      console.error(
+        "[payment/confirm] Toss 금액 불일치:",
+        { expected: expectedAmount, actual: tossResult.totalAmount, orderId }
+      );
+      // 금액 불일치 시 결제 취소
+      try {
+        await fetch(`${TOSS_API_BASE}/${paymentKey}/cancel`, {
+          method: "POST",
+          headers: {
+            "Authorization": getTossAuthHeader(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            cancelReason: "서버 검증 금액 불일치로 인한 자동 취소",
+          }),
+        });
+      } catch {
+        console.error("[CRITICAL] 금액 불일치 결제 취소 실패:", { paymentKey, orderId });
+      }
+      return NextResponse.json(
+        { error: "결제 금액 검증에 실패했어요. 결제가 취소되었습니다." },
+        { status: 400 }
+      );
+    }
+
+    // 결제 성공 - DB에 저장 (Toss 확인 금액 사용)
     if (supabase) {
       const userId = getUserIdFromOrder(orderId);
 
@@ -236,9 +271,10 @@ export async function POST(request: NextRequest) {
       const productType = isProductOrder ? prefix.toLowerCase() : null;
       const bundleType = isBundleOrder ? prefix.replace("BUNDLE_", "").toLowerCase() : null;
 
-      // 수수료 계산 (런칭 초기 15%)
-      const platformFee = Math.round(Number(amount) * PLATFORM_COMMISSION_RATE);
-      const mentorAmount = Number(amount) - platformFee;
+      // 수수료 계산 (런칭 초기 15%) - Toss 확인 금액 기준
+      const confirmedAmount = tossResult.totalAmount;
+      const platformFee = Math.round(confirmedAmount * PLATFORM_COMMISSION_RATE);
+      const mentorAmount = confirmedAmount - platformFee;
 
       // payments 테이블에 저장
       const { data: paymentData, error: paymentError } = await supabase
@@ -248,7 +284,7 @@ export async function POST(request: NextRequest) {
           consultation_id: consultationId && consultationId !== "local" ? consultationId : null,
           order_id: orderId,
           payment_key: paymentKey,
-          amount: Number(amount),
+          amount: confirmedAmount,
           platform_fee: platformFee,
           mentor_amount: mentorAmount,
           status: "completed",
@@ -280,7 +316,7 @@ export async function POST(request: NextRequest) {
               consultation_id: consultationId && consultationId !== "local" ? consultationId : null,
               order_id: orderId,
               payment_key: paymentKey,
-              amount: Number(amount),
+              amount: confirmedAmount,
               platform_fee: platformFee,
               mentor_amount: mentorAmount,
               status: "completed",

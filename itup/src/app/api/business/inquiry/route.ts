@@ -4,6 +4,7 @@ import { sendEmail } from "@/lib/email/sender";
 import { businessInquiryTemplate } from "@/lib/email/templates";
 import { inquiryLimiter, getClientIp } from "@/lib/rate-limit";
 import { SITE_CONFIG } from "@/lib/site-config";
+import { isValidEmail } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Basic email validation
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!isValidEmail(email)) {
       return NextResponse.json(
         { error: "올바른 이메일 형식이 아닙니다." },
         { status: 400 }

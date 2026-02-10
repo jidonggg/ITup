@@ -13,6 +13,11 @@ function getServiceSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+// UUID 형식 검증
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// 최대 체류 시간 (1시간)
+const MAX_DURATION_SECONDS = 3600;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -21,6 +26,19 @@ export async function POST(request: NextRequest) {
     if (!path || !session_id || typeof duration !== "number" || duration < 1) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
     }
+
+    // session_id UUID 형식 검증 (인젝션 방지)
+    if (typeof session_id !== "string" || !UUID_REGEX.test(session_id)) {
+      return NextResponse.json({ error: "Invalid session_id format" }, { status: 400 });
+    }
+
+    // path 길이 제한
+    if (typeof path !== "string" || path.length > 500) {
+      return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    }
+
+    // duration 범위 제한 (1초 ~ 1시간)
+    const clampedDuration = Math.min(Math.round(duration), MAX_DURATION_SECONDS);
 
     // Rate limit — 30 req / 60s per session
     const { success: allowed } = analyticsLimiter.check(session_id);
@@ -46,7 +64,7 @@ export async function POST(request: NextRequest) {
     if (data) {
       await supabase
         .from("page_views")
-        .update({ duration_seconds: duration })
+        .update({ duration_seconds: clampedDuration })
         .eq("id", data.id);
     }
 

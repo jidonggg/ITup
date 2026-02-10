@@ -180,10 +180,12 @@ export default function MentorDashboardPage() {
     const supabase = createClient();
 
     try {
+      if (!mentor) return;
       const { error } = await supabase
         .from("bookings")
         .update({ status: newStatus })
-        .eq("id", bookingId);
+        .eq("id", bookingId)
+        .eq("mentor_id", mentor.id);
 
       if (error) {
         showToast("상태 변경에 실패했어요.", "error");
@@ -245,10 +247,12 @@ export default function MentorDashboardPage() {
     const supabase = createClient();
 
     try {
+      if (!mentor) return;
       const { error } = await supabase
         .from("bookings")
         .update({ meeting_link: meetingLinkInput[bookingId] || null })
-        .eq("id", bookingId);
+        .eq("id", bookingId)
+        .eq("mentor_id", mentor.id);
 
       if (error) {
         showToast("미팅 링크 저장에 실패했어요.", "error");
@@ -331,10 +335,12 @@ export default function MentorDashboardPage() {
     const supabase = createClient();
 
     try {
+      if (!mentor) return;
       const { error } = await supabase
         .from("mentor_schedules")
         .update({ is_active: !isActive })
-        .eq("id", scheduleId);
+        .eq("id", scheduleId)
+        .eq("mentor_id", mentor.id);
 
       if (error) {
         showToast("상태 변경에 실패했어요.", "error");
@@ -359,10 +365,12 @@ export default function MentorDashboardPage() {
     const supabase = createClient();
 
     try {
+      if (!mentor) return;
       const { error } = await supabase
         .from("mentor_schedules")
         .delete()
-        .eq("id", scheduleId);
+        .eq("id", scheduleId)
+        .eq("mentor_id", mentor.id);
 
       if (error) {
         showToast("스케줄 삭제에 실패했어요.", "error");

@@ -151,6 +151,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
     }
 
+    // 승인 시 프로필 역할을 "mentor"로 설정
+    if (mentor?.user_id) {
+      await supabase
+        .from("profiles")
+        .update({ role: "mentor" })
+        .eq("id", mentor.user_id);
+    }
+
     // 승인 이메일 발송 (비동기)
     if (mentor?.user_id) {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
@@ -184,6 +192,13 @@ export async function PATCH(request: NextRequest) {
   }
 
   if (action === "reject") {
+    // 멘토 정보 조회 (user_id 필요)
+    const { data: rejectMentor } = await supabase
+      .from("mentors")
+      .select("user_id")
+      .eq("id", mentorId)
+      .single();
+
     const { error } = await supabase
       .from("mentors")
       .update({ is_approved: false })
@@ -192,6 +207,14 @@ export async function PATCH(request: NextRequest) {
     if (error) {
       console.error("[admin/mentors] DB error:", error.message);
       return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
+    }
+
+    // 거절 시 프로필 역할을 "user"로 복원
+    if (rejectMentor?.user_id) {
+      await supabase
+        .from("profiles")
+        .update({ role: "user" })
+        .eq("id", rejectMentor.user_id);
     }
 
     return NextResponse.json({ success: true, message: "Mentor rejected" });
@@ -354,6 +377,13 @@ export async function DELETE(request: NextRequest) {
 
     const supabase = getServiceSupabase();
 
+    // 삭제 전 user_id 조회 (role 복원용)
+    const { data: deleteMentor } = await supabase
+      .from("mentors")
+      .select("user_id")
+      .eq("id", mentorId)
+      .single();
+
     const { error } = await supabase
       .from("mentors")
       .delete()
@@ -362,6 +392,14 @@ export async function DELETE(request: NextRequest) {
     if (error) {
       console.error("[admin/mentors] DB error:", error.message);
       return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
+    }
+
+    // 삭제 시 프로필 역할을 "user"로 복원
+    if (deleteMentor?.user_id) {
+      await supabase
+        .from("profiles")
+        .update({ role: "user" })
+        .eq("id", deleteMentor.user_id);
     }
 
     return NextResponse.json({ success: true, message: "Mentor deleted" });
