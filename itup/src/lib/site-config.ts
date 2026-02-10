@@ -15,11 +15,11 @@ export const SITE_CONFIG = {
   // URL (환경변수 우선, 없으면 기본값 사용)
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://coffeechat-kr.vercel.app",
 
-  // 이메일 주소
+  // 이메일 주소 (itup.kr 도메인 인증 후 변경 가능)
   email: {
-    support: "support@itup.kr",
-    noreply: "noreply@itup.kr",
-    privacy: "privacy@itup.kr",
+    support: "onboarding@resend.dev",
+    noreply: "onboarding@resend.dev",
+    privacy: "onboarding@resend.dev",
     admin: (process.env.ADMIN_EMAILS?.split(",")[0]?.trim()) || "admin@itup.kr",
   },
 
