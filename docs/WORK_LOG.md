@@ -70,6 +70,34 @@
 
 ## 작업 타임라인 (최신순)
 
+### 16:25 - Phase 7: QA 재검증 완료 (ALL PASS)
+
+**팀장**: team-lead (3명 QA 에이전트 병렬)
+**결과**: **전체 PASS** - 블로킹 이슈 0건
+
+#### QA 결과 요약
+| 에이전트 | 검증 범위 | 이전 이슈 확인 | 새 버그 | 결과 |
+|---------|----------|-------------|--------|------|
+| qa-mentee | 18개 페이지/컴포넌트 | 10/10 수정 확인 | 0건 (LOW 참고 2건) | **PASS** |
+| qa-mentor | 10개 페이지 + API 1개 | 6/6 수정 확인 | 1건 (즉시 수정) | **PASS** |
+| qa-admin | 11개 파일 (2184줄 admin) | 6/6 수정 확인 | 0건 | **PASS** |
+
+#### QA 중 발견 & 즉시 수정
+- **mentor/edit available_times 저장 형식 복원**: 표시용 문자열을 다시 Record 형식으로 파싱하여 저장 (콤마 split → "월: 09:00, 10:00 / 화: 14:00" 파싱)
+
+#### 보안 패턴 확인 (qa-admin)
+- 모든 admin API: Bearer token + isAdmin() 이메일 체크
+- Rate limiting: admin 30req/60s, settlement 10req/60s
+- 환불: PG 환불 → DB 업데이트 순서 준수
+- Optimistic locking: settlement 상태 변경
+- 서버 사이드 금액 재계산 (클라이언트 값 무시)
+
+#### LOW 참고사항 (qa-mentee, 조치 불필요)
+- ConsultModal expected_amount 초기값은 base price (할인은 payment step에서 적용되므로 정상)
+- mentors 페이지 isMobile 초기값 false → 모바일에서 미세한 레이아웃 시프트 (hydration-safe 접근)
+
+---
+
 ### 16:15 - Phase 6: 잔여 이슈 전체 해결 완료
 
 **팀장**: team-lead (4명 에이전트 병렬 작업)

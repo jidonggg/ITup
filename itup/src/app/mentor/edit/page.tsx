@@ -179,10 +179,31 @@ export default function MentorEditPage() {
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
 
-      const availableTimesArray = formData.availableTimes
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+      // available_times: "월: 09:00, 10:00 / 화: 14:00" → Record<string, string[]>
+      const labelToDay: Record<string, string> = {
+        "월": "mon", "화": "tue", "수": "wed", "목": "thu",
+        "금": "fri", "토": "sat", "일": "sun",
+      };
+      let availableTimesData: Record<string, string[]> | string[] = [];
+      const timesStr = formData.availableTimes.trim();
+      if (timesStr && timesStr.includes(":") && timesStr.match(/^[월화수목금토일]/)) {
+        // Record format: "월: 09:00, 10:00 / 화: 14:00"
+        const parsed: Record<string, string[]> = {};
+        const dayParts = timesStr.split(" / ");
+        for (const part of dayParts) {
+          const colonIdx = part.indexOf(":");
+          if (colonIdx > 0) {
+            const dayLabel = part.substring(0, colonIdx).trim();
+            const dayKey = labelToDay[dayLabel] || dayLabel;
+            const slots = part.substring(colonIdx + 1).split(",").map(s => s.trim()).filter(s => s.length > 0);
+            if (slots.length > 0) parsed[dayKey] = slots;
+          }
+        }
+        availableTimesData = parsed;
+      } else if (timesStr) {
+        // Legacy flat format
+        availableTimesData = timesStr.split(",").map(s => s.trim()).filter(s => s.length > 0);
+      }
 
       const { error } = await supabase
         .from("mentors")
@@ -198,7 +219,7 @@ export default function MentorEditPage() {
           experience: formData.experience,
           skills: formData.skills,
           bio: formData.bio || null,
-          available_times: availableTimesArray,
+          available_times: availableTimesData as string[],
           consult_types: formData.consultTypes,
         })
         .eq("id", mentorId);
