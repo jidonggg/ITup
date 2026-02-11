@@ -48,15 +48,15 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
         </div>
 
         {/* Tier Selector */}
-        <div className="flex justify-center gap-2 mb-8">
+        <div className="flex justify-center gap-2 mb-10 p-1.5 bg-white/40 backdrop-blur-sm rounded-full border border-card-border/40 w-fit mx-auto">
           {tierOptions.map((tier) => (
             <button
               key={tier.id}
               onClick={() => setSelectedTier(tier.id)}
-              className={`px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer ${
+              className={`px-5 py-2.5 text-sm font-medium rounded-full transition-all duration-300 cursor-pointer ${
                 selectedTier === tier.id
-                  ? "bg-primary text-white"
-                  : "bg-card-bg border border-card-border text-muted hover:text-foreground hover:border-primary"
+                  ? "bg-gradient-to-r from-primary to-primary-dark text-white shadow-md shadow-primary/20"
+                  : "text-muted hover:text-foreground"
               }`}
             >
               {tier.label}
@@ -127,18 +127,20 @@ function ProductCard({ product, index, onProductClick, onConsultClick, tierExper
       style={{ transitionDelay: `${index * 100}ms` }}
     >
       <div
-        className="relative h-full p-6 md:p-8 rounded-2xl border bg-card-bg border-card-border hover:border-primary/50 transition-all duration-300"
+        className="relative h-full p-6 md:p-8 rounded-2xl border bg-white/50 backdrop-blur-sm border-card-border/50 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.06] hover:-translate-y-1 transition-all duration-300"
       >
         {/* Icon + Name */}
         <div className="text-center mb-6">
-          <span className="text-4xl mb-3 block">{product.icon}</span>
-          <h4 className="text-xl font-semibold mb-2">{product.name}</h4>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+            <span className="text-3xl">{product.icon}</span>
+          </div>
+          <h4 className="text-xl font-bold mb-2">{product.name}</h4>
           <p className="text-muted text-sm mb-4">{product.description}</p>
           <div className="flex items-end justify-center gap-1">
             <span className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               {tieredPrice.toLocaleString()}
             </span>
-            <span className="text-muted mb-1">원</span>
+            <span className="text-muted mb-1 font-medium">원</span>
           </div>
           <p className="text-xs text-muted mt-1">{product.duration}</p>
         </div>
@@ -147,19 +149,21 @@ function ProductCard({ product, index, onProductClick, onConsultClick, tierExper
         <ul className="space-y-3 mb-8">
           {product.features.map((feature, i) => (
             <li key={i} className="flex items-start gap-3">
-              <svg
-                className="w-5 h-5 text-primary flex-shrink-0 mt-0.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg
+                  className="w-3 h-3 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
               <span className="text-sm text-foreground/80">{feature}</span>
             </li>
           ))}
@@ -168,7 +172,7 @@ function ProductCard({ product, index, onProductClick, onConsultClick, tierExper
         {/* CTA */}
         <button
           onClick={() => onProductClick ? onProductClick(product.id) : onConsultClick()}
-          className="w-full py-3 font-medium transition-all duration-300 cursor-pointer border border-card-border text-foreground hover:border-primary hover:text-primary rounded-full"
+          className="w-full py-3 font-medium transition-all duration-300 cursor-pointer border border-card-border/60 text-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5 rounded-full"
         >
           신청하기
         </button>
@@ -197,26 +201,28 @@ function BundleCard({ bundle, index, onBundleClick, highlighted }: BundleCardPro
       <div
         className={`relative h-full p-6 md:p-8 rounded-2xl border transition-all duration-300 ${
           highlighted
-            ? "bg-gradient-to-b from-primary/10 to-card-bg border-primary shadow-lg shadow-primary/20"
-            : "bg-card-bg border-card-border hover:border-primary/50"
+            ? "bg-gradient-to-b from-primary/8 to-white/60 backdrop-blur-sm border-primary/60 shadow-xl shadow-primary/15 hover:-translate-y-1"
+            : "bg-white/50 backdrop-blur-sm border-card-border/50 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.06] hover:-translate-y-1"
         }`}
       >
         {/* Discount Badge */}
-        <div className="absolute -top-3 right-4 px-3 py-1 bg-gradient-to-r from-red-500 to-orange-500 rounded-full text-white text-xs font-bold">
+        <div className="absolute -top-3 right-4 px-3 py-1.5 bg-gradient-to-r from-red-500 to-orange-500 rounded-full text-white text-xs font-bold shadow-md shadow-red-500/20">
           {discountPercent}% 할인
         </div>
 
         {/* Popular Badge */}
         {highlighted && (
-          <div className="absolute -top-3 left-4 px-3 py-1 bg-gradient-to-r from-primary to-accent rounded-full text-white text-xs font-medium">
+          <div className="absolute -top-3 left-4 px-3 py-1.5 bg-gradient-to-r from-primary to-accent rounded-full text-white text-xs font-bold shadow-md shadow-primary/20">
             인기
           </div>
         )}
 
         {/* Icon + Name */}
         <div className="text-center mb-6 mt-2">
-          <span className="text-4xl mb-3 block">{bundle.icon}</span>
-          <h4 className="text-xl font-semibold mb-2">{bundle.name}</h4>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-accent/15 to-primary/15 flex items-center justify-center">
+            <span className="text-3xl">{bundle.icon}</span>
+          </div>
+          <h4 className="text-xl font-bold mb-2">{bundle.name}</h4>
           <p className="text-muted text-sm mb-4">{bundle.description}</p>
           <div className="flex items-end justify-center gap-1">
             <span className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -254,10 +260,10 @@ function BundleCard({ bundle, index, onBundleClick, highlighted }: BundleCardPro
         {/* CTA */}
         <button
           onClick={() => onBundleClick?.(bundle.id)}
-          className={`w-full py-3 font-medium transition-all duration-300 cursor-pointer rounded-full ${
+          className={`w-full py-3.5 font-semibold transition-all duration-300 cursor-pointer rounded-full ${
             highlighted
-              ? "bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-lg hover:shadow-primary/30"
-              : "border border-card-border text-foreground hover:border-primary hover:text-primary"
+              ? "shine-effect bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5"
+              : "border border-card-border/60 text-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5"
           }`}
         >
           번들 구매하기

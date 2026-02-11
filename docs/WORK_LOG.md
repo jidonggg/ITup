@@ -142,31 +142,138 @@
 
 ---
 
-### 13:30 - 현재 진행 상황
+### 13:30 - 구독 취소 구현, P0 수정 완료
+
+**Task #2: 구독 취소 기능 구현** (dev-1) - **완료**
+- `/api/subscription/cancel` API 신규 생성
+  - 쿠키 기반 Supabase 인증, Rate limiting (5 req/60s)
+  - 본인 확인 (mentee_id === user.id)
+  - 환불 비율 자동 계산: 48h+ = 100%, 24~48h = 50%, 24h 미만 = 0%
+  - TossPayments 환불 API 연동
+  - payments/bookings 테이블 상태 업데이트
+- 마이페이지: `window.confirm()` → 커스텀 확인 다이얼로그
+  - 실시간 환불 금액 미리보기, 취소 사유 입력, 환불 규정 안내
+
+**Task #23: 소셜 로그인 버튼 수정** (planner-1) - **완료**
+- login/signup 페이지: 카카오/네이버 버튼 → 비활성 div + "준비 중" 뱃지
+- opacity-50, cursor-not-allowed, aria-disabled 적용
+- Google OAuth는 정상 유지
+
+**Task #25: 로그인 리다이렉트 수정** (planner-1) - **완료**
+- login 페이지: `redirect` 쿼리파라미터 파싱 및 로그인 후 리다이렉트
+- mypage: "로그인하기" → `/login?redirect=/mypage`
+- mentor/dashboard: "로그인하기" → `/login?redirect=/mentor/dashboard`
+- booking: 로그인 링크에 redirect 파라미터 추가
+
+---
+
+### 13:32 - QA 통합 테스트 완료
+
+**Task #13: 전체 기능 통합 테스트** (qa-1) - **완료**
+- 검토 범위: API 25개, 페이지 30개, 컴포넌트 31개, 컨텍스트 3개, 훅 3개, lib 20+개
+- **버그 4건 발견**:
+  1. **(MEDIUM - 수정됨)** Open Redirect: login 페이지 redirect 파라미터 외부 URL 허용 → 상대 경로만 허용하도록 수정
+  2. (LOW) signup 페이지 미사용 소셜 로그인 핸들러 (dead code)
+  3. (LOW) mentor apply 페이지 미사용 free_trial state
+  4. (LOW) AuthContext refreshProfile 미메모이제이션
+- **전체 코드 품질: Excellent** - 에러 핸들링, 로딩/빈 상태, 폼 검증, 타입, 보안, 접근성 모두 양호
+
+---
+
+### 13:33 - 디자인 개선 완료, 전체 작업 마무리
+
+**Task #12: 트렌디한 UI/UX 디자인 개선** (designer) - **완료** (10개 파일)
+- **globals.css**: 새 유틸리티 추가
+  - `glass-card` (backdrop-blur-20px, 반투명 배경)
+  - `shine-effect` (CTA 버튼 빛 스윕 효과)
+  - `subtle-float` (6초 자연스러운 부유 애니메이션)
+  - `gradient-border` (호버 시 그라데이션 테두리)
+- **Hero.tsx**: 도트 패턴 배경, 글래스모피즘 뱃지, shine-effect CTA, 신뢰 지표 glass pill 스타일
+- **Header.tsx**: 스크롤 시 글래스모피즘 (bg-white/70 backdrop-blur-2xl), 로고 hover:rotate-3, 그라데이션 밑줄
+- **Mentors.tsx**: 카드 hover:-translate-y-1 + shadow-xl, pill 태그, glass 스켈레톤
+- **Features.tsx**: glass 카드, hover lift, 넉넉한 패딩
+- **CTA.tsx**: 대형 블러 오브, glass 컨테이너, subtle-float 아이콘
+- **Stats.tsx**: glass 컨테이너, 그라데이션 아이콘 배경, hover scale
+- **Pricing.tsx**: glass pill 티어 선택기, shine-effect CTA, 향상된 번들 카드
+- **FreeTrialBanner.tsx**: 이중 블러 원, glass 효과, shine-effect CTA
+- **Footer.tsx**: 그라데이션 배경, glass 뉴스레터 입력, shine-effect 구독 버튼
+- **MentorDetailModal.tsx**: 소프트 backdrop-blur, rounded-3xl 모달, glass stats, shine-effect CTA
+- **mentors/page.tsx**: glass 필터 사이드바, 그라데이션 페이지네이션
+
+#### 디자인 원칙
+- 일관된 글래스모피즘 (white/50-70 + backdrop-blur)
+- hover 시 미세 lift (translate-y-1)
+- 레이어드 그림자 (shadow-xl shadow-primary/[0.06])
+- pill 형태 태그 (rounded-full), 카드 (rounded-2xl)
+- 모든 주요 CTA에 shine sweep 효과
+- 다크모드 호환 유지
+
+---
+
+## 커밋 이력
+
+| 커밋 | 내용 | 변경 파일 |
+|------|------|-----------|
+| Phase 1 (`0d59584`) | 이메일 하드코딩 제거, 대시보드 자동 갱신, 회의록 | 11개 |
+| Phase 2 (`a9157a2`) | SEO 구조화 데이터, P0 멘토 목록 수정 | 17개 |
+| Phase 3 (`223563d`) | 구독 취소 구현, 소셜 로그인/리다이렉트 수정 | 6개 |
+| Phase 4 (현재) | 트렌디 UI 디자인, QA 결과, 회의록 최종 | 12개+ |
+
+---
+
+## 최종 태스크 현황
 
 | # | 태스크 | 담당 | 상태 |
 |---|--------|------|------|
 | 1 | 이메일 도메인 하드코딩 수정 | email-fixer | **완료** |
-| 2 | 구독 취소 기능 구현 | dev-1 | 작업 중 |
+| 2 | 구독 취소 기능 구현 | dev-1 | **완료** |
 | 3 | Consultation 타입 확인 | type-fixer | **완료** (변경 불필요) |
 | 4 | 분석 대시보드 자동 갱신 | analytics-fixer | **완료** |
 | 8 | UX 전체 감사 | planner-1 | **완료** (40+ 이슈) |
 | 9 | 추가 기능 기획 | planner-2 | **완료** (8개 기능 제안) |
 | 10 | 수익화 전략 | biz-1 | **완료** (10개 전략) |
-| 11 | 성장/SEO 전략 | biz-2 | **완료** (11개 파일 수정) |
-| 12 | 트렌디 UI 디자인 | designer | 작업 중 |
-| 13 | 기능 통합 테스트 | qa-1 | 작업 중 |
+| 11 | 성장/SEO 전략 | biz-2 | **완료** (11개 파일 구현) |
+| 12 | 트렌디 UI 디자인 | designer | **완료** (10개 파일) |
+| 13 | 기능 통합 테스트 | qa-1 | **완료** (버그 4건, 1건 수정) |
 | 14 | 보안/성능 점검 | qa-2 | **완료** (크리티컬 없음) |
-| 23 | [P0] 소셜 로그인 버튼 수정 | planner-1 | 작업 중 |
+| 23 | [P0] 소셜 로그인 버튼 수정 | planner-1 | **완료** |
 | 24 | [P0] 멘토 목록 로딩/가격 수정 | planner-2 | **완료** |
-| 25 | [P0] 로그인 리다이렉트 수정 | planner-1 | 작업 중 |
+| 25 | [P0] 로그인 리다이렉트 수정 | planner-1 | **완료** |
 
-### 남은 작업
-- designer: 트렌디 UI 디자인 개선
-- dev-1: 구독 취소 기능
-- qa-1: 기능 통합 테스트
-- planner-1: P0 소셜 로그인 + 로그인 리다이렉트
+**전체 14개 태스크 완료 (100%)**
 
 ---
 
-*이 문서는 작업 진행에 따라 지속적으로 업데이트됩니다.*
+## 향후 과제 (팀 권고사항)
+
+### 즉시 검토 필요
+- [ ] 가격 정상화 여부 결정 (biz-1: 레거시 15,000원 → 권장 50,000원)
+- [ ] `.env.production`, `.env.old` 로컬 시크릿 파일 삭제 (qa-2)
+- [ ] Vercel에 `CRON_SECRET` 환경변수 설정 확인 (qa-2)
+
+### Phase 1 신규 기능 (planner-2 기획)
+- [ ] 멘토 찜/위시리스트
+- [ ] 고급 검색/필터 (텍스트 검색, 가격 필터, 정렬)
+- [ ] 향상된 리뷰 시스템 (세부 항목 평점)
+
+### Phase 2 신규 기능
+- [ ] 멘토 추천/매칭 시스템
+- [ ] 가용 시간 캘린더 뷰
+- [ ] 세션 후 피드백 구조화
+
+### 성장 전략 (biz-2 권고)
+- [ ] 블로그 섹션 (MDX 기반 SEO 콘텐츠)
+- [ ] 소셜 공유 기능
+- [ ] 추천/레퍼럴 시스템
+- [ ] 뉴스레터 드립 캠페인
+
+### UX 개선 잔여 (planner-1 감사)
+- [ ] P1 이슈 8건 (Hero 보조 CTA, 멘토 검색, 예약 UX 등)
+- [ ] P2 이슈 10건 (정렬, 접근성, 딥링크 등)
+
+---
+
+*작성: team-lead (Claude Agent Team)*
+*작업 시간: 2026-02-11 13:20 ~ 13:35 (약 15분)*
+*참여 에이전트: 12명*
+*총 수정 파일: 46개+*

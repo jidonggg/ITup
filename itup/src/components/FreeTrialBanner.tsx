@@ -69,11 +69,12 @@ export default function FreeTrialBanner() {
   return (
     <section className="py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden bg-gradient-to-r from-accent/20 via-primary/10 to-accent/20 border border-accent/30 rounded-2xl p-6 md:p-8">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="relative overflow-hidden bg-gradient-to-r from-accent/15 via-primary/8 to-accent/15 backdrop-blur-sm border border-accent/20 rounded-2xl p-6 md:p-8 shadow-lg shadow-accent/[0.04]">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-accent/8 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/8 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl" />
           <div className="relative flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-accent/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center flex-shrink-0 shadow-md shadow-accent/10">
                 <span className="text-3xl">🎁</span>
               </div>
               <div>
@@ -87,7 +88,7 @@ export default function FreeTrialBanner() {
             </div>
             <Link
               href={mentorId ? `/free-trial/${mentorId}` : "/mentors"}
-              className="px-6 py-3 bg-gradient-to-r from-accent to-primary text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-accent/30 transition-all whitespace-nowrap"
+              className="shine-effect px-7 py-3 bg-gradient-to-r from-accent to-primary text-white font-semibold rounded-full hover:shadow-xl hover:shadow-accent/25 hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap"
             >
               무료 체험 신청
             </Link>

@@ -41,14 +41,14 @@ export default function Stats() {
           isVisible ? "visible" : ""
         }`}
       >
-        <div className="bg-card-bg/50 backdrop-blur-sm border border-card-border rounded-3xl p-8 md:p-12">
+        <div className="bg-white/50 backdrop-blur-xl border border-card-border/40 rounded-3xl p-8 md:p-12 shadow-lg shadow-primary/[0.03]">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
             {values.map((item) => (
               <div key={item.title} className="text-center group">
-                <div className="text-4xl sm:text-5xl mb-3 transform group-hover:scale-110 transition-transform duration-300">
-                  {item.icon}
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center group-hover:scale-110 group-hover:shadow-md group-hover:shadow-primary/10 transition-all duration-300">
+                  <span className="text-3xl sm:text-4xl">{item.icon}</span>
                 </div>
-                <div className="font-semibold text-foreground mb-1">
+                <div className="font-bold text-foreground mb-1">
                   {item.title}
                 </div>
                 <div className="text-muted text-sm">{item.description}</div>

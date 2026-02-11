@@ -112,14 +112,14 @@ function FeatureCard({ feature, index }: FeatureCardProps) {
       className={`scroll-animate ${isVisible ? "visible" : ""}`}
       style={{ transitionDelay: `${index * 100}ms` }}
     >
-      <div className="group h-full p-6 bg-card-bg/50 border border-card-border rounded-2xl hover:border-primary/50 hover:bg-card-bg transition-all duration-300">
+      <div className="group h-full p-7 bg-white/50 backdrop-blur-sm border border-card-border/50 rounded-2xl hover:border-primary/30 hover:bg-white/70 hover:shadow-lg hover:shadow-primary/[0.06] hover:-translate-y-1 transition-all duration-300">
         {/* Icon */}
-        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary mb-4 group-hover:scale-110 group-hover:from-primary/30 group-hover:to-accent/30 transition-all duration-300">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center text-primary mb-5 group-hover:scale-110 group-hover:from-primary/25 group-hover:to-accent/25 group-hover:shadow-md group-hover:shadow-primary/10 transition-all duration-300">
           {feature.icon}
         </div>
 
         {/* Content */}
-        <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors duration-300">
+        <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors duration-300">
           {feature.title}
         </h3>
         <p className="text-muted text-sm leading-relaxed">

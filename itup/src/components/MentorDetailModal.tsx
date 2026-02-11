@@ -93,17 +93,17 @@ export default function MentorDetailModal({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xl animate-[fadeIn_0.2s_ease-out]"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(160,113,79,0.25)] animate-[modalIn_0.3s_ease-out] max-h-[85vh] overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-white/90 backdrop-blur-2xl border border-card-border/40 rounded-3xl shadow-[0_25px_80px_-12px_rgba(160,113,79,0.2)] animate-[modalIn_0.3s_ease-out] max-h-[85vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-muted hover:text-foreground transition-colors cursor-pointer z-10"
+          className="absolute top-4 right-4 p-2 text-muted hover:text-foreground hover:bg-white/60 rounded-full transition-all cursor-pointer z-10"
           aria-label="닫기"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,9 +112,10 @@ export default function MentorDetailModal({
         </button>
 
         {/* Header - Profile */}
-        <div className="relative h-32 bg-gradient-to-br from-primary/30 to-accent/30">
+        <div className="relative h-36 bg-gradient-to-br from-primary/20 via-accent/15 to-primary-light/20 overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_var(--accent)_0%,_transparent_50%)] opacity-20" />
           <div className="absolute -bottom-12 left-6">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-3xl font-bold border-4 border-card-bg shadow-lg">
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-xl shadow-primary/20">
               {mentor.name[0]}
             </div>
           </div>
@@ -142,7 +143,7 @@ export default function MentorDetailModal({
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 p-4 bg-secondary/50 rounded-xl mb-6">
+          <div className="grid grid-cols-3 gap-4 p-4 bg-gradient-to-r from-secondary/40 to-secondary/20 backdrop-blur-sm rounded-2xl mb-6 border border-card-border/30">
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 text-lg font-bold text-primary">
                 <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
@@ -311,7 +312,7 @@ export default function MentorDetailModal({
           {/* CTA Button */}
           <button
             onClick={handleConsultClick}
-            className="w-full py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 cursor-pointer"
+            className="shine-effect w-full py-4 bg-gradient-to-r from-primary via-primary-dark to-primary text-white rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
           >
             상품 선택 후 신청하기
           </button>

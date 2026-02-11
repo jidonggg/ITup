@@ -372,11 +372,11 @@ function MentorsContent() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-secondary/90 backdrop-blur-md border-b border-card-border">
+      <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-2xl border-b border-card-border/50 shadow-sm shadow-black/[0.02]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 md:h-16">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shadow-primary/15">
                 <span className="text-white text-lg md:text-xl">☕</span>
               </div>
               <span className="text-lg md:text-xl font-bold text-foreground group-hover:text-primary transition-colors hidden sm:inline">
@@ -385,7 +385,7 @@ function MentorsContent() {
             </Link>
             <Link
               href="/"
-              className="text-muted hover:text-foreground transition-colors min-h-[44px] flex items-center px-2"
+              className="text-muted hover:text-primary font-medium text-sm transition-colors min-h-[44px] flex items-center px-2"
             >
               홈으로
             </Link>
@@ -406,7 +406,7 @@ function MentorsContent() {
         <div className="lg:hidden mb-4">
           <button
             onClick={() => setIsFilterSheetOpen(true)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-card-bg border border-card-border rounded-xl min-h-[48px] active:bg-secondary transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-xl min-h-[48px] active:bg-secondary/50 transition-all shadow-sm"
           >
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -479,7 +479,7 @@ function MentorsContent() {
         <div className="flex flex-col lg:flex-row gap-4 md:gap-8">
           {/* Filters Sidebar (Desktop) */}
           <aside className="hidden lg:block lg:w-64 flex-shrink-0">
-            <div className="bg-card-bg border border-card-border rounded-2xl p-6 sticky top-24">
+            <div className="bg-white/60 backdrop-blur-sm border border-card-border/40 rounded-2xl p-6 sticky top-24 shadow-sm shadow-primary/[0.02]">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-semibold">필터</h2>
                 {hasActiveFilters && (
@@ -537,7 +537,7 @@ function MentorsContent() {
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="p-2.5 rounded-lg border border-card-border text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      className="p-2.5 rounded-xl border border-card-border/50 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -564,10 +564,10 @@ function MentorsContent() {
                               )}
                               <button
                                 onClick={() => setCurrentPage(page)}
-                                className={`w-10 h-10 md:w-10 md:h-10 rounded-lg text-sm font-medium transition-colors cursor-pointer min-w-[40px] min-h-[40px] ${
+                                className={`w-10 h-10 md:w-10 md:h-10 rounded-xl text-sm font-medium transition-all cursor-pointer min-w-[40px] min-h-[40px] ${
                                   currentPage === page
-                                    ? "bg-primary text-white"
-                                    : "border border-card-border hover:border-primary hover:text-primary"
+                                    ? "bg-gradient-to-r from-primary to-primary-dark text-white shadow-md shadow-primary/20"
+                                    : "border border-card-border/50 hover:border-primary/50 hover:text-primary hover:bg-primary/5"
                                 }`}
                               >
                                 {page}
@@ -580,7 +580,7 @@ function MentorsContent() {
                     <button
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="p-2.5 rounded-lg border border-card-border text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      className="p-2.5 rounded-xl border border-card-border/50 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -647,18 +647,18 @@ function MentorsContent() {
 
 function MentorCardSkeleton() {
   return (
-    <div className="bg-card-bg border border-card-border rounded-2xl overflow-hidden animate-pulse">
-      <div className="h-24 md:h-32 bg-secondary" />
+    <div className="bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-2xl overflow-hidden animate-pulse">
+      <div className="h-24 md:h-32 bg-gradient-to-br from-secondary/80 to-secondary/40" />
       <div className="p-4 md:p-5">
-        <div className="h-5 md:h-6 bg-secondary rounded w-2/3 mb-2" />
-        <div className="h-4 bg-secondary rounded w-1/2 mb-3 md:mb-4" />
+        <div className="h-5 md:h-6 bg-secondary/80 rounded-lg w-2/3 mb-2" />
+        <div className="h-4 bg-secondary/60 rounded-lg w-1/2 mb-3 md:mb-4" />
         <div className="flex gap-2 mb-3 md:mb-4">
-          <div className="h-6 bg-secondary rounded w-16" />
-          <div className="h-6 bg-secondary rounded w-12" />
+          <div className="h-6 bg-secondary/60 rounded-full w-16" />
+          <div className="h-6 bg-secondary/60 rounded-full w-12" />
         </div>
-        <div className="pt-3 md:pt-4 border-t border-card-border flex justify-between">
-          <div className="h-4 bg-secondary rounded w-12" />
-          <div className="h-4 bg-secondary rounded w-16" />
+        <div className="pt-3 md:pt-4 border-t border-card-border/50 flex justify-between">
+          <div className="h-4 bg-secondary/60 rounded-lg w-12" />
+          <div className="h-4 bg-secondary/60 rounded-lg w-16" />
         </div>
       </div>
     </div>
@@ -674,40 +674,41 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
   return (
     <div
       onClick={onClick}
-      className="group bg-card-bg border border-card-border rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer active:scale-[0.98]"
+      className="group bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.06] hover:-translate-y-1 transition-all duration-300 cursor-pointer active:scale-[0.98]"
     >
       {/* Avatar Section */}
-      <div className="relative h-24 md:h-32 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xl md:text-2xl font-bold transform group-hover:scale-110 transition-transform duration-300">
+      <div className="relative h-24 md:h-32 bg-gradient-to-br from-primary/10 via-accent/10 to-primary-light/10 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,_var(--accent)_0%,_transparent_60%)] opacity-15" />
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xl md:text-2xl font-bold transform group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-primary/20">
           {mentor.name?.charAt(0) || "?"}
         </div>
-        <div className="absolute top-2 right-2 md:top-3 md:right-3 px-2 py-0.5 md:py-1 bg-background/80 backdrop-blur-sm rounded-full text-xs font-medium text-primary">
+        <div className="absolute top-2 right-2 md:top-3 md:right-3 px-2.5 py-1 bg-white/80 backdrop-blur-md rounded-full text-xs font-semibold text-primary-dark border border-primary/10">
           {mentor.company}
         </div>
       </div>
 
       {/* Info Section */}
       <div className="p-4 md:p-5">
-        <h3 className="text-base md:text-lg font-semibold mb-0.5 md:mb-1 group-hover:text-primary transition-colors line-clamp-1">
+        <h3 className="text-base md:text-lg font-bold mb-0.5 md:mb-1 group-hover:text-primary transition-colors duration-300 line-clamp-1">
           {mentor.name}
         </h3>
         <p className="text-muted text-xs md:text-sm mb-2 md:mb-3 line-clamp-1">{mentor.role}</p>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1 md:gap-1.5 mb-2 md:mb-4">
-          <span className="px-2 py-0.5 md:py-1 bg-primary/10 text-primary text-xs rounded-md">
+          <span className="px-2.5 py-0.5 md:py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
             {mentor.experience} 경력
           </span>
-          <span className="px-2 py-0.5 md:py-1 bg-accent/10 text-accent text-xs rounded-md">
+          <span className="px-2.5 py-0.5 md:py-1 bg-accent/10 text-accent text-xs font-medium rounded-full">
             {getTierInfo(mentor.experience).badge} {getTierInfo(mentor.experience).name}
           </span>
           {mentor.skills.slice(0, 1).map(skill => (
-            <span key={skill} className="px-2 py-0.5 md:py-1 bg-secondary text-muted text-xs rounded-md hidden sm:inline-block">
+            <span key={skill} className="px-2.5 py-0.5 md:py-1 bg-secondary/80 text-muted text-xs rounded-full hidden sm:inline-block">
               {skill}
             </span>
           ))}
           {mentor.skills.length > 1 && (
-            <span className="px-2 py-0.5 md:py-1 bg-secondary text-muted text-xs rounded-md">
+            <span className="px-2.5 py-0.5 md:py-1 bg-secondary/80 text-muted text-xs rounded-full">
               +{mentor.skills.length - 1}
             </span>
           )}
@@ -716,29 +717,29 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
         {/* Consult Types */}
         <div className="flex flex-wrap gap-1 md:gap-1.5 mb-3 md:mb-4">
           {mentor.consultTypes.slice(0, 2).map(type => (
-            <span key={type} className="px-2 py-0.5 bg-accent/10 text-accent text-xs rounded">
+            <span key={type} className="px-2 py-0.5 bg-accent/10 text-accent text-xs font-medium rounded-full">
               {consultTypeLabels[type]}
             </span>
           ))}
           {mentor.consultTypes.length > 2 && (
-            <span className="px-2 py-0.5 bg-accent/10 text-accent text-xs rounded">
+            <span className="px-2 py-0.5 bg-accent/10 text-accent text-xs rounded-full">
               +{mentor.consultTypes.length - 2}
             </span>
           )}
         </div>
 
         {/* Stats */}
-        <div className="flex items-center justify-between pt-3 md:pt-4 border-t border-card-border">
+        <div className="flex items-center justify-between pt-3 md:pt-4 border-t border-card-border/50">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
-              <span className="text-sm font-medium">{mentor.rating}</span>
+              <span className="text-sm font-bold text-foreground">{mentor.rating}</span>
             </div>
-            <span className="text-xs text-muted">{mentor.sessions}회</span>
+            <span className="text-xs text-muted font-medium">{mentor.sessions}회</span>
           </div>
-          <span className="text-sm font-semibold text-primary">
+          <span className="text-sm font-bold text-primary">
             {getTieredPrice("coffee", mentor.experience).toLocaleString()}원~
           </span>
         </div>
