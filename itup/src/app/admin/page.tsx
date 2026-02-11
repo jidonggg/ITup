@@ -134,9 +134,12 @@ function AdminPageContent() {
   const [settlementFilter, setSettlementFilter] = useState<SettlementStatus | "all">("all");
   const [processingSettlementId, setProcessingSettlementId] = useState<string | null>(null);
 
+  // 미들웨어를 통과한 사용자(middlewareError 없음)는 관리자로 간주
+  const isAdminUser = !middlewareError && !!user;
+
   useEffect(() => {
     if (!isInitialized) return;
-    if (!user || profile?.role !== "admin") {
+    if (!isAdminUser) {
       setIsLoading(false);
       return;
     }
@@ -149,7 +152,7 @@ function AdminPageContent() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [isInitialized, user, profile]);
+  }, [isInitialized, isAdminUser]);
 
   const fetchAllData = async () => {
     if (!isSupabaseConfigured()) {
@@ -944,7 +947,7 @@ function AdminPageContent() {
     );
   }
 
-  if (middlewareError || !user || profile?.role !== "admin") {
+  if (!isAdminUser) {
     const errorInfo = middlewareError === "config"
       ? {
           icon: (

@@ -68,6 +68,28 @@
 
 ## 작업 타임라인 (최신순)
 
+### 15:30 - Phase 5-B: QA 보고 기반 HIGH 버그 핫픽스
+
+**빌드 결과**: TypeScript 0 에러, Next.js 빌드 성공
+
+**FIX H-1: ConsultModal 할인 적용 시 expected_amount 미갱신** (qa-mentee 보고)
+- 파일: `src/components/ConsultModal.tsx`
+- 문제: 할인 코드 적용 후 결제 시 DB의 `expected_amount`가 원래 가격 그대로 → 결제 확인 API에서 금액 불일치 가능
+- 수정: `handlePayment()`에서 결제 전 `finalPrice !== price`인 경우 consultation 레코드 업데이트
+
+**FIX H-2: Admin 페이지 role 체크와 middleware desync** (qa-admin 보고)
+- 파일: `src/app/admin/page.tsx`
+- 문제: middleware는 `ADMIN_EMAILS` 환경변수로 체크, 페이지는 `profile?.role`로 체크 → DB에 role이 "admin"으로 안 되어 있으면 접근 불가
+- 수정: `isAdminUser = !middlewareError && !!user` 방식으로 변경 (미들웨어 통과 = 관리자)
+- useEffect 의존성도 `[isInitialized, isAdminUser]`로 최적화
+
+**FIX M-2: 리뷰 작성 페이지 로그인 리다이렉트 URL 보존 누락** (qa-mentee 보고)
+- 파일: `src/app/review/write/page.tsx`
+- 문제: 비로그인 사용자가 리뷰 작성 접근 시 `/login`으로 이동, 로그인 후 리뷰 페이지로 못 돌아옴
+- 수정: `/login?redirect=/review/write?bookingId=X&mentorId=Y` 형식으로 변경
+
+---
+
 ### 15:10 - Phase 5: 전체 QA & 검증 완료
 
 **팀장**: team-lead (6명 에이전트)
@@ -353,9 +375,19 @@
 ## 향후 과제 (팀 권고사항)
 
 ### 즉시 검토 필요
+- [ ] Vercel에 `ADMIN_EMAILS` 환경변수 설정 (관리자 접근 필수)
 - [ ] 가격 정상화 여부 결정 (biz-1: 레거시 15,000원 → 권장 50,000원)
 - [ ] `.env.production`, `.env.old` 로컬 시크릿 파일 삭제 (qa-2)
 - [ ] Vercel에 `CRON_SECRET` 환경변수 설정 확인 (qa-2)
+
+### Phase 5 QA에서 발견된 잔여 이슈 (HIGH/MEDIUM)
+- [ ] **(HIGH)** `available_times` 타입 불일치: apply 페이지는 `Record<string, string[]>`, edit 페이지는 `string[]` 가정 (qa-mentor M02)
+- [ ] **(HIGH)** mentor/earnings 페이지 `profile.role === "mentor"` 체크 → 승인 전 멘토 접근 불가 (qa-mentor M03)
+- [ ] **(HIGH)** admin 클라이언트 사이드 데이터 조회 RLS 의존 → 서버 API 전환 권장 (qa-admin H1)
+- [ ] **(MEDIUM)** mentor/edit 페이지 스키마가 apply 페이지와 불일치 (qa-mentor M06)
+- [ ] **(MEDIUM)** 할인 코드 사용 후 소비(consumed) 처리 미구현 → 무한 재사용 가능 (qa-mentee H-2)
+- [ ] **(MEDIUM)** onboarding 페이지 인증 가드 없음 (qa-mentee M-4)
+- [ ] **(MEDIUM)** 분쟁 "disputed" 해결 시 로컬 상태에서 제거 후 30초 후 재표시 (qa-admin M2)
 
 ### Phase 1 신규 기능 (planner-2 기획)
 - [ ] 멘토 찜/위시리스트

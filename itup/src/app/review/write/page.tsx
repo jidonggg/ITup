@@ -298,7 +298,7 @@ function ReviewWriteContent() {
           <p className="text-muted mb-6">리뷰 작성을 위해 로그인해주세요.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/login"
+              href={`/login?redirect=${encodeURIComponent(`/review/write?bookingId=${bookingId || ""}&mentorId=${mentorId || ""}`)}`}
               className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
             >
               로그인하기
