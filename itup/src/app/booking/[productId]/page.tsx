@@ -1264,7 +1264,7 @@ export default function BookingPage({
           <p className="text-muted text-sm md:text-base mb-4 md:mb-6">예약을 진행하려면 로그인해주세요.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/login"
+              href={`/login?redirect=/booking/${productId}`}
               className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium min-h-[44px] flex items-center justify-center"
             >
               로그인하기

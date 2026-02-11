@@ -414,12 +414,20 @@ export default function MentorDashboardPage() {
           </div>
           <h2 className="text-2xl font-bold mb-2">로그인이 필요해요</h2>
           <p className="text-muted mb-6">멘토 대시보드는 로그인 후 이용할 수 있어요.</p>
-          <Link
-            href="/"
-            className="inline-block px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
-          >
-            홈으로 돌아가기
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/login?redirect=/mentor/dashboard"
+              className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
+            >
+              로그인하기
+            </Link>
+            <Link
+              href="/"
+              className="px-6 py-2.5 border border-card-border text-foreground rounded-full font-medium"
+            >
+              홈으로 돌아가기
+            </Link>
+          </div>
         </div>
       </div>
     );

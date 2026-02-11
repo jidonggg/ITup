@@ -254,17 +254,31 @@ export default function MyPage() {
   };
 
   const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
+  const getRefundInfo = (booking: BookingWithDetails) => {
+    if (booking.amount === 0) return { rate: 0, amount: 0, label: "무료 체험" };
+    const now = Date.now();
+    const scheduledTime = new Date(booking.scheduled_at).getTime();
+    const timeUntil = scheduledTime - now;
+    if (timeUntil > 48 * 60 * 60 * 1000) return { rate: 100, amount: booking.amount, label: "전액 환불" };
+    if (timeUntil >= 24 * 60 * 60 * 1000) return { rate: 50, amount: Math.round(booking.amount * 0.5), label: "50% 환불" };
+    return { rate: 0, amount: 0, label: "환불 불가" };
+  };
 
   const handleCancelBooking = async (bookingId: string) => {
     if (!user || cancellingBookingId) return;
-    if (!confirm("정말 예약을 취소하시겠어요?\n\n환불 규정:\n• 48시간 전: 전액 환불\n• 24~48시간: 50% 환불\n• 24시간 이내: 환불 불가")) return;
 
     setCancellingBookingId(bookingId);
     try {
-      const res = await fetch("/api/booking/cancel", {
+      const res = await fetch("/api/subscription/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId }),
+        body: JSON.stringify({
+          bookingId,
+          reason: cancelReason.trim() || undefined,
+        }),
       });
       const data = await res.json();
 
@@ -285,6 +299,8 @@ export default function MyPage() {
       showToast("취소에 실패했어요.", "error");
     } finally {
       setCancellingBookingId(null);
+      setShowCancelDialog(null);
+      setCancelReason("");
     }
   };
 
@@ -312,12 +328,20 @@ export default function MyPage() {
           </div>
           <h2 className="text-2xl font-bold mb-2">로그인이 필요해요</h2>
           <p className="text-muted mb-6">마이페이지는 로그인 후 이용할 수 있어요.</p>
-          <Link
-            href="/"
-            className="inline-block px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
-          >
-            홈으로 돌아가기
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/login?redirect=/mypage"
+              className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
+            >
+              로그인하기
+            </Link>
+            <Link
+              href="/"
+              className="px-6 py-2.5 border border-card-border text-foreground rounded-full font-medium"
+            >
+              홈으로 돌아가기
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -642,7 +666,7 @@ export default function MyPage() {
                         )}
                         {(booking.status === "pending" || booking.status === "paid" || booking.status === "confirmed") && (
                           <button
-                            onClick={() => handleCancelBooking(booking.id)}
+                            onClick={() => setShowCancelDialog(booking.id)}
                             disabled={cancellingBookingId === booking.id}
                             className="px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -671,6 +695,81 @@ export default function MyPage() {
           </Link>
         </div>
       </main>
+
+      {/* Cancel Confirmation Dialog */}
+      {showCancelDialog && (() => {
+        const targetBooking = bookings.find(b => b.id === showCancelDialog);
+        if (!targetBooking) return null;
+        const refundInfo = getRefundInfo(targetBooking);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => { setShowCancelDialog(null); setCancelReason(""); }}>
+            <div className="bg-card-bg border border-card-border rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-bold mb-2">예약 취소</h3>
+              <p className="text-sm text-muted mb-4">
+                {targetBooking.mentor?.name || "멘토"} 멘토님과의 예약을 취소하시겠어요?
+              </p>
+
+              {/* Refund info */}
+              <div className="p-3 bg-background border border-card-border rounded-lg mb-4">
+                <p className="text-sm font-medium mb-2">환불 안내</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted">결제 금액</span>
+                    <span>{targetBooking.amount.toLocaleString()}원</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">환불 비율</span>
+                    <span className={refundInfo.rate === 100 ? "text-green-500" : refundInfo.rate > 0 ? "text-yellow-500" : "text-red-500"}>
+                      {refundInfo.label}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-semibold pt-1 border-t border-card-border">
+                    <span>환불 금액</span>
+                    <span>{refundInfo.amount.toLocaleString()}원</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Refund policy */}
+              <div className="text-xs text-muted mb-4 space-y-0.5">
+                <p>* 48시간 전 취소: 전액 환불</p>
+                <p>* 24~48시간 전: 50% 환불</p>
+                <p>* 24시간 이내: 환불 불가</p>
+              </div>
+
+              {/* Cancel reason */}
+              <div className="mb-4">
+                <label className="block text-sm text-muted mb-1">취소 사유 (선택)</label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="취소 사유를 입력해주세요"
+                  maxLength={500}
+                  rows={2}
+                  className="w-full px-3 py-2 bg-background border border-card-border rounded-lg text-sm focus:outline-none focus:border-primary resize-none"
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleCancelBooking(showCancelDialog)}
+                  disabled={cancellingBookingId === showCancelDialog}
+                  className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {cancellingBookingId === showCancelDialog ? "취소 처리 중..." : "예약 취소"}
+                </button>
+                <button
+                  onClick={() => { setShowCancelDialog(null); setCancelReason(""); }}
+                  className="flex-1 px-4 py-2.5 border border-card-border rounded-lg text-sm font-medium hover:border-primary transition-colors cursor-pointer"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

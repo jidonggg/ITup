@@ -137,16 +137,6 @@ export default function SignupPage() {
     setError("Google 로그인은 현재 개발 중이에요. 곧 이용 가능합니다.");
   };
 
-  // 카카오 로그인 (사업자 등록 심사 중)
-  const handleKakaoLogin = () => {
-    setError("카카오 로그인은 현재 사업자 등록 심사 중이에요. 승인 후 이용 가능합니다.");
-  };
-
-  // 네이버 로그인 (준비 중 — Supabase Custom OIDC Provider 설정 필요)
-  const handleNaverLogin = () => {
-    setError("네이버 로그인은 준비 중이에요. 다른 방법으로 가입해주세요.");
-  };
-
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -299,27 +289,29 @@ export default function SignupPage() {
           </div>
 
           <div className="space-y-3">
-            <button
-              onClick={handleKakaoLogin}
-              className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            <div
+              className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 opacity-50 cursor-not-allowed relative"
               style={{ backgroundColor: "#FEE500", color: "#000000" }}
+              aria-disabled="true"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.87 5.33 4.67 6.73l-.95 3.53c-.08.29.24.54.5.39l4.2-2.78c.52.05 1.05.08 1.58.08 5.52 0 10-3.58 10-8s-4.48-8-10-8z" />
               </svg>
               카카오로 시작하기
-            </button>
+              <span className="absolute right-3 px-2 py-0.5 bg-black/20 text-xs rounded-full">준비 중</span>
+            </div>
 
-            <button
-              onClick={handleNaverLogin}
-              className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            <div
+              className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 opacity-50 cursor-not-allowed relative"
               style={{ backgroundColor: "#03C75A", color: "#FFFFFF" }}
+              aria-disabled="true"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" />
               </svg>
               네이버로 시작하기
-            </button>
+              <span className="absolute right-3 px-2 py-0.5 bg-black/20 text-xs rounded-full">준비 중</span>
+            </div>
 
             <button
               onClick={handleGoogleLogin}
