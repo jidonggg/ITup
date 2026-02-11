@@ -26,7 +26,7 @@ interface TransactionItem {
 }
 
 export default function MentorEarningsPage() {
-  const { user, profile, isInitialized } = useAuth();
+  const { user, isInitialized } = useAuth();
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [completedBookings, setCompletedBookings] = useState<Booking[]>([]);
   const [bookingProfiles, setBookingProfiles] = useState<Record<string, Profile>>({});
@@ -34,11 +34,9 @@ export default function MentorEarningsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Check mentor authorization
-  const isAuthorized = useMemo(() => {
-    if (!profile) return false;
-    return profile.role === "mentor";
-  }, [profile]);
+  // Check mentor authorization: user has a mentor record (not relying on profile.role,
+  // because role is only set to "mentor" after admin approval)
+  const isAuthorized = !!mentor;
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -244,18 +242,13 @@ export default function MentorEarningsPage() {
     );
   }
 
-  // Not authorized (not a mentor)
-  if (!isAuthorized && !isLoading) {
+  // Error state (mentor not found, not approved, etc.)
+  if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-8 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold mb-2">접근 권한이 없어요</h2>
-          <p className="text-muted mb-6">멘토 전용 페이지입니다.</p>
+        <div className="max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold mb-4">멘토 전용 페이지</h1>
+          <p className="text-muted mb-6">{error}</p>
           <div className="flex gap-4 justify-center">
             <Link
               href="/mentor/apply"
@@ -275,13 +268,18 @@ export default function MentorEarningsPage() {
     );
   }
 
-  // Error state
-  if (error) {
+  // Not authorized (no mentor record found)
+  if (!isAuthorized && !isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold mb-4">멘토 전용 페이지</h1>
-          <p className="text-muted mb-6">{error}</p>
+        <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold mb-2">접근 권한이 없어요</h2>
+          <p className="text-muted mb-6">멘토 전용 페이지입니다.</p>
           <div className="flex gap-4 justify-center">
             <Link
               href="/mentor/apply"

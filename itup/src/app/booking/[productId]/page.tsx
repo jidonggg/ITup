@@ -1218,7 +1218,7 @@ export default function BookingPage({
           type: "new_booking",
           bookingId: data.id,
         }),
-      }).catch((e) => console.error("[새예약 이메일 알림 실패]", e));
+      }).catch(() => {});
 
       // Clear saved progress on success
       clearProgress(productId);

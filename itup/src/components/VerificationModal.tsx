@@ -267,7 +267,7 @@ export default function VerificationModal({
                 <p className="font-medium mb-1">개인정보 보호 안내</p>
                 <p>
                   인증 코드는 검증 완료 즉시 폐기됩니다.<br />
-                  인증 완료 여부만 기록되며, 이메일 주소는 저장되지 않아요.
+                  본인 확인 용도로만 사용되며, 외부에 공개되지 않습니다.
                 </p>
               </div>
             </div>

@@ -68,6 +68,41 @@
 
 ## 작업 타임라인 (최신순)
 
+### 16:00 - Phase 6: 잔여 이슈 전체 해결 (진행 중)
+
+**팀장**: team-lead (4명 에이전트 병렬 작업)
+**목표**: Phase 5 QA에서 발견된 모든 잔여 이슈 해결
+
+#### 팀 구성
+| 에이전트 | 담당 | 이슈 수 |
+|---------|------|--------|
+| mentor-fixer | 멘토 페이지 (available_times, earnings, edit, dashboard) | HIGH 2 + MED 2 |
+| admin-fixer | 관리자 페이지 (dispute, delete, token, settlement) | MED 4 + LOW 1 |
+| payment-fixer | 결제/할인/인증 (discount, onboarding, mentors SSR) | MED 3 + LOW 2 |
+| misc-fixer | 기타 LOW (Footer, booking, verification, guidelines, Google) | LOW 4 + COSMETIC 1 |
+
+#### 진행 상황
+- [ ] Task #1: 멘토 페이지 버그 수정 (mentor-fixer) - 작업 중
+- [ ] Task #2: 관리자 페이지 버그 수정 (admin-fixer) - 작업 중
+- [ ] Task #3: 결제/할인/인증 버그 수정 (payment-fixer) - 작업 중
+- [ ] Task #4: 기타 LOW 버그 수정 (misc-fixer) - 작업 중
+- [ ] Task #5: 전체 QA 재검증 - Task 1~4 완료 후 실행 예정
+
+#### 현재 수정된 파일 (12개, +147줄)
+- `admin/page.tsx` - 분쟁/멘토삭제/토큰 수정
+- `api/discount/validate/route.ts` - 사용 횟수 추적
+- `booking/[productId]/page.tsx` - console.error 제거
+- `login/page.tsx` - Google 로그인 처리
+- `mentor/earnings/page.tsx` - role 체크 수정
+- `mentor/edit/page.tsx` - available_times 호환
+- `mentor/guidelines/page.tsx` - 하드코딩 제거
+- `onboarding/page.tsx` - 인증 가드 추가
+- `ConsultModal.tsx` - 할인 유지
+- `Footer.tsx` - 링크 수정
+- `VerificationModal.tsx` - 개인정보 고지 수정
+
+---
+
 ### 15:30 - Phase 5-B: QA 보고 기반 HIGH 버그 핫픽스
 
 **빌드 결과**: TypeScript 0 에러, Next.js 빌드 성공

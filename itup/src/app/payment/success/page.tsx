@@ -174,7 +174,7 @@ function PaymentSuccessContent() {
               <div className="flex justify-between">
                 <span className="text-muted">결제금액</span>
                 <span className="font-semibold text-primary">
-                  {Number(amount).toLocaleString()}원
+                  {amount ? `${Number(amount).toLocaleString()}원` : "금액 확인 중"}
                 </span>
               </div>
             </div>

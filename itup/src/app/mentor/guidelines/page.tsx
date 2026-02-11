@@ -124,7 +124,7 @@ export default function MentorGuidelinesPage() {
               <span className="text-white text-sm">☕</span>
             </div>
             <span className="font-bold text-foreground group-hover:text-primary transition-colors">
-              커피챗
+              {SITE_CONFIG.name}
             </span>
           </Link>
           <Link

@@ -96,6 +96,15 @@ function MentorsContent() {
     };
   }, []);
 
+  // Mobile detection (responsive)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Mobile filter bottom sheet
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
@@ -676,7 +685,6 @@ function MentorsContent() {
                       {Array.from({ length: totalPages }, (_, i) => i + 1)
                         .filter(page => {
                           // On mobile, show current page, first, last, and adjacent pages
-                          const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
                           if (!isMobile || totalPages <= 5) return true;
                           return page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1;
                         })

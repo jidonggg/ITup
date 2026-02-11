@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,7 +18,7 @@ const productTypes: { value: ProductType; label: string; icon: string; descripti
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
   const [step, setStep] = useState<Step>(1);
   const [selectedJobType, setSelectedJobType] = useState<JobType | null>(null);
   const [selectedEngine, setSelectedEngine] = useState<EngineType | null>(null);
@@ -99,6 +99,44 @@ export default function OnboardingPage() {
     if (step === 3) return selectedProduct !== null;
     return false;
   };
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center">
+            <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold mb-2">로그인이 필요해요</h2>
+          <p className="text-muted mb-6">온보딩은 로그인 후 이용할 수 있어요.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/login?redirect=/onboarding"
+              className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
+            >
+              로그인하기
+            </Link>
+            <Link
+              href="/"
+              className="px-6 py-2.5 border border-card-border text-foreground rounded-full font-medium"
+            >
+              홈으로 이동
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

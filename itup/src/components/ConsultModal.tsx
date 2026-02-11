@@ -478,7 +478,6 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                 <button
                   onClick={() => {
                     setStep("form");
-                    handleRemoveDiscount();
                   }}
                   className="flex-1 py-3 border border-card-border text-foreground rounded-xl font-medium hover:bg-secondary transition-colors cursor-pointer"
                 >

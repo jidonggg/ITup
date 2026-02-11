@@ -654,10 +654,13 @@ function AdminPageContent() {
       }
 
       showToast("멘토가 삭제되었습니다.", "success");
+      const deletedMentor = mentors.find(m => m.id === mentorId);
+      const wasPending = deletedMentor && !deletedMentor.is_approved;
       setMentors(prev => prev.filter(m => m.id !== mentorId));
       setStats(prev => ({
         ...prev,
         totalMentors: prev.totalMentors - 1,
+        ...(wasPending ? { pendingMentors: Math.max(0, prev.pendingMentors - 1) } : {}),
       }));
     } catch (error) {
       showToast("오류가 발생했습니다.", "error");
@@ -819,11 +822,21 @@ function AdminPageContent() {
       showToast("분쟁이 해결되었습니다.", "success");
 
       // Update local state
-      setDisputes(prev => prev.filter(d => d.confirmation.id !== confirmationId));
-      setStats(prev => ({
-        ...prev,
-        disputeCount: Math.max(0, prev.disputeCount - 1),
-      }));
+      if (finalStatus === "disputed") {
+        // "disputed" keeps the dispute active (no resolved_at), just update the status
+        setDisputes(prev => prev.map(d =>
+          d.confirmation.id === confirmationId
+            ? { ...d, confirmation: { ...d.confirmation, final_status: finalStatus } }
+            : d
+        ));
+      } else {
+        // "resolved" / "mentor_noshow" etc. fully resolve — remove from list
+        setDisputes(prev => prev.filter(d => d.confirmation.id !== confirmationId));
+        setStats(prev => ({
+          ...prev,
+          disputeCount: Math.max(0, prev.disputeCount - 1),
+        }));
+      }
       setDisputeResolution(null);
     } catch {
       showToast("오류가 발생했습니다.", "error");
@@ -1702,6 +1715,7 @@ function AdminPageContent() {
                               if (!confirm("이 예약을 취소하시겠습니까?")) return;
                               try {
                                 const token = await getAuthToken();
+                                if (!token) { showToast("인증 오류", "error"); return; }
                                 const res = await fetch("/api/booking/cancel", {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -1980,6 +1994,7 @@ function AdminPageContent() {
                               {settlement.status === "pending" && (
                                 <button
                                   onClick={async () => {
+                                    if (!confirm("정산 상태를 변경하시겠습니까?")) return;
                                     setProcessingSettlementId(settlement.id);
                                     try {
                                       const token = await getAuthToken();
@@ -2012,6 +2027,7 @@ function AdminPageContent() {
                               {settlement.status === "processing" && (
                                 <button
                                   onClick={async () => {
+                                    if (!confirm("정산 상태를 변경하시겠습니까?")) return;
                                     setProcessingSettlementId(settlement.id);
                                     try {
                                       const token = await getAuthToken();
@@ -2044,6 +2060,7 @@ function AdminPageContent() {
                               {(settlement.status === "pending" || settlement.status === "processing") && (
                                 <button
                                   onClick={async () => {
+                                    if (!confirm("정산 상태를 변경하시겠습니까?")) return;
                                     setProcessingSettlementId(settlement.id);
                                     try {
                                       const token = await getAuthToken();

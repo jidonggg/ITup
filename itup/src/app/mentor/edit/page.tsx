@@ -6,8 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { skillCategories } from "@/data/mentors";
-import { VALIDATION } from "@/lib/constants";
-import type { ConsultType } from "@/lib/supabase/types";
+import { VALIDATION, JOB_TYPES, ENGINE_TYPES } from "@/lib/constants";
+import type { ConsultType, JobType, EngineType } from "@/lib/supabase/types";
 
 const consultTypeOptions: { value: ConsultType; label: string }[] = [
   { value: "coffee", label: "1:1 상담" },
@@ -26,6 +26,10 @@ interface FormData {
   name: string;
   company: string;
   role: string;
+  position: string;
+  years: number | "";
+  jobType: JobType | "";
+  engine: EngineType | "";
   previousCompanies: string;
   experience: string;
   skills: string[];
@@ -38,6 +42,10 @@ const initialFormData: FormData = {
   name: "",
   company: "",
   role: "",
+  position: "",
+  years: "",
+  jobType: "",
+  engine: "",
   previousCompanies: "",
   experience: "",
   skills: [],
@@ -81,15 +89,42 @@ export default function MentorEditPage() {
 
       setMentorId(data.id);
       setIsApproved(data.is_approved || false);
+      // available_times can be either Record<string, string[]> (from apply page)
+      // or string[] (legacy). Handle both formats for display.
+      const dayLabels: Record<string, string> = {
+        mon: "월", tue: "화", wed: "수", thu: "목",
+        fri: "금", sat: "토", sun: "일",
+      };
+      let availableTimesStr = "";
+      const rawTimes = data.available_times;
+      if (rawTimes) {
+        if (Array.isArray(rawTimes)) {
+          availableTimesStr = rawTimes.join(", ");
+        } else if (typeof rawTimes === "object") {
+          const parts: string[] = [];
+          for (const [day, slots] of Object.entries(rawTimes as Record<string, string[]>)) {
+            if (Array.isArray(slots) && slots.length > 0) {
+              const label = dayLabels[day] || day;
+              parts.push(`${label}: ${slots.join(", ")}`);
+            }
+          }
+          availableTimesStr = parts.join(" / ");
+        }
+      }
+
       setFormData({
         name: data.name || "",
         company: data.company || "",
         role: data.role || "",
+        position: data.position || "",
+        years: data.years ?? "",
+        jobType: (data.job_type as JobType) || "",
+        engine: (data.engine as EngineType) || "",
         previousCompanies: (data.previous_companies || []).join(", "),
         experience: data.experience || "",
         skills: data.skills || [],
         consultTypes: (data.consult_types || []) as ConsultType[],
-        availableTimes: (data.available_times || []).join(", "),
+        availableTimes: availableTimesStr,
         bio: data.bio || "",
       });
       setIsLoadingData(false);
@@ -155,6 +190,10 @@ export default function MentorEditPage() {
           name: formData.name,
           role: formData.role,
           company: formData.company,
+          position: formData.position || null,
+          years: formData.years === "" ? null : formData.years,
+          job_type: formData.jobType || null,
+          engine: formData.engine || null,
           previous_companies: previousCompaniesArray,
           experience: formData.experience,
           skills: formData.skills,
@@ -182,7 +221,12 @@ export default function MentorEditPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "years") {
+      const num = value === "" ? "" : parseInt(value, 10);
+      setFormData((prev) => ({ ...prev, years: num }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
     if (errors[name as keyof FormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -392,6 +436,78 @@ export default function MentorEditPage() {
                     }`}
                   />
                   {errors.role && <p className="mt-1 text-sm text-red-500">{errors.role}</p>}
+                </div>
+
+                {/* 직책/직급 (apply page field) */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    직책/직급 <span className="text-muted">(선택)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="position"
+                    value={formData.position}
+                    onChange={handleChange}
+                    placeholder="예: 시니어 클라이언트 프로그래머"
+                    className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
+                  />
+                </div>
+
+                {/* 경력 (년) */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    경력 (년) <span className="text-muted">(선택)</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="years"
+                    value={formData.years}
+                    onChange={handleChange}
+                    placeholder="예: 5"
+                    min={1}
+                    max={40}
+                    className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
+                  />
+                </div>
+
+                {/* 직군 */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    직군 <span className="text-muted">(선택)</span>
+                  </label>
+                  <select
+                    name="jobType"
+                    value={formData.jobType}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-colors cursor-pointer"
+                  >
+                    <option value="">선택해주세요</option>
+                    {JOB_TYPES.map((jt) => (
+                      <option key={jt.value} value={jt.value}>
+                        {jt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 주력 엔진 */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    주력 엔진 <span className="text-muted">(선택)</span>
+                  </label>
+                  <select
+                    name="engine"
+                    value={formData.engine}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-colors cursor-pointer"
+                  >
+                    <option value="">선택해주세요</option>
+                    {ENGINE_TYPES.map((et) => (
+                      <option key={et.value} value={et.value}>
+                        {et.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* 이전 직장 */}

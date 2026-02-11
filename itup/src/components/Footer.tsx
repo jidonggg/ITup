@@ -126,7 +126,11 @@ export default function Footer() {
               <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.label}>
-                    {link.href.startsWith("mailto:") || link.href.startsWith("http") ? (
+                    {"disabled" in link && link.disabled ? (
+                      <span className="text-muted/50 text-sm cursor-default">
+                        {link.label}
+                      </span>
+                    ) : link.href.startsWith("mailto:") || link.href.startsWith("http") ? (
                       <a
                         href={link.href}
                         className="text-muted text-sm hover:text-primary transition-colors duration-300"

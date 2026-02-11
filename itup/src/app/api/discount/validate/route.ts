@@ -85,6 +85,12 @@ const DISCOUNT_CODES: DiscountCode[] = [
 ];
 
 // =============================================
+// Usage Tracking (in-memory; resets on cold start)
+// TODO: Replace with Redis for production persistence
+// =============================================
+const usageCounts = new Map<string, number>();
+
+// =============================================
 // API Route
 // =============================================
 
@@ -142,6 +148,17 @@ export async function POST(request: NextRequest) {
         { valid: false, error: "만료된 할인 코드입니다." },
         { status: 400 }
       );
+    }
+
+    // Check usage limit
+    if (discountCode.usageLimit !== null) {
+      const currentUsage = usageCounts.get(discountCode.code) || 0;
+      if (currentUsage >= discountCode.usageLimit) {
+        return NextResponse.json(
+          { valid: false, error: "이 할인 코드의 사용 횟수가 초과되었습니다." },
+          { status: 400 }
+        );
+      }
     }
 
     // Check minimum amount
@@ -230,6 +247,9 @@ export async function POST(request: NextRequest) {
     }
 
     const finalAmount = amount - discountAmount;
+
+    // Increment usage count
+    usageCounts.set(discountCode.code, (usageCounts.get(discountCode.code) || 0) + 1);
 
     return NextResponse.json({
       valid: true,

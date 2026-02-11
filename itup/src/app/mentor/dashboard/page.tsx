@@ -770,7 +770,12 @@ export default function MentorDashboardPage() {
 
                   {/* Action Buttons */}
                   <div className="flex gap-2 flex-wrap">
-                    {(booking.status === "pending") && (
+                    {!mentor?.is_approved && (booking.status === "pending" || booking.status === "paid" || booking.status === "confirmed") && (
+                      <span className="px-4 py-2 bg-yellow-500/10 text-yellow-500 rounded-lg text-sm font-medium">
+                        멘토 승인 후 예약 관리가 가능해요
+                      </span>
+                    )}
+                    {mentor?.is_approved && (booking.status === "pending") && (
                       <>
                         <button
                           onClick={() => updateBookingStatus(booking.id, "confirmed")}
@@ -788,7 +793,7 @@ export default function MentorDashboardPage() {
                         </button>
                       </>
                     )}
-                    {booking.status === "paid" && (
+                    {mentor?.is_approved && booking.status === "paid" && (
                       <>
                         <button
                           onClick={async () => {
@@ -815,7 +820,7 @@ export default function MentorDashboardPage() {
                         </button>
                       </>
                     )}
-                    {booking.status === "confirmed" && (
+                    {mentor?.is_approved && booking.status === "confirmed" && (
                       <Link
                         href={`/session/confirm/${booking.id}`}
                         className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
