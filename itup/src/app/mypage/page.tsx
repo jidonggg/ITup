@@ -702,8 +702,8 @@ export default function MyPage() {
         if (!targetBooking) return null;
         const refundInfo = getRefundInfo(targetBooking);
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => { setShowCancelDialog(null); setCancelReason(""); }}>
-            <div className="bg-card-bg border border-card-border rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => { setShowCancelDialog(null); setCancelReason(""); }}>
+            <div className="bg-white/95 backdrop-blur-xl border border-card-border/50 rounded-2xl p-6 max-w-md w-full shadow-[0_25px_80px_-12px_rgba(0,0,0,0.15)]" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-lg font-bold mb-2">예약 취소</h3>
               <p className="text-sm text-muted mb-4">
                 {targetBooking.mentor?.name || "멘토"} 멘토님과의 예약을 취소하시겠어요?

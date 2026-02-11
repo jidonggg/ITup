@@ -165,7 +165,7 @@ export default function AboutPage() {
                 멘토 찾아보기
               </Link>
               <Link
-                href="/mentor/register"
+                href="/mentor/apply"
                 className="px-8 py-4 border border-card-border text-foreground rounded-full font-semibold hover:border-primary hover:text-primary transition-colors"
               >
                 멘토로 참여하기

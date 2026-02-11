@@ -164,7 +164,7 @@ function PaymentSuccessContent() {
             곧 확인 이메일을 보내드릴게요.
           </p>
 
-          <div className="bg-card-bg border border-card-border rounded-xl p-4 mb-6 text-left">
+          <div className="bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-xl p-4 mb-6 text-left">
             <h3 className="font-medium mb-3">결제 정보</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">

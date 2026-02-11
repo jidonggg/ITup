@@ -108,6 +108,15 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
   );
 }
 
+// 가장 인기 있는 단품 상품
+const POPULAR_PRODUCT: ProductType = "resume";
+
+const PRODUCT_CTA: Record<ProductType, string> = {
+  coffee: "커피챗 시작하기",
+  resume: "첨삭 받아보기",
+  interview: "면접 연습하기",
+};
+
 interface ProductCardProps {
   product: (typeof products)[number];
   index: number;
@@ -119,6 +128,7 @@ interface ProductCardProps {
 function ProductCard({ product, index, onProductClick, onConsultClick, tierExperience }: ProductCardProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
   const tieredPrice = getTieredPrice(product.id, tierExperience);
+  const isPopular = product.id === POPULAR_PRODUCT;
 
   return (
     <div
@@ -127,10 +137,21 @@ function ProductCard({ product, index, onProductClick, onConsultClick, tierExper
       style={{ transitionDelay: `${index * 100}ms` }}
     >
       <div
-        className="relative h-full p-6 md:p-8 rounded-2xl border bg-white/50 backdrop-blur-sm border-card-border/50 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.06] hover:-translate-y-1 transition-all duration-300"
+        className={`relative h-full p-6 md:p-8 rounded-2xl border transition-all duration-300 ${
+          isPopular
+            ? "bg-gradient-to-b from-primary/8 to-white/60 backdrop-blur-sm border-primary/60 shadow-xl shadow-primary/15 hover:-translate-y-1"
+            : "bg-white/50 backdrop-blur-sm border-card-border/50 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.06] hover:-translate-y-1"
+        }`}
       >
+        {/* Popular Badge */}
+        {isPopular && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-gradient-to-r from-primary to-accent rounded-full text-white text-xs font-bold shadow-md shadow-primary/20">
+            인기
+          </div>
+        )}
+
         {/* Icon + Name */}
-        <div className="text-center mb-6">
+        <div className={`text-center mb-6 ${isPopular ? "mt-2" : ""}`}>
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
             <span className="text-3xl">{product.icon}</span>
           </div>
@@ -172,9 +193,13 @@ function ProductCard({ product, index, onProductClick, onConsultClick, tierExper
         {/* CTA */}
         <button
           onClick={() => onProductClick ? onProductClick(product.id) : onConsultClick()}
-          className="w-full py-3 font-medium transition-all duration-300 cursor-pointer border border-card-border/60 text-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5 rounded-full"
+          className={`w-full py-3 font-semibold transition-all duration-300 cursor-pointer rounded-full ${
+            isPopular
+              ? "shine-effect bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5"
+              : "border border-card-border/60 text-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5"
+          }`}
         >
-          신청하기
+          {PRODUCT_CTA[product.id]}
         </button>
       </div>
     </div>
@@ -266,7 +291,7 @@ function BundleCard({ bundle, index, onBundleClick, highlighted }: BundleCardPro
               : "border border-card-border/60 text-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5"
           }`}
         >
-          번들 구매하기
+          {highlighted ? `${discountPercent}% 할인받고 시작하기` : "번들로 할인받기"}
         </button>
       </div>
     </div>

@@ -217,7 +217,7 @@ export default async function MentorDetailPage({
       {productJsonLd && <JsonLd data={productJsonLd} />}
       <JsonLd data={breadcrumbJsonLd} />
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-secondary/90 backdrop-blur-md border-b border-card-border">
+      <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-2xl border-b border-card-border/50 shadow-sm shadow-black/[0.02]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 md:h-16">
             <Link href="/" className="flex items-center gap-2 group">

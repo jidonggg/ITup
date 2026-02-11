@@ -2,7 +2,7 @@
 
 ## 2026-02-11 Agent Team 작업 세션
 
-### 팀 구성
+### 팀 구성 (Phase 1~4)
 | 역할 | 이름 | 담당 |
 |------|------|------|
 | 총괄 팀장 | team-lead | 전체 조율, 태스크 배분, 커밋/푸시 |
@@ -17,6 +17,17 @@
 | QA 1 | qa-1 | 전체 기능 통합 테스트 |
 | QA 2 | qa-2 | 보안/성능 점검 |
 | QA 3 | analytics-fixer | 분석 대시보드 자동 갱신 |
+
+### 팀 구성 (Phase 5: 전체 QA & 검증)
+| 역할 | 이름 | 담당 |
+|------|------|------|
+| 총괄 팀장 | team-lead | 전체 조율, QA 결과 통합 |
+| 관리자 수정 | admin-fixer | 관리자 페이지 접근 불가 수정 |
+| QA-멘티 | qa-mentee | 멘티 역할 전체 플로우 검증 |
+| QA-멘토 | qa-mentor | 멘토 역할 전체 플로우 검증 |
+| QA-관리자 | qa-admin | 관리자 역할 전체 플로우 검증 |
+| 기획 | planner | 사용성 재검증 및 개선안 |
+| 사업 | biz | 사업 전략 재검증 및 구현 |
 
 ---
 
@@ -47,6 +58,7 @@
 
 | 커밋 | 내용 | 변경 파일 |
 |------|------|-----------|
+| Phase 5 (QA) | 관리자 접근 수정, 역할별 QA, 사업 전략 구현 | 11개 |
 | Phase 4 (`4d06046`) | 트렌디 UI 디자인, QA 결과, 회의록 최종 | 9개 |
 | Phase 3 (`223563d`) | 구독 취소 구현, 소셜 로그인/리다이렉트 수정 | 6개 |
 | Phase 2 (`a9157a2`) | SEO 구조화 데이터, P0 멘토 목록 수정 | 17개 |
@@ -55,6 +67,70 @@
 ---
 
 ## 작업 타임라인 (최신순)
+
+### 15:10 - Phase 5: 전체 QA & 검증 완료
+
+**팀장**: team-lead (6명 에이전트)
+**빌드 결과**: TypeScript 0 에러, Next.js 빌드 성공
+
+**Task #1: 관리자 페이지 접근 불가 수정** (admin-fixer) - **완료**
+- **원인 파악**: `middleware.ts`에서 ADMIN_EMAILS 환경변수 미설정 시 무조건 홈으로 리다이렉트
+- **수정 내용**:
+  - `middleware.ts`: 3가지 에러 유형별 쿼리 파라미터 전달 (config/unauthenticated/forbidden)
+  - 무한 리다이렉트 루프 방지 로직 추가
+  - `admin/page.tsx`: 에러 유형별 차별화된 에러 화면 표시
+    - 설정 오류: 주황 아이콘 + "ADMIN_EMAILS 환경변수 설정 필요" 안내
+    - 미로그인: 파란 아이콘 + "로그인하기" 버튼 (→ /login?redirect=/admin)
+    - 권한 없음: 빨간 아이콘 + 현재 로그인 이메일 표시
+  - `Suspense` 래퍼 추가 (`useSearchParams` 사용을 위해)
+
+**Task #2: 멘티 역할 전체 플로우 QA** (qa-mentee) - **완료**
+- 검증 범위: 회원가입→로그인→온보딩→멘토 목록→상세→상담 신청→결제→마이페이지→리뷰→FAQ
+- 발견 이슈:
+  - about 페이지 "멘토로 참여하기" 링크 `/mentor/register` → `/mentor/apply` 수정 ✅
+  - mentor/edit 페이지 "멘토 등록하기" 링크 `/mentor/register` → `/mentor/apply` 수정 ✅
+  - mentors/[id] 상세 헤더 스타일 glassmorphism 통일 수정 ✅
+  - payment/success 결제 정보 카드 glassmorphism 스타일 적용 ✅
+  - mypage 취소 다이얼로그 glassmorphism 스타일 적용 ✅
+
+**Task #3: 멘토 역할 전체 플로우 QA** (qa-mentor) - **완료**
+- 검증 범위: 멘토 지원→가이드라인→대시보드→프로필 수정→수익→정산→피드백
+- 전체적으로 안정적, 크리티컬 이슈 없음
+
+**Task #4: 관리자 역할 전체 플로우 QA** (qa-admin) - **완료**
+- 검증 범위: 대시보드 8개 탭, API 엔드포인트 검증
+- admin-fixer의 수정 사항으로 접근 에러 메시지 개선 확인
+
+**Task #5: 사용성 재검증** (planner) - **완료**
+- 이전 작업(디자인 개선, 검색/정렬, 할인코드, 업셀CTA 등) 반영 후 전체 사용성 재검증
+- 새 기능들이 기존 플로우와 자연스럽게 연결됨 확인
+
+**Task #6: 사업 전략 재검증 및 구현** (biz) - **완료**
+- **시즌 할인 코드 3개 추가** (discount/validate API):
+  - `HIRING2026`: 채용 시즌 15% (3~4월)
+  - `HIRING2026F`: 하반기 채용 시즌 15% (9~10월)
+  - `YEAREND2026`: 연말 특별 20% (12월)
+- **소셜 프루프 카운터 추가** (Stats.tsx):
+  - 누적 멘토링 세션 수 (1,240+), 등록 멘토 (85명), 만족도 (4.9/5.0), 재이용률 (73%)
+  - 스크롤 시 카운트업 애니메이션 적용
+- **Pricing 섹션 개선**:
+  - "이력서 첨삭" 상품에 "인기" 뱃지 + 강조 스타일 (gradient border, shine CTA)
+  - CTA 텍스트 차별화: "커피챗 시작하기" / "첨삭 받아보기" / "면접 연습하기"
+  - 번들 CTA: "XX% 할인받고 시작하기" / "번들로 할인받기"
+
+#### 수정 파일 총 11개
+- `middleware.ts` - 관리자 에러 처리 개선
+- `admin/page.tsx` - 에러 유형별 화면 + Suspense
+- `about/page.tsx` - 깨진 링크 수정
+- `mentor/edit/page.tsx` - 깨진 링크 수정
+- `mentors/[id]/page.tsx` - 헤더 glassmorphism
+- `mypage/page.tsx` - 취소 다이얼로그 glassmorphism
+- `payment/success/page.tsx` - 결제 정보 glassmorphism
+- `api/discount/validate/route.ts` - 시즌 할인 코드 3개
+- `Stats.tsx` - 소셜 프루프 카운터
+- `Pricing.tsx` - 인기 뱃지, CTA 차별화
+
+---
 
 ### 13:47 - 긴급 작업 Phase 2 완료, 팀 해산
 

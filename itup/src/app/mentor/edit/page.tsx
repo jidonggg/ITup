@@ -254,7 +254,7 @@ export default function MentorEditPage() {
           <h2 className="text-2xl font-bold mb-2">멘토 등록이 필요합니다</h2>
           <p className="text-muted mb-6">아직 멘토로 등록되지 않았습니다. 먼저 멘토로 등록해주세요.</p>
           <Link
-            href="/mentor/register"
+            href="/mentor/apply"
             className="inline-block px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
           >
             멘토 등록하기

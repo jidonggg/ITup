@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -61,9 +62,11 @@ interface Stats {
   disputeCount: number;
 }
 
-export default function AdminPage() {
+function AdminPageContent() {
   const { user, profile, isInitialized } = useAuth();
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
+  const middlewareError = searchParams.get("error");
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
@@ -941,23 +944,71 @@ export default function AdminPage() {
     );
   }
 
-  if (!user || profile?.role !== "admin") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-8 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+  if (middlewareError || !user || profile?.role !== "admin") {
+    const errorInfo = middlewareError === "config"
+      ? {
+          icon: (
+            <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          ),
+          iconBg: "bg-orange-500/20",
+          title: "관리자 설정 필요",
+          description: "ADMIN_EMAILS 환경변수가 설정되지 않았습니다. Vercel 대시보드에서 환경변수를 확인해주세요.",
+        }
+      : middlewareError === "unauthenticated" || !user
+      ? {
+          icon: (
+            <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          ),
+          iconBg: "bg-blue-500/20",
+          title: "관리자 로그인이 필요합니다",
+          description: "관리자 페이지에 접근하려면 먼저 로그인해주세요.",
+        }
+      : {
+          icon: (
             <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
+          ),
+          iconBg: "bg-red-500/20",
+          title: "관리자 권한이 필요합니다",
+          description: user
+            ? `현재 로그인된 계정(${user.email})에는 관리자 권한이 없습니다.`
+            : "관리자만 접근할 수 있는 페이지입니다.",
+        };
+
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-8 text-center">
+          <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${errorInfo.iconBg} flex items-center justify-center`}>
+            {errorInfo.icon}
           </div>
-          <h2 className="text-2xl font-bold mb-2">접근 권한이 없어요</h2>
-          <p className="text-muted mb-6">관리자만 접근할 수 있어요.</p>
-          <Link
-            href="/"
-            className="inline-block px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
-          >
-            홈으로 돌아가기
-          </Link>
+          <h2 className="text-2xl font-bold mb-2">{errorInfo.title}</h2>
+          <p className="text-muted mb-6">{errorInfo.description}</p>
+          <div className="flex flex-col gap-3">
+            {(middlewareError === "unauthenticated" || !user) && (
+              <Link
+                href="/login?redirect=/admin"
+                className="inline-block px-6 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-medium"
+              >
+                로그인하기
+              </Link>
+            )}
+            <Link
+              href="/"
+              className={`inline-block px-6 py-2.5 rounded-full font-medium ${
+                middlewareError === "unauthenticated" || !user
+                  ? "border border-card-border text-muted hover:text-foreground"
+                  : "bg-gradient-to-r from-primary to-primary-dark text-white"
+              }`}
+            >
+              홈으로 돌아가기
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -2094,5 +2145,19 @@ export default function AdminPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        </div>
+      }
+    >
+      <AdminPageContent />
+    </Suspense>
   );
 }
