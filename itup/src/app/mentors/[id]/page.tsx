@@ -6,6 +6,8 @@ import { PRODUCT_INFO } from "@/lib/constants";
 import { JOB_TYPES, ENGINE_TYPES } from "@/lib/constants";
 import type { Mentor, Product, Review, ProductType } from "@/lib/supabase/types";
 import MentorDetailClient from "./MentorDetailClient";
+import JsonLd from "@/components/JsonLd";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export async function generateMetadata({
   params,
@@ -36,9 +38,14 @@ export async function generateMetadata({
   return {
     title: `${mentor.name} 멘토 - ${mentor.company}`,
     description,
+    alternates: {
+      canonical: `${SITE_CONFIG.url}/mentors/${id}`,
+    },
     openGraph: {
       title: `${mentor.name} 멘토 - ${mentor.company} | 커피챗`,
       description,
+      url: `${SITE_CONFIG.url}/mentors/${id}`,
+      type: "profile",
     },
   };
 }
@@ -124,8 +131,91 @@ export default async function MentorDetailPage({
 
   const minPrice = products.length > 0 ? Math.min(...products.map((p) => p.price)) : null;
 
+  const jobLabel = typedMentor.job_type
+    ? JOB_TYPES.find((j) => j.value === typedMentor.job_type)?.label || typedMentor.job_type
+    : "게임 개발";
+
+  const mentorJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      name: typedMentor.name,
+      jobTitle: typedMentor.position || jobLabel,
+      worksFor: {
+        "@type": "Organization",
+        name: typedMentor.company,
+      },
+      description: typedMentor.bio?.slice(0, 200) || `${typedMentor.company} ${typedMentor.position || ""} ${jobLabel} 멘토`,
+      knowsAbout: typedMentor.skills,
+      ...(typedMentor.rating > 0 && {
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: typedMentor.rating.toFixed(1),
+          reviewCount: typedMentor.reviews,
+          bestRating: 5,
+          worstRating: 1,
+        },
+      }),
+    },
+  };
+
+  const productJsonLd = products.length > 0
+    ? {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        itemListElement: products.map((product, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          item: {
+            "@type": "Service",
+            name: product.title,
+            description: product.description || PRODUCT_INFO[product.type as ProductType]?.description || "",
+            offers: {
+              "@type": "Offer",
+              price: product.price,
+              priceCurrency: "KRW",
+              availability: "https://schema.org/InStock",
+            },
+            provider: {
+              "@type": "Person",
+              name: typedMentor.name,
+            },
+          },
+        })),
+      }
+    : null;
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "홈",
+        item: SITE_CONFIG.url,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "멘토 찾기",
+        item: `${SITE_CONFIG.url}/mentors`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: `${typedMentor.name} 멘토`,
+        item: `${SITE_CONFIG.url}/mentors/${id}`,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
+      <JsonLd data={mentorJsonLd} />
+      {productJsonLd && <JsonLd data={productJsonLd} />}
+      <JsonLd data={breadcrumbJsonLd} />
       {/* Header */}
       <header className="sticky top-0 z-40 bg-secondary/90 backdrop-blur-md border-b border-card-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

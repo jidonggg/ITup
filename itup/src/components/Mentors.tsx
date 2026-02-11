@@ -109,10 +109,10 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
         </div>
 
         {/* View All Button */}
-        <div className="text-center mt-12">
+        <div className="text-center mt-14">
           <Link
             href="/mentors"
-            className="group inline-flex items-center gap-2 px-8 py-4 border border-card-border text-foreground hover:border-primary hover:text-primary transition-all duration-300 cursor-pointer rounded-full"
+            className="group inline-flex items-center gap-2 px-8 py-4 bg-white/50 backdrop-blur-sm border border-card-border/60 text-foreground hover:border-primary/50 hover:text-primary hover:shadow-lg hover:shadow-primary/[0.06] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer rounded-full font-medium"
           >
             모든 멘토 보기
             <svg
@@ -138,18 +138,18 @@ interface MentorCardProps {
 
 function MentorCardSkeleton() {
   return (
-    <div className="bg-card-bg border border-card-border rounded-2xl overflow-hidden animate-pulse">
-      <div className="h-48 bg-secondary" />
+    <div className="bg-white/60 backdrop-blur-sm border border-card-border/60 rounded-2xl overflow-hidden animate-pulse">
+      <div className="h-48 bg-gradient-to-br from-secondary/80 to-secondary/40" />
       <div className="p-6">
-        <div className="h-6 bg-secondary rounded w-2/3 mb-2" />
-        <div className="h-4 bg-secondary rounded w-1/2 mb-4" />
+        <div className="h-6 bg-secondary/80 rounded-lg w-2/3 mb-2" />
+        <div className="h-4 bg-secondary/60 rounded-lg w-1/2 mb-4" />
         <div className="flex gap-2 mb-4">
-          <div className="h-6 bg-secondary rounded w-16" />
-          <div className="h-6 bg-secondary rounded w-12" />
+          <div className="h-6 bg-secondary/60 rounded-full w-16" />
+          <div className="h-6 bg-secondary/60 rounded-full w-12" />
         </div>
-        <div className="pt-4 border-t border-card-border flex justify-between">
-          <div className="h-4 bg-secondary rounded w-12" />
-          <div className="h-4 bg-secondary rounded w-16" />
+        <div className="pt-4 border-t border-card-border/50 flex justify-between">
+          <div className="h-4 bg-secondary/60 rounded-lg w-12" />
+          <div className="h-4 bg-secondary/60 rounded-lg w-16" />
         </div>
       </div>
     </div>
@@ -176,57 +176,58 @@ function MentorCard({ mentor, index, onClick }: MentorCardProps) {
         role="button"
         tabIndex={0}
         aria-label={`${mentor.name} 멘토 상세 정보 보기`}
-        className="group relative bg-card-bg border border-card-border rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+        className="group relative bg-white/60 backdrop-blur-sm border border-card-border/60 rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.08] hover:-translate-y-1 transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
       >
         {/* Avatar Section */}
-        <div className="relative h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-3xl font-bold transform group-hover:scale-110 transition-transform duration-300">
+        <div className="relative h-48 bg-gradient-to-br from-primary/10 via-accent/10 to-primary-light/10 flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,_var(--accent)_0%,_transparent_60%)] opacity-20" />
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-3xl font-bold transform group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-primary/20">
             {mentor.name[0]}
           </div>
           {/* Company Badge */}
-          <div className="absolute top-4 right-4 px-3 py-1 bg-background/80 backdrop-blur-sm rounded-full text-xs font-medium text-primary">
+          <div className="absolute top-4 right-4 px-3 py-1.5 bg-white/80 backdrop-blur-md rounded-full text-xs font-semibold text-primary-dark border border-primary/10">
             {mentor.company}
           </div>
         </div>
 
         {/* Info Section */}
         <div className="p-6">
-          <h3 className="text-xl font-semibold mb-1 group-hover:text-primary transition-colors">
+          <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors duration-300">
             {mentor.name}
           </h3>
           <p className="text-muted text-sm mb-4">{mentor.role}</p>
 
           {/* Tags */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-md">
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
               {mentor.experience} 경력
             </span>
             {mentor.skills.slice(0, 2).map((skill) => (
-              <span key={skill} className="px-2 py-1 bg-secondary text-muted text-xs rounded-md">
+              <span key={skill} className="px-2.5 py-1 bg-secondary/80 text-muted text-xs rounded-full">
                 {skill}
               </span>
             ))}
             {mentor.skills.length > 2 && (
-              <span className="px-2 py-1 bg-secondary text-muted text-xs rounded-md">
+              <span className="px-2.5 py-1 bg-secondary/80 text-muted text-xs rounded-full">
                 +{mentor.skills.length - 2}
               </span>
             )}
           </div>
 
           {/* Stats */}
-          <div className="flex items-center justify-between pt-4 border-t border-card-border">
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center justify-between pt-4 border-t border-card-border/50">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
-              <span className="text-sm font-medium">{mentor.rating}</span>
+              <span className="text-sm font-bold text-foreground">{mentor.rating}</span>
             </div>
-            <span className="text-xs text-muted">{mentor.sessions}회 멘토링</span>
+            <span className="text-xs text-muted font-medium">{mentor.sessions}회 멘토링</span>
           </div>
         </div>
 
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        {/* Hover Overlay - Subtle gradient from bottom */}
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       </div>
     </div>
   );

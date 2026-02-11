@@ -9,7 +9,7 @@ import { consultTypeLabels, skillCategories } from "@/data/mentors";
 import { MentorData } from "@/components/MentorDetailModal";
 import MentorDetailModal from "@/components/MentorDetailModal";
 import ConsultModal from "@/components/ConsultModal";
-import { getTierInfo } from "@/lib/pricing/tiers";
+import { getTierInfo, getTieredPrice } from "@/lib/pricing/tiers";
 import { JOB_TYPES, ENGINE_TYPES } from "@/lib/constants";
 import { BottomSheet } from "@/components/mobile";
 
@@ -59,7 +59,7 @@ function MentorsContent() {
   const searchParams = useSearchParams();
   const [mentors, setMentors] = useState<(MentorData & { id: string; job_type?: JobType | null; engine?: EngineType | null })[]>([]);
   const [filteredMentors, setFilteredMentors] = useState<(MentorData & { id: string })[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Filters
   const [selectedCompany, setSelectedCompany] = useState("전체");
@@ -107,6 +107,7 @@ function MentorsContent() {
     const fetchMentors = async () => {
       if (!isSupabaseConfigured()) {
         // Already have initial data, no need to fetch
+        setIsLoading(false);
         return;
       }
 
@@ -728,13 +729,18 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
 
         {/* Stats */}
         <div className="flex items-center justify-between pt-3 md:pt-4 border-t border-card-border">
-          <div className="flex items-center gap-1">
-            <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-            <span className="text-sm font-medium">{mentor.rating}</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+              <span className="text-sm font-medium">{mentor.rating}</span>
+            </div>
+            <span className="text-xs text-muted">{mentor.sessions}회</span>
           </div>
-          <span className="text-xs text-muted">{mentor.sessions}회 멘토링</span>
+          <span className="text-sm font-semibold text-primary">
+            {getTieredPrice("coffee", mentor.experience).toLocaleString()}원~
+          </span>
         </div>
       </div>
     </div>

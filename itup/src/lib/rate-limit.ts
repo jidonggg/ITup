@@ -162,6 +162,12 @@ export const adminLimiter = new RateLimiter({
   windowMs: 60 * 1000,
 });
 
+/** /api/subscription/cancel — 5 req / 60s per user */
+export const subscriptionCancelLimiter = new RateLimiter({
+  limit: 5,
+  windowMs: 60 * 1000,
+});
+
 /** /api/settlement/* — 10 req / 60s per admin */
 export const settlementLimiter = new RateLimiter({
   limit: 10,

@@ -1,11 +1,16 @@
 import { Metadata } from "next";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   title: "자주 묻는 질문",
-  description: "커피챗 서비스 이용에 관한 자주 묻는 질문과 답변을 확인하세요. 멘토링 진행 방법, 결제, 환불 정책 등을 안내합니다.",
+  description: "커피챗 서비스 이용에 관한 자주 묻는 질문과 답변을 확인하세요. 멘토링 진행 방법, 결제, 환불 정책, 멘토 등록 방법 등을 안내합니다.",
+  alternates: {
+    canonical: `${SITE_CONFIG.url}/faq`,
+  },
   openGraph: {
     title: "자주 묻는 질문 | 커피챗",
-    description: "커피챗 서비스 이용에 관한 자주 묻는 질문과 답변을 확인하세요.",
+    description: "커피챗 서비스 이용에 관한 자주 묻는 질문과 답변을 확인하세요. 멘토링 진행 방법, 결제, 환불 정책 등.",
+    url: `${SITE_CONFIG.url}/faq`,
   },
 };
 
