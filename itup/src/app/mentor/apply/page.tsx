@@ -35,6 +35,8 @@ interface StepOneData {
   verifiedEmail: string | null;
 }
 
+type MentorProductType = Exclude<ProductType, "free_trial">;
+
 interface StepTwoData {
   // 이전 경력 (선택)
   wantsPreviousCareer: boolean | null;
@@ -44,7 +46,7 @@ interface StepTwoData {
   bio: string;
   profilePhoto: File | null;
   // 상품 등록
-  products: Record<ProductType, ProductSetting>;
+  products: Record<MentorProductType, ProductSetting>;
 }
 
 interface ProductSetting {
@@ -104,7 +106,6 @@ const initialStepTwo: StepTwoData = {
     coffee_chat: { enabled: false, price: "" },
     document_review: { enabled: false, price: "" },
     mock_interview: { enabled: false, price: "" },
-    free_trial: { enabled: false, price: "" },
   },
 };
 
@@ -314,7 +315,7 @@ export default function MentorApplyPage() {
     setStepTwo((prev) => ({ ...prev, profilePhoto: file }));
   };
 
-  const toggleProduct = (type: ProductType) => {
+  const toggleProduct = (type: MentorProductType) => {
     setStepTwo((prev) => ({
       ...prev,
       products: {
@@ -329,7 +330,7 @@ export default function MentorApplyPage() {
     clearError(`price_${type}`);
   };
 
-  const handlePriceChange = (type: ProductType, value: string) => {
+  const handlePriceChange = (type: MentorProductType, value: string) => {
     const numericValue = value.replace(/[^0-9]/g, "");
     const num = numericValue === "" ? "" : parseInt(numericValue, 10);
     setStepTwo((prev) => ({
@@ -356,7 +357,7 @@ export default function MentorApplyPage() {
     }
 
     // 상품 최소 1개
-    const enabledProducts = (Object.keys(stepTwo.products) as ProductType[]).filter(
+    const enabledProducts = (Object.keys(stepTwo.products) as MentorProductType[]).filter(
       (t) => stepTwo.products[t].enabled
     );
 
@@ -540,7 +541,7 @@ export default function MentorApplyPage() {
       }
 
       // Insert enabled products
-      const enabledProducts = (Object.keys(stepTwo.products) as ProductType[]).filter(
+      const enabledProducts = (Object.keys(stepTwo.products) as MentorProductType[]).filter(
         (t) => stepTwo.products[t].enabled
       );
 
@@ -1116,7 +1117,7 @@ export default function MentorApplyPage() {
   // ---------------------------------------------------------------------------
 
   const renderStepTwo = () => {
-    const productTypes: ProductType[] = [
+    const productTypes: MentorProductType[] = [
       "coffee_chat",
       "document_review",
       "mock_interview",

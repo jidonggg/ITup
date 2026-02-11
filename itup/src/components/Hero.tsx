@@ -22,6 +22,11 @@ export default function Hero() {
     router.push("/mentors");
   };
 
+  const handleLearnMoreClick = () => {
+    trackClick("히어로_서비스알아보기_버튼");
+    document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   // 헤드라인 로테이션
   useEffect(() => {
     const interval = setInterval(() => {
@@ -123,6 +128,17 @@ export default function Hero() {
                 </svg>
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+            </button>
+            <button
+              onClick={handleLearnMoreClick}
+              className="group px-10 py-4.5 border border-white/30 bg-white/10 backdrop-blur-sm text-foreground font-semibold text-lg transform hover:-translate-y-1.5 hover:bg-white/20 hover:border-primary/40 hover:shadow-lg transition-all duration-300 cursor-pointer rounded-full"
+            >
+              <span className="flex items-center gap-2">
+                서비스 알아보기
+                <svg className="w-5 h-5 transform group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </span>
             </button>
           </div>
 

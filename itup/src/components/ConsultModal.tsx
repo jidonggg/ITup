@@ -59,8 +59,21 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   const [consultationId, setConsultationId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductType>(initialProductType || "coffee");
 
+  // 할인 코드 상태
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountLoading, setDiscountLoading] = useState(false);
+  const [discountResult, setDiscountResult] = useState<{
+    valid: boolean;
+    percentage: number;
+    description: string;
+    discountAmount: number;
+    finalAmount: number;
+  } | null>(null);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+
   const currentProduct = products.find((p) => p.id === selectedProduct) ?? products[0];
   const price = getTieredPrice(selectedProduct, mentorExperience);
+  const finalPrice = discountResult ? discountResult.finalAmount : price;
 
   useModalClose(isOpen, onClose);
   useBodyScrollLock(isOpen);
@@ -225,17 +238,17 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       // 위젯 인스턴스 생성
       const widgets = tossPayments.widgets({ customerKey });
 
-      // 결제 금액 설정
+      // 결제 금액 설정 (할인 적용된 금액)
       await widgets.setAmount({
         currency: "KRW",
-        value: price,
+        value: finalPrice,
       });
 
       // 결제 요청
       await widgets.requestPayment({
         orderId,
         orderName: `${currentProduct.name} - ${mentorName || "멘토"}`,
-        successUrl: `${window.location.origin}/payment/success?consultationId=${consultationId || "local"}`,
+        successUrl: `${window.location.origin}/payment/success?consultationId=${consultationId || "local"}${discountResult ? `&discountCode=${encodeURIComponent(discountCode.trim())}` : ""}`,
         failUrl: `${window.location.origin}/payment/fail`,
         customerEmail: user?.email || formData.email,
         customerName: profile?.name || formData.name,
@@ -249,12 +262,72 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     }
   };
 
+  const handleApplyDiscount = async () => {
+    if (!discountCode.trim()) {
+      setDiscountError("할인 코드를 입력해주세요.");
+      return;
+    }
+
+    setDiscountLoading(true);
+    setDiscountError(null);
+    setDiscountResult(null);
+
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        setDiscountError("로그인이 필요합니다.");
+        setDiscountLoading(false);
+        return;
+      }
+
+      const res = await fetch("/api/discount/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ code: discountCode.trim(), amount: price }),
+      });
+
+      const data = await res.json();
+
+      if (data.valid) {
+        setDiscountResult({
+          valid: true,
+          percentage: data.percentage,
+          description: data.description,
+          discountAmount: data.discountAmount,
+          finalAmount: data.finalAmount,
+        });
+        trackEvent("discount", "할인코드_적용_성공", { code: discountCode.trim(), percentage: data.percentage });
+      } else {
+        setDiscountError(data.error || "유효하지 않은 할인 코드입니다.");
+      }
+    } catch {
+      setDiscountError("할인 코드 확인 중 오류가 발생했습니다.");
+    } finally {
+      setDiscountLoading(false);
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setDiscountCode("");
+    setDiscountResult(null);
+    setDiscountError(null);
+  };
+
   const handleClose = () => {
     setFormData(initialFormData);
     setErrors({});
     setStep("form");
     setConsultationId(null);
     setSelectedProduct(initialProductType || "coffee");
+    setDiscountCode("");
+    setDiscountResult(null);
+    setDiscountError(null);
     onClose();
   };
 
@@ -321,10 +394,69 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                   <span className="text-muted">시간</span>
                   <span className="font-medium">{currentProduct.duration}</span>
                 </div>
+                {discountResult && (
+                  <div className="flex justify-between items-center mb-2 text-sm">
+                    <span className="text-green-500">할인 ({discountResult.percentage}%)</span>
+                    <span className="text-green-500 font-medium">-{discountResult.discountAmount.toLocaleString()}원</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center pt-2 border-t border-card-border">
                   <span className="font-medium">결제 금액</span>
-                  <span className="text-xl font-bold text-primary">{price.toLocaleString()}원</span>
+                  <div className="text-right">
+                    {discountResult && (
+                      <span className="text-sm text-muted line-through mr-2">{price.toLocaleString()}원</span>
+                    )}
+                    <span className="text-xl font-bold text-primary">{finalPrice.toLocaleString()}원</span>
+                  </div>
                 </div>
+              </div>
+
+              {/* 할인 코드 */}
+              <div className="mb-6">
+                {discountResult ? (
+                  <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
+                    <div className="text-sm">
+                      <span className="text-green-500 font-medium">{discountResult.description}</span>
+                      <span className="text-muted ml-2">({discountResult.percentage}% 할인 적용)</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveDiscount}
+                      className="text-muted hover:text-foreground text-sm ml-2 cursor-pointer"
+                    >
+                      취소
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={discountCode}
+                        onChange={(e) => {
+                          setDiscountCode(e.target.value);
+                          if (discountError) setDiscountError(null);
+                        }}
+                        placeholder="할인 코드 입력"
+                        maxLength={50}
+                        className={`flex-1 px-4 py-2.5 bg-secondary border rounded-xl text-foreground text-sm placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
+                          discountError ? "border-red-500" : "border-card-border"
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyDiscount}
+                        disabled={discountLoading || !discountCode.trim()}
+                        className="px-4 py-2.5 bg-secondary border border-card-border rounded-xl text-sm font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        {discountLoading ? "확인 중..." : "적용"}
+                      </button>
+                    </div>
+                    {discountError && (
+                      <p className="mt-1.5 text-sm text-red-500">{discountError}</p>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* 신청 정보 요약 */}
@@ -338,7 +470,10 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => setStep("form")}
+                  onClick={() => {
+                    setStep("form");
+                    handleRemoveDiscount();
+                  }}
                   className="flex-1 py-3 border border-card-border text-foreground rounded-xl font-medium hover:bg-secondary transition-colors cursor-pointer"
                 >
                   이전으로
@@ -348,7 +483,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                   disabled={isLoading}
                   className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 cursor-pointer"
                 >
-                  {isLoading ? "처리 중..." : `${price.toLocaleString()}원 결제할게요`}
+                  {isLoading ? "처리 중..." : `${finalPrice.toLocaleString()}원 결제할게요`}
                 </button>
               </div>
 

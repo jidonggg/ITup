@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -12,6 +12,14 @@ import ConsultModal from "@/components/ConsultModal";
 import { getTierInfo, getTieredPrice } from "@/lib/pricing/tiers";
 import { JOB_TYPES, ENGINE_TYPES } from "@/lib/constants";
 import { BottomSheet } from "@/components/mobile";
+
+type SortOption = "recommended" | "rating" | "reviews" | "sessions";
+const sortOptions: { value: SortOption; label: string }[] = [
+  { value: "recommended", label: "추천순" },
+  { value: "rating", label: "평점 높은순" },
+  { value: "reviews", label: "리뷰 많은순" },
+  { value: "sessions", label: "세션 많은순" },
+];
 
 function convertToMentorData(mentor: Mentor): MentorData & { id: string; job_type?: JobType | null; engine?: EngineType | null } {
   return {
@@ -67,6 +75,26 @@ function MentorsContent() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedJobType, setSelectedJobType] = useState<JobType | "all">("all");
   const [selectedEngineType, setSelectedEngineType] = useState<EngineType | "all">("all");
+
+  // Search & Sort
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("recommended");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setSearchQuery(value);
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, []);
 
   // Mobile filter bottom sheet
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
@@ -145,6 +173,17 @@ function MentorsContent() {
   useEffect(() => {
     let result = [...mentors];
 
+    // Text search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(m =>
+        m.name.toLowerCase().includes(q) ||
+        m.company.toLowerCase().includes(q) ||
+        m.skills.some(s => s.toLowerCase().includes(q)) ||
+        (m.bio && m.bio.toLowerCase().includes(q))
+      );
+    }
+
     // Company filter
     if (selectedCompany !== "전체") {
       if (selectedCompany === "기타") {
@@ -177,9 +216,26 @@ function MentorsContent() {
       result = result.filter(m => m.engine === selectedEngineType);
     }
 
+    // Sort
+    switch (sortBy) {
+      case "rating":
+        result.sort((a, b) => b.rating - a.rating);
+        break;
+      case "reviews":
+        result.sort((a, b) => b.reviews - a.reviews);
+        break;
+      case "sessions":
+        result.sort((a, b) => b.sessions - a.sessions);
+        break;
+      case "recommended":
+      default:
+        // Default order from DB (already sorted by rating desc)
+        break;
+    }
+
     setFilteredMentors(result);
     setCurrentPage(1); // 필터 변경 시 첫 페이지로
-  }, [mentors, selectedCompany, selectedConsultType, selectedSkills, selectedJobType, selectedEngineType]);
+  }, [mentors, searchQuery, sortBy, selectedCompany, selectedConsultType, selectedSkills, selectedJobType, selectedEngineType]);
 
   // Pagination
   const totalPages = Math.ceil(filteredMentors.length / MENTORS_PER_PAGE);
@@ -202,6 +258,9 @@ function MentorsContent() {
     setSelectedSkills([]);
     setSelectedJobType("all");
     setSelectedEngineType("all");
+    setSearchInput("");
+    setSearchQuery("");
+    setSortBy("recommended");
   };
 
   const openMentorModal = (mentor: MentorData & { id: string }) => {
@@ -228,13 +287,15 @@ function MentorsContent() {
     setSelectedMentor(null); // ConsultModal 닫을 때 selectedMentor 초기화
   };
 
-  const hasActiveFilters = selectedCompany !== "전체" || selectedConsultType !== "all" || selectedSkills.length > 0 || selectedJobType !== "all" || selectedEngineType !== "all";
+  const hasActiveFilters = selectedCompany !== "전체" || selectedConsultType !== "all" || selectedSkills.length > 0 || selectedJobType !== "all" || selectedEngineType !== "all" || searchQuery.trim() !== "" || sortBy !== "recommended";
   const activeFilterCount = [
     selectedCompany !== "전체",
     selectedConsultType !== "all",
     selectedSkills.length > 0,
     selectedJobType !== "all",
     selectedEngineType !== "all",
+    searchQuery.trim() !== "",
+    sortBy !== "recommended",
   ].filter(Boolean).length;
 
   // Filter content component (shared between sidebar and bottom sheet)
@@ -395,11 +456,64 @@ function MentorsContent() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Page Title */}
-        <div className="mb-4 md:mb-8">
+        <div className="mb-4 md:mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">멘토 찾기</h1>
           <p className="text-muted text-sm md:text-base">
             {filteredMentors.length}명의 현직자 멘토가 기다리고 있어요
           </p>
+        </div>
+
+        {/* Search & Sort Bar */}
+        <div className="mb-4 md:mb-6 flex flex-col sm:flex-row gap-3">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <svg
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={searchInput}
+              onChange={e => handleSearchChange(e.target.value)}
+              placeholder="멘토 이름, 회사, 스킬로 검색..."
+              className="w-full pl-11 pr-4 py-3 bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-xl text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all min-h-[48px] shadow-sm"
+            />
+            {searchInput && (
+              <button
+                onClick={() => { setSearchInput(""); setSearchQuery(""); }}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-foreground transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="relative sm:w-48">
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as SortOption)}
+              className="w-full appearance-none px-4 py-3 pr-10 bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-xl text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all min-h-[48px] cursor-pointer shadow-sm"
+            >
+              {sortOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <svg
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
 
         {/* Mobile Filter Button */}
@@ -427,6 +541,19 @@ function MentorsContent() {
           {/* Active filter chips (mobile) */}
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-2 mt-3">
+              {searchQuery.trim() !== "" && (
+                <span className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-full flex items-center gap-1">
+                  &quot;{searchQuery}&quot;
+                  <button
+                    onClick={() => { setSearchInput(""); setSearchQuery(""); }}
+                    className="ml-1 hover:text-primary-dark"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              )}
               {selectedCompany !== "전체" && (
                 <span className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-full flex items-center gap-1">
                   {selectedCompany}
