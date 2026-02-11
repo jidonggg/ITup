@@ -3,6 +3,7 @@
 import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 // TossPayments 에러 코드 -> 사용자 친화적 메시지 매핑
 const ERROR_MESSAGES: Record<string, string> = {
@@ -102,7 +103,7 @@ function PaymentFailContent() {
 
         <p className="mt-8 text-sm text-muted">
           문제가 계속되면{" "}
-          <a href="mailto:support@itup.kr" className="text-primary hover:underline">
+          <a href={`mailto:${SITE_CONFIG.contactEmail.support}`} className="text-primary hover:underline">
             고객센터
           </a>
           로 문의해 주세요.

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export default function PrivacyPage() {
   return (
@@ -142,7 +143,7 @@ export default function PrivacyPage() {
 
             <div className="bg-secondary/50 rounded-lg p-4">
               <p><strong>개인정보 보호책임자</strong></p>
-              <p>이메일: privacy@itup.kr</p>
+              <p>이메일: {SITE_CONFIG.contactEmail.privacy}</p>
             </div>
 
             <p className="mt-4">

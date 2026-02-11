@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { getDisplayDomain } from "@/lib/site-config";
 
 export const runtime = "edge";
 
@@ -137,7 +138,7 @@ export default function Image() {
             display: "flex",
           }}
         >
-          coffeechat-kr.vercel.app
+          {getDisplayDomain()}
         </div>
       </div>
     ),

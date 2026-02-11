@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { ProductType, JobType, EngineType } from "@/lib/supabase/types";
+import { SITE_CONFIG } from "@/lib/site-config";
 import {
   PRICE_LIMITS,
   RECOMMENDED_PRICES,
@@ -1095,7 +1096,7 @@ export default function MentorApplyPage() {
                 type="button"
                 onClick={() =>
                   showToast(
-                    "회사 이메일이 없는 경우 support@itup.kr 로 문의해주세요. 재직증명서 등 대체 인증 방법을 안내드립니다.",
+                    `회사 이메일이 없는 경우 ${SITE_CONFIG.contactEmail.support} 로 문의해주세요. 재직증명서 등 대체 인증 방법을 안내드립니다.`,
                     "info"
                   )
                 }

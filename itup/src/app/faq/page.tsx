@@ -1,5 +1,7 @@
 import Link from "next/link";
 import FAQClient from "./FAQClient";
+import JsonLd from "@/components/JsonLd";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 interface FAQItem {
   question: string;
@@ -91,7 +93,7 @@ const faqData: FAQItem[] = [
   {
     category: "기타",
     question: "문의사항이 있으면 어디로 연락하나요?",
-    answer: "이메일 support@itup.kr로 문의해주세요. 빠르게 답변드릴게요.",
+    answer: `이메일 ${SITE_CONFIG.contactEmail.support}로 문의해주세요. 빠르게 답변드릴게요.`,
   },
   {
     category: "기타",
@@ -101,8 +103,22 @@ const faqData: FAQItem[] = [
 ];
 
 export default function FAQPage() {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqData.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd data={faqJsonLd} />
       {/* Header */}
       <header className="border-b border-card-border">
         <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
@@ -128,7 +144,7 @@ export default function FAQPage() {
             궁금한 점이 있으시면 아래에서 찾아보세요.
             <br />
             원하는 답변이 없다면{" "}
-            <a href="mailto:support@itup.kr" className="text-primary hover:underline">
+            <a href={`mailto:${SITE_CONFIG.contactEmail.support}`} className="text-primary hover:underline">
               문의하기
             </a>
             를 이용해 주세요.
@@ -145,7 +161,7 @@ export default function FAQPage() {
           </p>
           <div className="flex justify-center">
             <a
-              href="mailto:support@itup.kr"
+              href={`mailto:${SITE_CONFIG.contactEmail.support}`}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary-dark transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

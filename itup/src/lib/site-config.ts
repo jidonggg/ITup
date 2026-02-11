@@ -15,7 +15,13 @@ export const SITE_CONFIG = {
   // URL (환경변수 우선, 없으면 기본값 사용)
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://coffeechat-kr.vercel.app",
 
-  // 이메일 주소 (itup.kr 도메인 인증 후 변경 가능)
+  // 공개 연락처용 이메일 (환경변수 우선, 페이지에 표시되는 이메일)
+  contactEmail: {
+    support: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@itup.kr",
+    privacy: process.env.NEXT_PUBLIC_PRIVACY_EMAIL || "privacy@itup.kr",
+  },
+
+  // 발신용 이메일 (Resend 등 이메일 서비스용)
   email: {
     support: "onboarding@resend.dev",
     noreply: "onboarding@resend.dev",
@@ -34,7 +40,12 @@ export const SITE_CONFIG = {
     representative: "대표자명",
     address: "주소",
   },
-} as const;
+};
+
+// 표시용 도메인 (프로토콜 제외, OG 이미지 등에서 사용)
+export function getDisplayDomain(): string {
+  return SITE_CONFIG.url.replace(/^https?:\/\//, "");
+}
 
 // 이메일 발신자 형식
 export function getEmailFrom(type: "support" | "noreply" = "noreply"): string {

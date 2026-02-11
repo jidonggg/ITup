@@ -139,6 +139,13 @@ export default function AdminPage() {
     }
 
     fetchAllData();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchAllData();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [isInitialized, user, profile]);
 
   const fetchAllData = async () => {

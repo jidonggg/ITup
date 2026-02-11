@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 interface GuidelineItem {
   title: string;
@@ -242,7 +243,7 @@ export default function MentorGuidelinesPage() {
             가이드라인 관련 문의는 편하게 연락주세요.
           </p>
           <a
-            href="mailto:support@itup.kr"
+            href={`mailto:${SITE_CONFIG.contactEmail.support}`}
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary-dark transition-colors"
           >
             <svg

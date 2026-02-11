@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 const footerLinks = {
   서비스: [
@@ -14,7 +15,7 @@ const footerLinks = {
   회사: [
     { label: "회사 소개", href: "/about" },
     { label: "자주 묻는 질문", href: "/faq" },
-    { label: "문의하기", href: "mailto:support@itup.kr" },
+    { label: "문의하기", href: `mailto:${SITE_CONFIG.contactEmail.support}` },
   ],
   지원: [
     { label: "이용약관", href: "/terms" },
@@ -108,13 +109,13 @@ export default function Footer() {
             </p>
             {/* 문의 이메일 */}
             <a
-              href="mailto:support@itup.kr"
+              href={`mailto:${SITE_CONFIG.contactEmail.support}`}
               className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              support@itup.kr
+              {SITE_CONFIG.contactEmail.support}
             </a>
           </div>
 
