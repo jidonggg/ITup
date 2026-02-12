@@ -393,7 +393,7 @@ export default async function MentorDetailPage({
               <div className="bg-gradient-to-r from-accent/20 via-primary/10 to-accent/20 border border-accent/30 rounded-2xl p-4 md:p-5">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                   <div className="flex items-center gap-3 text-center sm:text-left">
-                    <span className="text-xl md:text-2xl">🎁</span>
+                    <svg className="w-5 h-5 md:w-6 md:h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
                     <div>
                       <p className="font-semibold text-sm md:text-base">15분 무료 멘토링 체험</p>
                       <p className="text-xs md:text-sm text-muted">결제 없이 먼저 체험해 보세요!</p>

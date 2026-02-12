@@ -1137,7 +1137,7 @@ function AdminPageContent() {
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">⚠️</span>
+                    <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
                     <div>
                       <p className="font-medium">승인 대기중인 멘토가 있습니다</p>
                       <p className="text-sm text-muted">{stats.pendingMentors}명의 멘토가 승인을 기다리고 있습니다</p>
@@ -1157,7 +1157,7 @@ function AdminPageContent() {
               <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">🔍</span>
+                    <svg className="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
                     <div>
                       <p className="font-medium">검증 대기중인 멘토가 있습니다</p>
                       <p className="text-sm text-muted">{stats.pendingVerifications}명의 멘토가 검증을 기다리고 있습니다</p>
@@ -1177,7 +1177,7 @@ function AdminPageContent() {
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">🚨</span>
+                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
                     <div>
                       <p className="font-medium">해결 대기중인 분쟁이 있습니다</p>
                       <p className="text-sm text-muted">{stats.disputeCount}건의 분쟁이 관리자 결정을 기다리고 있습니다</p>

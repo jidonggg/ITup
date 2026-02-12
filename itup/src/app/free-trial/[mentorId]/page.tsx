@@ -218,7 +218,7 @@ export default function FreeTrialPage({
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-card-bg border border-card-border rounded-2xl p-8 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center">
-            <span className="text-3xl">🎁</span>
+            <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
           </div>
           <h2 className="text-2xl font-bold mb-2">이미 체험을 이용하셨어요</h2>
           <p className="text-muted mb-6">무료 체험은 1회만 가능합니다. 유료 멘토링을 이용해주세요.</p>
@@ -266,7 +266,7 @@ export default function FreeTrialPage({
 
         {/* Free Trial Badge */}
         <div className="flex items-center gap-3 mb-8 p-4 bg-accent/10 border border-accent/30 rounded-xl">
-          <span className="text-2xl">🎁</span>
+          <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
           <div>
             <p className="font-semibold text-accent">15분 무료 체험</p>
             <p className="text-sm text-muted">결제 없이 바로 예약 확정됩니다</p>
