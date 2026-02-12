@@ -58,6 +58,7 @@
 
 | 커밋 | 내용 | 변경 파일 |
 |------|------|-----------|
+| Phase 8-B (`6f9d19e`) | 전체 페이지 이모지 → SVG 라인 아이콘 교체 | 9개 |
 | Phase 8 (`9d2c9ac`) | 페이지 콘텐츠 리라이팅 - AI 느낌 제거, 자연스러운 톤 | 4개 |
 | Phase 7 (`f7cbfec`) | QA 재검증 + available_times 저장 수정 | 2개 |
 | Phase 6 (`a6e549f`) | 잔여 이슈 전체 해결 (HIGH 4 + MED 8 + LOW 5) | 15개 |
@@ -71,6 +72,27 @@
 ---
 
 ## 작업 타임라인 (최신순)
+
+### Phase 8-B: 전체 이모지 → SVG 아이콘 교체
+
+**요청**: "다른 페이지들도 이모지 다 아이콘으로 바꿔줘"
+**커밋**: `3ca19b3` → `2ed14a1` → `6f9d19e` (3단계)
+**배포**: Vercel 자동 배포, 전체 12개 페이지 브라우저 확인 완료
+
+#### 교체 내역 (15개 이모지, 9개 파일)
+
+| 이모지 | SVG 아이콘 | 적용 파일 |
+|--------|-----------|----------|
+| 🎁 | gift box | FreeTrialBanner, FreeTrialConversionCTA, payment/success, free-trial, mentors/[id] |
+| 🎉 | sparkles | FreeTrialConversionCTA |
+| 📅 👤 | calendar, user | mypage (탭 아이콘 + 빈 상태) |
+| ⚠️ 🔍 🚨 | warning triangle, magnifying glass, exclamation circle | admin |
+| 🎮 ☕(비로고) 📄 🔒 | monitor, chat bubble, document, shield check | Stats, about |
+
+- 브랜드 로고 ☕ (Header/Footer 등)는 유지
+- 모든 SVG: `stroke="currentColor"`, `strokeWidth={1.5}`, `fill="none"` 통일
+
+---
 
 ### Phase 8: 페이지 콘텐츠 리라이팅 (AI 느낌 제거)
 
