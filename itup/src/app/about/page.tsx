@@ -1,175 +1,159 @@
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export default function AboutPage() {
-  const values = [
-    {
-      icon: "🎯",
-      title: "실전 중심",
-      description: "현업에서 바로 적용할 수 있는 실질적인 조언을 제공해요.",
-    },
-    {
-      icon: "🤝",
-      title: "신뢰와 연결",
-      description: "검증된 멘토와 멘티 간의 진정한 연결을 만들어가요.",
-    },
-    {
-      icon: "🚀",
-      title: "성장 지원",
-      description: "개인의 커리어 성장을 위한 최적의 환경을 제공해요.",
-    },
-    {
-      icon: "💡",
-      title: "업계 인사이트",
-      description: "게임 업계의 최신 트렌드와 인사이트를 공유해요.",
-    },
-  ];
-
-  const milestones = [
-    { year: "2025", event: "커피챗 서비스 구상 시작" },
-    { year: "2026", event: "베타 서비스 오픈" },
-  ];
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative py-20 md:py-32 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
+        <section className="relative py-20 md:py-28 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-background to-accent/5" />
 
-          <div className="relative max-w-4xl mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              게임 업계의 성장을
+          <div className="relative max-w-3xl mx-auto px-4 text-center">
+            <h1 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">
+              게임 업계 취업,
               <br />
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                함께 만들어갑니다
-              </span>
+              혼자 준비하기 막막하잖아요.
             </h1>
-            <p className="text-lg md:text-xl text-muted max-w-2xl mx-auto">
-              커피챗은 게임 업계 현직자와 예비 개발자를 연결하여
-              <br className="hidden md:block" />
-              실질적인 커리어 성장을 돕는 커피챗이에요.
+            <p className="text-lg text-muted max-w-xl mx-auto leading-relaxed">
+              그래서 만들었어요.
+              <br />
+              현직자한테 직접 물어볼 수 있는 곳.
             </p>
           </div>
         </section>
 
-        {/* Mission Section */}
-        <section className="py-16 md:py-24 bg-card-bg border-y border-card-border">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <h2 className="text-3xl font-bold mb-6">우리의 미션</h2>
-                <p className="text-muted leading-relaxed mb-6">
-                  게임 업계 취업과 커리어 성장은 혼자 준비하기 어려워요.
-                  인터넷에 있는 정보는 오래되었거나 실무와 동떨어진 경우가 많아요.
-                </p>
-                <p className="text-muted leading-relaxed mb-6">
-                  커피챗은 현업에서 직접 일하고 있는 게임 개발자, 기획자, 아티스트들과
-                  1:1 대화를 통해 실질적인 조언을 받을 수 있는 기회를 제공해요.
-                </p>
-                <p className="text-foreground font-medium">
-                  한 잔의 커피처럼 가볍게, 하지만 진정성 있는 대화를 통해
-                  여러분의 꿈에 한 걸음 더 다가갈 수 있도록 도울게요.
+        {/* Story Section */}
+        <section className="py-16 md:py-20 bg-card-bg border-y border-card-border">
+          <div className="max-w-3xl mx-auto px-4">
+            <h2 className="text-2xl font-bold mb-8">왜 커피챗을 만들었나</h2>
+
+            <div className="space-y-6 text-foreground/80 leading-relaxed">
+              <p>
+                게임 업계에 들어가고 싶은데 어디서부터 준비해야 할지 모르겠다는 이야기를 정말 많이 들었어요.
+                인터넷에서 찾아보면 몇 년 전 정보거나, &quot;열심히 하세요&quot; 같은 뜬구름 잡는 답변뿐이고요.
+              </p>
+              <p>
+                실제로 게임사에서 일하는 사람한테 물어보면 5분이면 알 수 있는 건데,
+                그 5분짜리 대화를 할 기회가 없는 거예요.
+                주변에 게임 업계 아는 사람이 없으면 더더욱요.
+              </p>
+              <p>
+                커피챗은 그 간단한 문제를 해결하려고 시작했어요.
+                넥슨, 넷마블, 크래프톤 같은 곳에서 실제로 일하고 있는 기획자, 개발자, 아티스트한테
+                궁금한 걸 직접 물어볼 수 있는 자리를 만드는 거죠.
+              </p>
+              <p className="text-foreground font-medium">
+                거창한 멘토링이 아니라, 커피 한 잔 하면서 나누는 솔직한 대화.
+                그게 커피챗이 하고 싶은 거예요.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* What We Do Section */}
+        <section className="py-16 md:py-20">
+          <div className="max-w-3xl mx-auto px-4">
+            <h2 className="text-2xl font-bold mb-8">이런 걸 해요</h2>
+
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                <div className="text-2xl mb-3">☕</div>
+                <h3 className="font-semibold mb-2">커피챗</h3>
+                <p className="text-sm text-muted leading-relaxed">
+                  현직자와 15분~30분 가볍게 이야기해요.
+                  면접 준비, 회사 분위기, 직무 궁금증 등 뭐든 물어볼 수 있어요.
                 </p>
               </div>
-              <div className="relative">
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-8xl mb-4">☕</div>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                      Coffee Chat
-                    </p>
-                  </div>
-                </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                <div className="text-2xl mb-3">📄</div>
+                <h3 className="font-semibold mb-2">이력서 & 포폴 리뷰</h3>
+                <p className="text-sm text-muted leading-relaxed">
+                  실제 채용에 관여했던 분들이 이력서와 포트폴리오를 봐줘요.
+                  어디를 어떻게 고치면 좋을지 구체적으로 알려줘요.
+                </p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                <div className="text-2xl mb-3">🎤</div>
+                <h3 className="font-semibold mb-2">모의면접</h3>
+                <p className="text-sm text-muted leading-relaxed">
+                  실전처럼 면접을 연습하고, 바로 피드백을 받아요.
+                  실제 면접관 출신 멘토도 있어요.
+                </p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                <div className="text-2xl mb-3">🎮</div>
+                <h3 className="font-semibold mb-2">게임 업계 전문</h3>
+                <p className="text-sm text-muted leading-relaxed">
+                  기획, 프로그래밍, 아트, QA, 마케팅까지.
+                  게임 업계 전 직군의 현직자를 만날 수 있어요.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Values Section */}
-        <section className="py-16 md:py-24">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">핵심 가치</h2>
-              <p className="text-muted">우리가 중요하게 생각하는 것들</p>
-            </div>
+        {/* How It Works - Simple */}
+        <section className="py-16 md:py-20 bg-card-bg border-y border-card-border">
+          <div className="max-w-3xl mx-auto px-4">
+            <h2 className="text-2xl font-bold mb-8">이용 방법</h2>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {values.map((value, index) => (
-                <div
-                  key={index}
-                  className="bg-card-bg border border-card-border rounded-xl p-6 hover:border-primary/50 transition-colors"
-                >
-                  <div className="text-4xl mb-4">{value.icon}</div>
-                  <h3 className="text-lg font-semibold mb-2">{value.title}</h3>
-                  <p className="text-sm text-muted">{value.description}</p>
+            <div className="space-y-6">
+              {[
+                { step: "1", title: "멘토 고르기", desc: "회사, 직무, 경력을 보고 나한테 맞는 멘토를 선택해요." },
+                { step: "2", title: "신청하기", desc: "궁금한 점을 적고 신청하면 돼요. 결제도 간편해요." },
+                { step: "3", title: "대화하기", desc: "온라인 또는 오프라인으로 만나서 궁금한 걸 다 물어보세요." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 items-start">
+                  <div className="w-8 h-8 shrink-0 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+                    {item.step}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">{item.title}</h3>
+                    <p className="text-sm text-muted">{item.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Timeline Section */}
-        <section className="py-16 md:py-24 bg-card-bg border-y border-card-border">
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">우리의 여정</h2>
-              <p className="text-muted">커피챗이 걸어온 길</p>
-            </div>
-
-            <div className="relative">
-              <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-0.5 bg-card-border" />
-              <div className="space-y-8">
-                {milestones.map((milestone, index) => (
-                  <div
-                    key={index}
-                    className={`relative flex items-center ${
-                      index % 2 === 0 ? "justify-start" : "justify-end"
-                    }`}
-                  >
-                    <div
-                      className={`w-5/12 ${
-                        index % 2 === 0 ? "pr-8 text-right" : "pl-8 text-left"
-                      }`}
-                    >
-                      <div className="bg-background border border-card-border rounded-xl p-4">
-                        <span className="text-primary font-bold">{milestone.year}</span>
-                        <p className="text-sm mt-1">{milestone.event}</p>
-                      </div>
-                    </div>
-                    <div className="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-primary rounded-full border-4 border-background" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* CTA Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-br from-primary/10 to-accent/10">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-4">함께 성장할 준비가 되셨나요?</h2>
+        <section className="py-16 md:py-20">
+          <div className="max-w-3xl mx-auto px-4 text-center">
+            <h2 className="text-2xl font-bold mb-3">궁금한 거 있으면 물어보세요</h2>
             <p className="text-muted mb-8">
-              지금 바로 커피챗에서 나에게 맞는 멘토를 찾아보세요.
+              첫 커피챗, 부담 없이 시작해보세요.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/mentors"
-                className="px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all"
+                className="px-8 py-3.5 bg-primary text-white rounded-full font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all"
               >
                 멘토 찾아보기
               </Link>
               <Link
-                href="/mentor/apply"
-                className="px-8 py-4 border border-card-border text-foreground rounded-full font-semibold hover:border-primary hover:text-primary transition-colors"
+                href="/faq"
+                className="px-8 py-3.5 border border-card-border text-foreground rounded-full font-semibold hover:border-primary hover:text-primary transition-colors"
               >
-                멘토로 참여하기
+                자주 묻는 질문
               </Link>
+            </div>
+
+            {/* Contact */}
+            <div className="mt-10 text-sm text-muted">
+              다른 궁금한 점이 있으면{" "}
+              <a
+                href={`mailto:${SITE_CONFIG.contactEmail.support}`}
+                className="text-primary hover:underline"
+              >
+                {SITE_CONFIG.contactEmail.support}
+              </a>
+              으로 편하게 메일 주세요.
             </div>
           </div>
         </section>

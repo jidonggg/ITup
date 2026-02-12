@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const values = [
@@ -26,40 +25,12 @@ const values = [
   },
 ];
 
-const socialProof = [
-  { label: "누적 멘토링 세션 수", value: 1240, suffix: "+" },
-  { label: "등록 멘토 수", value: 85, suffix: "명" },
-  { label: "평균 만족도", value: 4.9, suffix: "/5.0", isDecimal: true },
-  { label: "재이용률", value: 73, suffix: "%" },
+const highlights = [
+  { label: "커피 한 잔 가격부터", value: "15,000원~" },
+  { label: "게임 업계 전 직군", value: "기획·개발·아트·QA" },
+  { label: "온/오프라인", value: "자유 선택" },
+  { label: "멘토 경력", value: "3년 이상" },
 ];
-
-function useCountUp(target: number, isVisible: boolean, isDecimal?: boolean) {
-  const [count, setCount] = useState(0);
-  const hasAnimated = useRef(false);
-
-  useEffect(() => {
-    if (!isVisible || hasAnimated.current) return;
-    hasAnimated.current = true;
-
-    const duration = 2000;
-    const steps = 60;
-    const increment = target / steps;
-    let current = 0;
-    const interval = setInterval(() => {
-      current += increment;
-      if (current >= target) {
-        setCount(target);
-        clearInterval(interval);
-      } else {
-        setCount(isDecimal ? Math.round(current * 10) / 10 : Math.floor(current));
-      }
-    }, duration / steps);
-
-    return () => clearInterval(interval);
-  }, [isVisible, target, isDecimal]);
-
-  return isDecimal ? count.toFixed(1) : count.toLocaleString();
-}
 
 export default function Stats() {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>({
@@ -77,10 +48,15 @@ export default function Stats() {
           isVisible ? "visible" : ""
         }`}
       >
-        {/* Social Proof Counters */}
+        {/* Highlights */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-8">
-          {socialProof.map((item) => (
-            <SocialProofCounter key={item.label} item={item} isVisible={isVisible} />
+          {highlights.map((item) => (
+            <div key={item.label} className="text-center">
+              <div className="text-xl md:text-2xl font-bold text-primary">
+                {item.value}
+              </div>
+              <div className="text-muted text-sm mt-1">{item.label}</div>
+            </div>
           ))}
         </div>
 
@@ -102,25 +78,5 @@ export default function Stats() {
         </div>
       </div>
     </section>
-  );
-}
-
-function SocialProofCounter({
-  item,
-  isVisible,
-}: {
-  item: (typeof socialProof)[number];
-  isVisible: boolean;
-}) {
-  const displayValue = useCountUp(item.value, isVisible, item.isDecimal);
-
-  return (
-    <div className="text-center">
-      <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-        {displayValue}
-        <span className="text-lg md:text-xl">{item.suffix}</span>
-      </div>
-      <div className="text-muted text-sm mt-1">{item.label}</div>
-    </div>
   );
 }

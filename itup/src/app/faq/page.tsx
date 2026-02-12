@@ -1,6 +1,8 @@
 import Link from "next/link";
 import FAQClient from "./FAQClient";
 import JsonLd from "@/components/JsonLd";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { SITE_CONFIG } from "@/lib/site-config";
 
 interface FAQItem {
@@ -14,7 +16,7 @@ const faqData: FAQItem[] = [
   {
     category: "서비스 소개",
     question: "커피챗은 어떤 서비스인가요?",
-    answer: "커피챗은 게임 업계 현직자와 취업 준비생을 연결하는 커피챗 플랫폼이에요. 1:1 커피챗을 통해 실무 경험과 취업 노하우를 들을 수 있어요.",
+    answer: "게임 업계 현직자와 취업 준비생을 연결하는 1:1 멘토링 서비스예요. 커피챗을 통해 실무 경험, 취업 노하우, 커리어 고민을 직접 물어볼 수 있어요.",
   },
   {
     category: "서비스 소개",
@@ -46,43 +48,33 @@ const faqData: FAQItem[] = [
   {
     category: "요금 및 결제",
     question: "이용 요금은 어떻게 되나요?",
-    answer: "상품 3종: 커피챗(15,000원~), 이력서/포폴 첨삭(39,000원~), 모의면접(59,000원~)이 있어요. 멘토 경력에 따라 주니어/시니어/리드 등급별로 가격이 달라요. 번들로 묶으면 더 합리적! 스타터(39,000원), 올인원(79,000원), 풀패키지(99,000원)를 제공해요.",
+    answer: "커피챗(15,000원~), 이력서/포폴 첨삭(39,000원~), 모의면접(59,000원~) 세 가지 상품이 있어요. 멘토 경력에 따라 주니어/시니어/리드 등급별로 가격이 달라요. 번들 구매 시 할인도 있어요.",
   },
   {
     category: "요금 및 결제",
     question: "멘토마다 가격이 다른가요?",
-    answer: "네! 멘토 경력에 따라 주니어(🌱 3-5년), 시니어(⭐ 5-10년), 리드(👑 10년+) 등급이 나뉘어요. 주니어가 기본 가격이고, 시니어는 1.3배, 리드는 1.6배예요. 예를 들어 커피챗은 주니어 15,000원, 시니어 20,000원, 리드 24,000원이에요.",
+    answer: "네, 멘토 경력에 따라 주니어(3~5년), 시니어(5~10년), 리드(10년+) 등급으로 나뉘어요. 주니어가 기본 가격이고, 시니어는 1.3배, 리드는 1.6배예요.",
   },
   {
     category: "요금 및 결제",
-    question: "번들 구매하면 수익은 어떻게 분배되나요?",
-    answer: "번들 가격은 포함된 상품의 정가 비율로 나뉘어요. 예를 들어 올인원 번들(79,000원)은 커피챗·이력서·모의면접 정가 비율대로 분배돼요. 각 세션을 다른 멘토와 진행할 수도 있어요.",
-  },
-  {
-    category: "요금 및 결제",
-    question: "가장 저렴한 상품은 뭔가요?",
-    answer: "커피챗 15분 상품이 15,000원(주니어 멘토 기준)부터 시작해요. 커피 한 잔 가격으로 현직자 멘토와 1:1 대화를 나눌 수 있어요.",
-  },
-  {
-    category: "요금 및 결제",
-    question: "번들은 뭐가 다른가요?",
-    answer: "번들은 여러 상품을 묶어서 할인된 가격으로 제공해요. 스타터(커피챗+이력서 첨삭), 올인원(커피챗+이력서 첨삭+모의면접), 풀패키지(커피챗 2회+이력서 첨삭+모의면접)가 있어요.",
+    question: "번들은 뭔가요?",
+    answer: "여러 상품을 묶어서 할인된 가격으로 제공하는 패키지예요. 스타터(커피챗+이력서 첨삭), 올인원(커피챗+이력서 첨삭+모의면접), 풀패키지(커피챗 2회+이력서 첨삭+모의면접)가 있어요.",
   },
   {
     category: "요금 및 결제",
     question: "결제는 어떻게 하나요?",
-    answer: "토스페이먼츠를 통해 신용카드, 체크카드, 계좌이체 등 다양한 방법으로 결제할 수 있어요. 건당 결제 방식이라 부담 없이 필요한 만큼만 이용하면 돼요.",
+    answer: "토스페이먼츠를 통해 신용카드, 체크카드, 계좌이체 등으로 결제할 수 있어요. 건당 결제라 부담 없이 필요한 만큼만 이용하면 돼요.",
   },
   {
     category: "요금 및 결제",
     question: "환불은 가능한가요?",
-    answer: "서비스 이용 전에 환불 요청하면 전액 환불돼요. 이용 후에는 이용약관에 따라 처리돼요. 자세한 건 이용약관을 확인해주세요.",
+    answer: "서비스 이용 전이면 전액 환불돼요. 이용 후에는 이용약관에 따라 처리돼요. 자세한 건 이용약관을 확인해주세요.",
   },
   // 멘토 관련
   {
     category: "멘토 관련",
     question: "멘토로 활동하려면 어떻게 해야 하나요?",
-    answer: "게임 업계 경력 3년 이상이면 멘토로 지원할 수 있어요. '멘토 등록' 페이지에서 신청서를 작성하면 검토 후 연락드려요.",
+    answer: "게임 업계 경력 3년 이상이면 멘토로 지원할 수 있어요. '멘토 지원' 페이지에서 신청서를 작성하면 검토 후 연락드려요.",
   },
   {
     category: "멘토 관련",
@@ -93,12 +85,12 @@ const faqData: FAQItem[] = [
   {
     category: "기타",
     question: "문의사항이 있으면 어디로 연락하나요?",
-    answer: `이메일 ${SITE_CONFIG.contactEmail.support}로 문의해주세요. 빠르게 답변드릴게요.`,
+    answer: `${SITE_CONFIG.contactEmail.support}으로 메일 주시면 빠르게 답변드려요.`,
   },
   {
     category: "기타",
     question: "개인정보는 안전하게 보호되나요?",
-    answer: "네, 모든 개인정보는 암호화해서 안전하게 보관해요. 자세한 건 개인정보처리방침을 확인해주세요.",
+    answer: "네, 모든 개인정보는 암호화해서 보관하고 있어요. 자세한 건 개인정보처리방침을 확인해주세요.",
   },
 ];
 
@@ -117,66 +109,47 @@ export default function FAQPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <JsonLd data={faqJsonLd} />
-      {/* Header */}
-      <header className="border-b border-card-border">
-        <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-white text-sm">☕</span>
-            </div>
-            <span className="font-bold text-foreground group-hover:text-primary transition-colors">
-              커피챗
-            </span>
-          </Link>
-          <Link href="/" className="text-sm text-muted hover:text-foreground transition-colors">
-            홈으로
-          </Link>
-        </div>
-      </header>
+      <Header />
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4">자주 묻는 질문</h1>
+      <main className="flex-1 max-w-3xl mx-auto px-4 py-12 w-full">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold mb-3">자주 묻는 질문</h1>
           <p className="text-muted">
-            궁금한 점이 있으시면 아래에서 찾아보세요.
-            <br />
-            원하는 답변이 없다면{" "}
+            궁금한 점이 있으면 아래에서 찾아보세요.
+            찾는 답변이 없다면{" "}
             <a href={`mailto:${SITE_CONFIG.contactEmail.support}`} className="text-primary hover:underline">
-              문의하기
+              메일
             </a>
-            를 이용해 주세요.
+            로 문의해주세요.
           </p>
         </div>
 
         <FAQClient faqData={faqData} />
 
         {/* Contact Section */}
-        <div className="mt-12 text-center bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-2xl p-8">
-          <h2 className="text-xl font-semibold mb-2">원하는 답변을 못 찾으셨나요?</h2>
-          <p className="text-muted mb-6">
-            편하게 문의해주세요. 빠르게 답변드릴게요.
+        <div className="mt-12 bg-card-bg border border-card-border rounded-xl p-6 text-center">
+          <h2 className="text-lg font-semibold mb-2">답변을 못 찾으셨나요?</h2>
+          <p className="text-muted text-sm mb-5">
+            편하게 문의해주세요.
           </p>
-          <div className="flex justify-center">
-            <a
-              href={`mailto:${SITE_CONFIG.contactEmail.support}`}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary-dark transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              이메일 문의
-            </a>
-          </div>
+          <a
+            href={`mailto:${SITE_CONFIG.contactEmail.support}`}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-full text-sm font-medium hover:bg-primary-dark transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            이메일 문의
+          </a>
         </div>
 
         {/* Back Link */}
         <div className="mt-8 text-center">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-muted hover:text-primary transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -185,6 +158,8 @@ export default function FAQPage() {
           </Link>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
