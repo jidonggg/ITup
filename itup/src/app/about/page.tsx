@@ -62,7 +62,6 @@ export default function AboutPage() {
 
             <div className="grid sm:grid-cols-2 gap-5">
               <div className="bg-card-bg border border-card-border rounded-xl p-6">
-                <div className="text-2xl mb-3">☕</div>
                 <h3 className="font-semibold mb-2">커피챗</h3>
                 <p className="text-sm text-muted leading-relaxed">
                   현직자와 15분~30분 가볍게 이야기해요.
@@ -70,7 +69,6 @@ export default function AboutPage() {
                 </p>
               </div>
               <div className="bg-card-bg border border-card-border rounded-xl p-6">
-                <div className="text-2xl mb-3">📄</div>
                 <h3 className="font-semibold mb-2">이력서 & 포폴 리뷰</h3>
                 <p className="text-sm text-muted leading-relaxed">
                   실제 채용에 관여했던 분들이 이력서와 포트폴리오를 봐줘요.
@@ -78,7 +76,6 @@ export default function AboutPage() {
                 </p>
               </div>
               <div className="bg-card-bg border border-card-border rounded-xl p-6">
-                <div className="text-2xl mb-3">🎤</div>
                 <h3 className="font-semibold mb-2">모의면접</h3>
                 <p className="text-sm text-muted leading-relaxed">
                   실전처럼 면접을 연습하고, 바로 피드백을 받아요.
@@ -86,7 +83,6 @@ export default function AboutPage() {
                 </p>
               </div>
               <div className="bg-card-bg border border-card-border rounded-xl p-6">
-                <div className="text-2xl mb-3">🎮</div>
                 <h3 className="font-semibold mb-2">게임 업계 전문</h3>
                 <p className="text-sm text-muted leading-relaxed">
                   기획, 프로그래밍, 아트, QA, 마케팅까지.
