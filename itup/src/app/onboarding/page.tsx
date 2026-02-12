@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { JOB_TYPES, ENGINE_TYPES, PRODUCT_INFO } from "@/lib/constants";
+import { ProductIcon, LogoIcon } from "@/components/icons";
 import type { JobType, EngineType, ProductType } from "@/lib/supabase/types";
 
 type Step = 1 | 2 | 3;
@@ -145,7 +146,7 @@ export default function OnboardingPage() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-white text-sm">☕</span>
+              <LogoIcon className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold">커피챗</span>
           </Link>
@@ -197,12 +198,13 @@ export default function OnboardingPage() {
                     }`}
                   >
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-                      <span className="text-2xl">
-                        {job.value === "client" ? "🖥️" :
-                         job.value === "server" ? "🔧" :
-                         job.value === "planner" ? "📋" :
-                         job.value === "artist" ? "🎨" : "🔗"}
-                      </span>
+                      <ProductIcon
+                        name={job.value === "client" ? "monitor" :
+                              job.value === "server" ? "wrench" :
+                              job.value === "planner" ? "clipboard" :
+                              job.value === "artist" ? "palette" : "link"}
+                        className="w-6 h-6 text-primary"
+                      />
                     </div>
                     <p className="font-semibold text-lg">{job.label}</p>
                   </button>
@@ -231,10 +233,11 @@ export default function OnboardingPage() {
                     }`}
                   >
                     <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-3 mx-auto">
-                      <span className="text-2xl">
-                        {engine.value === "unity" ? "🔷" :
-                         engine.value === "unreal" ? "🔶" : "⚙️"}
-                      </span>
+                      <ProductIcon
+                        name={engine.value === "unity" ? "unity" :
+                              engine.value === "unreal" ? "unreal" : "cog"}
+                        className="w-6 h-6 text-primary"
+                      />
                     </div>
                     <p className="font-semibold text-lg">{engine.label}</p>
                   </button>
@@ -262,7 +265,7 @@ export default function OnboardingPage() {
                         : "border-card-border bg-card-bg hover:border-primary/50"
                     }`}
                   >
-                    <div className="text-3xl mb-3">{product.icon}</div>
+                    <div className="mb-3"><ProductIcon name={product.icon} className="w-8 h-8 text-primary" /></div>
                     <p className="font-semibold text-lg mb-1">{product.label}</p>
                     <p className="text-sm text-muted">{product.description}</p>
                   </button>

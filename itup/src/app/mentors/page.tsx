@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { LogoIcon, ProductIcon } from "@/components/icons";
 import { Mentor, ConsultType, JobType, EngineType } from "@/lib/supabase/types";
 import { consultTypeLabels, skillCategories } from "@/data/mentors";
 import { MentorData } from "@/components/MentorDetailModal";
@@ -447,7 +448,7 @@ function MentorsContent() {
           <div className="flex items-center justify-between h-14 md:h-16">
             <Link href="/" className="flex items-center gap-2.5 group">
               <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shadow-primary/15">
-                <span className="text-white text-lg md:text-xl">☕</span>
+                <LogoIcon className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
               <span className="text-lg md:text-xl font-bold text-foreground group-hover:text-primary transition-colors hidden sm:inline">
                 커피챗
@@ -835,7 +836,7 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
             {mentor.experience} 경력
           </span>
           <span className="px-2.5 py-0.5 md:py-1 bg-accent/10 text-accent text-xs font-medium rounded-full">
-            {getTierInfo(mentor.experience).badge} {getTierInfo(mentor.experience).name}
+            <ProductIcon name={getTierInfo(mentor.experience).badge} className="w-3.5 h-3.5 inline-block" /> {getTierInfo(mentor.experience).name}
           </span>
           {mentor.skills.slice(0, 1).map(skill => (
             <span key={skill} className="px-2.5 py-0.5 md:py-1 bg-secondary/80 text-muted text-xs rounded-full hidden sm:inline-block">

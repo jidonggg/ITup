@@ -8,6 +8,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { Mentor, MentorSchedule } from "@/lib/supabase/types";
 import FreeTrialConversionCTA from "@/components/FreeTrialConversionCTA";
+import { LogoIcon } from "@/components/icons";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -238,7 +239,7 @@ export default function FreeTrialPage({
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-xl">☕</span>
+                <LogoIcon className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
                 커피챗

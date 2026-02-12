@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { LogoIcon } from "@/components/icons";
 
 function LoginContent() {
   const router = useRouter();
@@ -99,7 +100,7 @@ function LoginContent() {
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center gap-2 mb-8">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <span className="text-white text-2xl">☕</span>
+            <LogoIcon className="w-6 h-6 text-white" />
           </div>
           <span className="text-2xl font-bold">커피챗</span>
         </Link>

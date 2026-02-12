@@ -8,6 +8,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mentor, Booking, Product, MentorFeedback } from "@/lib/supabase/types";
 import { PRODUCT_INFO } from "@/lib/constants";
+import { ProductIcon, LogoIcon } from "@/components/icons";
 import FreeTrialConversionCTA from "@/components/FreeTrialConversionCTA";
 
 interface BookingWithDetails extends Booking {
@@ -246,7 +247,7 @@ export default function MyPage() {
       const info = PRODUCT_INFO[product.type];
       return (
         <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
-          {info.icon} {info.name}
+          <ProductIcon name={info.icon} className="w-4 h-4 inline-block" /> {info.name}
         </span>
       );
     }
@@ -370,7 +371,7 @@ export default function MyPage() {
         <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-white text-sm">☕</span>
+              <LogoIcon className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-foreground group-hover:text-primary transition-colors">
               커피챗

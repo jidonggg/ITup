@@ -24,25 +24,25 @@ export const RECOMMENDED_PRICES: Record<ProductType, number> = {
 export const PRODUCT_INFO: Record<ProductType, { name: string; icon: string; duration: number; description: string }> = {
   coffee_chat: {
     name: "커피챗",
-    icon: "☕",
+    icon: "coffee",
     duration: 30,
     description: "커리어, 회사, 업계 전반 상담",
   },
   document_review: {
     name: "서류 리뷰",
-    icon: "📄",
+    icon: "document",
     duration: 30,
     description: "이력서, 포트폴리오 피드백",
   },
   mock_interview: {
     name: "모의 면접",
-    icon: "🎯",
+    icon: "target",
     duration: 60,
     description: "실전 면접 시뮬레이션 + 피드백",
   },
   free_trial: {
     name: "무료 체험",
-    icon: "🎁",
+    icon: "gift",
     duration: 15,
     description: "15분 무료 멘토링 체험",
   },

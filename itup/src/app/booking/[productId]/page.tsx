@@ -26,6 +26,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { Product, Mentor, MentorSchedule } from "@/lib/supabase/types";
 import { PLATFORM_FEE_RATE, PRODUCT_INFO, REFUND_POLICY } from "@/lib/constants";
+import { ProductIcon, LogoIcon } from "@/components/icons";
 import { MobileStepIndicator, StickyBottomCTA } from "@/components/mobile";
 
 // =============================================
@@ -160,8 +161,8 @@ function StepProductConfirm({
       <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-6 mb-6">
         {/* Product Info */}
         <div className="flex items-start gap-3 md:gap-4 mb-5 md:mb-6">
-          <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-xl md:text-2xl shrink-0">
-            {productInfo.icon}
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
+            <ProductIcon name={productInfo.icon} className="w-6 h-6 md:w-7 md:h-7" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base md:text-lg font-bold mb-1">{product.title}</h3>
@@ -772,7 +773,7 @@ function StepPaymentConfirm({
           <div className="flex justify-between items-center">
             <span className="text-muted text-xs md:text-sm">상품</span>
             <span className="font-medium text-sm md:text-base">
-              {productInfo.icon} {product.title}
+              <ProductIcon name={productInfo.icon} className="w-4 h-4 inline-block" /> {product.title}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -972,7 +973,7 @@ function BookingSuccess({
           <div className="flex justify-between">
             <span className="text-muted">상품</span>
             <span className="font-medium">
-              {productInfo.icon} {product.title}
+              <ProductIcon name={productInfo.icon} className="w-4 h-4 inline-block" /> {product.title}
             </span>
           </div>
           <div className="flex justify-between">
@@ -1324,7 +1325,7 @@ export default function BookingPage({
           <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-sm">☕</span>
+                <LogoIcon className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold">커피챗</span>
             </Link>
@@ -1352,7 +1353,7 @@ export default function BookingPage({
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-sm">☕</span>
+                <LogoIcon className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold hidden sm:inline">커피챗</span>
             </Link>

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Booking, Product, Profile } from "@/lib/supabase/types";
 import { PRODUCT_INFO } from "@/lib/constants";
+import { ProductIcon } from "@/components/icons";
 
 // Booking status types and labels
 type BookingStatusType = "pending" | "paid" | "confirmed" | "completed" | "cancelled" | "refunded";
@@ -358,7 +359,7 @@ export default function BookingCalendar({
                         </span>
                         {productInfo && (
                           <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
-                            {productInfo.icon} {productInfo.name}
+                            <ProductIcon name={productInfo.icon} className="w-4 h-4 inline-block" /> {productInfo.name}
                           </span>
                         )}
                         {product && (

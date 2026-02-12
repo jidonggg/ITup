@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import PasswordStrength from "@/components/PasswordStrength";
+import { LogoIcon } from "@/components/icons";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -132,10 +133,7 @@ export default function SignupPage() {
     }
   };
 
-  // Google 로그인 (개발 중)
-  const handleGoogleLogin = () => {
-    setError("Google 로그인은 현재 개발 중이에요. 곧 이용 가능합니다.");
-  };
+  // Google 로그인 (개발 중) - unused handler removed
 
   if (authLoading) {
     return (
@@ -188,7 +186,7 @@ export default function SignupPage() {
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center gap-2 mb-8">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <span className="text-white text-2xl">☕</span>
+            <LogoIcon className="w-6 h-6 text-white" />
           </div>
           <span className="text-2xl font-bold">커피챗</span>
         </Link>
@@ -313,9 +311,9 @@ export default function SignupPage() {
               <span className="absolute right-3 px-2 py-0.5 bg-black/20 text-xs rounded-full">준비 중</span>
             </div>
 
-            <button
-              onClick={handleGoogleLogin}
-              className="w-full py-3 border border-card-border rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-secondary transition-colors cursor-pointer"
+            <div
+              className="w-full py-3 border border-card-border rounded-xl font-medium flex items-center justify-center gap-2 opacity-50 cursor-not-allowed relative"
+              aria-disabled="true"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -336,7 +334,8 @@ export default function SignupPage() {
                 />
               </svg>
               Google로 계속하기
-            </button>
+              <span className="absolute right-3 px-2 py-0.5 bg-black/20 text-xs rounded-full">준비 중</span>
+            </div>
           </div>
 
           <p className="text-center text-muted text-sm mt-6">

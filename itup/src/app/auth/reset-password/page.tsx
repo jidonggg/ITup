@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { LogoIcon } from "@/components/icons";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -172,7 +173,7 @@ export default function ResetPasswordPage() {
             <div className="flex items-center gap-2 mb-6">
               <Link href="/" className="flex items-center gap-2 group">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                  <span className="text-white text-xl">☕</span>
+                  <LogoIcon className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
                   커피챗

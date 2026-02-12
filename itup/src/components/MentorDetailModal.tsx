@@ -7,6 +7,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Review } from "@/lib/supabase/types";
 import { products } from "@/lib/payment/types";
 import { getTierInfo, getTieredPrice } from "@/lib/pricing/tiers";
+import { ProductIcon } from "@/components/icons";
 
 export interface MentorData {
   id?: string;
@@ -130,7 +131,7 @@ export default function MentorDetailModal({
                 {mentor.company}
               </span>
               <span className="px-2 py-0.5 bg-accent/20 text-accent text-xs font-medium rounded-full">
-                {getTierInfo(mentor.experience).badge} {getTierInfo(mentor.experience).name}
+                <ProductIcon name={getTierInfo(mentor.experience).badge} className="w-4 h-4 inline-block" /> {getTierInfo(mentor.experience).name}
               </span>
             </div>
             <p className="text-muted">{mentor.role}</p>
@@ -234,7 +235,7 @@ export default function MentorDetailModal({
                     className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/10"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-lg">{product.icon}</span>
+                      <ProductIcon name={product.icon} className="w-5 h-5" />
                       <div>
                         <p className="text-sm font-medium">{product.name}</p>
                         <p className="text-xs text-muted">{product.duration}</p>

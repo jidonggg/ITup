@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { Mentor, Booking, Product, Profile } from "@/lib/supabase/types";
 import { PRODUCT_INFO } from "@/lib/constants";
+import { ProductIcon, LogoIcon } from "@/components/icons";
 import { formatKRW } from "@/lib/settlement/calculate";
 
 interface MonthlyEarnings {
@@ -202,7 +203,7 @@ export default function MentorEarningsPage() {
         scheduledAt: booking.scheduled_at,
         menteeName: menteeProfile?.name || "멘티",
         productType: productInfo?.name || "멘토링",
-        productIcon: productInfo?.icon || "☕",
+        productIcon: productInfo?.icon || "coffee",
         amount: booking.amount,
         mentorAmount: booking.mentor_amount || 0,
         status: "completed",
@@ -307,7 +308,7 @@ export default function MentorEarningsPage() {
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-sm">☕</span>
+                <LogoIcon className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold">커피챗</span>
             </Link>
@@ -510,7 +511,7 @@ export default function MentorEarningsPage() {
                       </td>
                       <td className="py-4 px-2">
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs">
-                          {tx.productIcon} {tx.productType}
+                          <ProductIcon name={tx.productIcon} className="w-3.5 h-3.5 inline-block" /> {tx.productType}
                         </span>
                       </td>
                       <td className="py-4 px-2 text-right">

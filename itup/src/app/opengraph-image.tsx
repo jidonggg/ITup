@@ -52,12 +52,30 @@ export default function Image() {
         {/* 커피 아이콘 */}
         <div
           style={{
-            fontSize: 72,
-            marginBottom: 24,
+            width: 80,
+            height: 80,
+            borderRadius: 20,
+            background: "linear-gradient(135deg, #A0714F, #D4A574)",
             display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 24,
           }}
         >
-          ☕
+          <svg
+            width="44"
+            height="44"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M17 8h1a4 4 0 110 8h-1" />
+            <path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z" />
+            <path d="M6 2v3M10 2v3M14 2v3" />
+          </svg>
         </div>
 
         {/* 타이틀 */}

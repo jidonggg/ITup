@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import AuthButton from "@/components/auth/AuthButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { LogoIcon } from "@/components/icons";
 
 interface HeaderProps {
   onLoginClick?: () => void;
@@ -83,7 +84,7 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-md shadow-primary/20">
-              <span className="text-white text-xl">☕</span>
+              <LogoIcon className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
               커피챗

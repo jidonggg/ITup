@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SITE_CONFIG } from "@/lib/site-config";
+import { LogoIcon } from "@/components/icons";
 
 export default function PrivacyPage() {
   return (
@@ -9,7 +10,7 @@ export default function PrivacyPage() {
         <div className="max-w-4xl mx-auto px-4 py-6">
           <Link href="/" className="flex items-center gap-2 group w-fit">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-white text-sm">☕</span>
+              <LogoIcon className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-foreground group-hover:text-primary transition-colors">
               커피챗

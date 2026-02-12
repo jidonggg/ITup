@@ -113,50 +113,70 @@ export default function FAQPage() {
       <JsonLd data={faqJsonLd} />
       <Header />
 
-      <main className="flex-1 max-w-3xl mx-auto px-4 py-12 w-full">
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold mb-3">자주 묻는 질문</h1>
-          <p className="text-muted">
-            궁금한 점이 있으면 아래에서 찾아보세요.
-            찾는 답변이 없다면{" "}
-            <a href={`mailto:${SITE_CONFIG.contactEmail.support}`} className="text-primary hover:underline">
-              메일
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="relative py-16 md:py-20 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-background to-accent/5" />
+
+          <div className="relative max-w-3xl mx-auto px-4 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium mb-6">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+              </svg>
+              자주 묻는 질문
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
+              궁금한 점을 빠르게 찾아보세요
+            </h1>
+            <p className="text-muted text-lg max-w-xl mx-auto leading-relaxed">
+              서비스 이용, 요금, 멘토 활동 등 자주 묻는 질문과 답변을
+              카테고리별로 정리했어요.
+            </p>
+          </div>
+        </section>
+
+        {/* FAQ Content */}
+        <section className="max-w-3xl mx-auto px-4 pb-16 w-full">
+          <FAQClient faqData={faqData} />
+
+          {/* Contact Section */}
+          <div className="mt-16 bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-2xl p-8 md:p-10 text-center">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/15 flex items-center justify-center">
+              <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold mb-2">
+              원하는 답변을 못 찾으셨나요?
+            </h2>
+            <p className="text-muted mb-6 max-w-md mx-auto">
+              추가 문의사항이 있다면 편하게 이메일로 연락주세요.
+              빠르게 답변해 드릴게요.
+            </p>
+            <a
+              href={`mailto:${SITE_CONFIG.contactEmail.support}`}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary-dark transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              이메일 문의하기
             </a>
-            로 문의해주세요.
-          </p>
-        </div>
+          </div>
 
-        <FAQClient faqData={faqData} />
-
-        {/* Contact Section */}
-        <div className="mt-12 bg-card-bg border border-card-border rounded-xl p-6 text-center">
-          <h2 className="text-lg font-semibold mb-2">답변을 못 찾으셨나요?</h2>
-          <p className="text-muted text-sm mb-5">
-            편하게 문의해주세요.
-          </p>
-          <a
-            href={`mailto:${SITE_CONFIG.contactEmail.support}`}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-full text-sm font-medium hover:bg-primary-dark transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            이메일 문의
-          </a>
-        </div>
-
-        {/* Back Link */}
-        <div className="mt-8 text-center">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            홈으로 돌아가기
-          </Link>
-        </div>
+          {/* Back Link */}
+          <div className="mt-8 text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors group"
+            >
+              <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              홈으로 돌아가기
+            </Link>
+          </div>
+        </section>
       </main>
 
       <Footer />

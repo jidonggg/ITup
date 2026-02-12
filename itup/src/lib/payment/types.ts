@@ -38,7 +38,7 @@ export const products: ProductInfo[] = [
       "업계 현황 이야기",
       "자유 Q&A",
     ],
-    icon: "☕",
+    icon: "coffee",
     duration: "30분",
   },
   {
@@ -52,7 +52,7 @@ export const products: ProductInfo[] = [
       "업계 맞춤 어필 포인트",
       "첨삭 후 1회 추가 확인",
     ],
-    icon: "📄",
+    icon: "document",
     duration: "50분",
   },
   {
@@ -66,7 +66,7 @@ export const products: ProductInfo[] = [
       "상세 피드백 리포트",
       "면접 태도/답변 코칭",
     ],
-    icon: "🎤",
+    icon: "microphone",
     duration: "60분",
   },
 ];
@@ -83,7 +83,7 @@ export const bundles: BundleInfo[] = [
       { productType: "coffee", quantity: 1 },
       { productType: "resume", quantity: 1 },
     ],
-    icon: "🎯",
+    icon: "target",
   },
   {
     id: "allinone",
@@ -97,7 +97,7 @@ export const bundles: BundleInfo[] = [
       { productType: "resume", quantity: 1 },
       { productType: "interview", quantity: 1 },
     ],
-    icon: "🚀",
+    icon: "rocket",
   },
   {
     id: "full",
@@ -111,7 +111,7 @@ export const bundles: BundleInfo[] = [
       { productType: "resume", quantity: 1 },
       { productType: "interview", quantity: 1 },
     ],
-    icon: "👑",
+    icon: "crown",
   },
 ];
 

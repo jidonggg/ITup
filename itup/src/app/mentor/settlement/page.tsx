@@ -8,6 +8,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { Mentor, Settlement, MentorBankAccount } from "@/lib/supabase/types";
 import { COMMISSION_TIERS } from "@/lib/constants";
 import { getCommissionRate, formatKRW } from "@/lib/settlement/calculate";
+import { LogoIcon } from "@/components/icons";
 import SettlementHistoryTable from "@/components/settlement/SettlementHistoryTable";
 import BankAccountForm from "@/components/settlement/BankAccountForm";
 
@@ -230,7 +231,7 @@ export default function SettlementPage() {
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-sm">☕</span>
+                <LogoIcon className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold">커피챗</span>
             </Link>

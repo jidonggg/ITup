@@ -9,6 +9,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { products, ProductType } from "@/lib/payment/types";
 import { getTieredPrice } from "@/lib/pricing/tiers";
+import { ProductIcon } from "@/components/icons";
 
 // 토스페이먼츠 클라이언트 키 (환경변수 필수)
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
@@ -394,7 +395,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                 </div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-muted">상품</span>
-                  <span className="font-medium">{currentProduct.icon} {currentProduct.name}</span>
+                  <span className="font-medium"><ProductIcon name={currentProduct.icon} className="w-4 h-4 inline-block" /> {currentProduct.name}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-muted">시간</span>
@@ -519,7 +520,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                           : "border-card-border bg-secondary text-muted hover:border-primary/50"
                       }`}
                     >
-                      <span className="text-xl">{product.icon}</span>
+                      <ProductIcon name={product.icon} className="w-6 h-6" />
                       <span className="text-xs font-medium">{product.name}</span>
                       <span className="text-xs">{getTieredPrice(product.id, mentorExperience).toLocaleString()}원</span>
                     </button>

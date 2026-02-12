@@ -15,6 +15,7 @@ import type {
   SessionConfirmation,
 } from "@/lib/supabase/types";
 import { PRODUCT_INFO, AUTO_COMPLETE_HOURS } from "@/lib/constants";
+import { ProductIcon, LogoIcon } from "@/components/icons";
 import FreeTrialConversionCTA from "@/components/FreeTrialConversionCTA";
 import { trackFreeTrialCompleted } from "@/lib/analytics/conversion";
 
@@ -1037,7 +1038,7 @@ export default function SessionConfirmPage({
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-sm">☕</span>
+                <LogoIcon className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold">커피챗</span>
             </Link>
@@ -1131,7 +1132,7 @@ export default function SessionConfirmPage({
               <div className="flex justify-between items-center">
                 <span className="text-muted text-sm">상품</span>
                 <span className="font-medium">
-                  {productInfo.icon} {product.title}
+                  <ProductIcon name={productInfo.icon} className="w-4 h-4 inline-block" /> {product.title}
                 </span>
               </div>
             )}

@@ -7,6 +7,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mentor, Booking, Product, MentorSchedule, Profile } from "@/lib/supabase/types";
 import { PRODUCT_INFO } from "@/lib/constants";
+import { ProductIcon, LogoIcon } from "@/components/icons";
 import VerificationModal from "@/components/VerificationModal";
 import BookingCalendar from "@/components/mentor/BookingCalendar";
 
@@ -466,7 +467,7 @@ export default function MentorDashboardPage() {
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-sm">☕</span>
+                <LogoIcon className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold">커피챗</span>
             </Link>
@@ -688,7 +689,7 @@ export default function MentorDashboardPage() {
                         {menteeProfile?.email && <span>{menteeProfile.email}</span>}
                         {productInfo && (
                           <span className="px-2 py-0.5 bg-primary/10 text-primary rounded">
-                            {productInfo.icon} {productInfo.name}
+                            <ProductIcon name={productInfo.icon} className="w-4 h-4 inline-block" /> {productInfo.name}
                           </span>
                         )}
                         {product && (

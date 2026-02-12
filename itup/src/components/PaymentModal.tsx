@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { BundleInfo, BundleType } from "@/lib/payment/types";
 import { loadTossPayments, TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
+import { ProductIcon } from "@/components/icons";
 
 // 토스페이먼츠 클라이언트 키 (환경변수 필수)
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
@@ -147,7 +148,7 @@ export default function PaymentModal({ isOpen, onClose, bundle }: PaymentModalPr
             <h2 className="text-2xl font-bold mb-2">번들 결제</h2>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-lg font-semibold">{bundle.icon} {bundle.name}</p>
+                <p className="text-lg font-semibold"><ProductIcon name={bundle.icon} className="w-5 h-5 inline-block" /> {bundle.name}</p>
                 <p className="text-sm text-muted">{bundle.description}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {bundle.includes.map((item, i) => (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PRODUCT_INFO } from "@/lib/constants";
 import { JOB_TYPES, ENGINE_TYPES } from "@/lib/constants";
+import { ProductIcon, LogoIcon } from "@/components/icons";
 import type { Mentor, Product, Review, ProductType } from "@/lib/supabase/types";
 import MentorDetailClient from "./MentorDetailClient";
 import JsonLd from "@/components/JsonLd";
@@ -222,7 +223,7 @@ export default async function MentorDetailPage({
           <div className="flex items-center justify-between h-14 md:h-16">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-lg md:text-xl">☕</span>
+                <LogoIcon className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
               <span className="text-lg md:text-xl font-bold text-foreground group-hover:text-primary transition-colors hidden sm:inline">
                 커피챗
@@ -450,7 +451,7 @@ export default async function MentorDetailPage({
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
-                              <span className="text-xl md:text-2xl">{productInfo?.icon || "📦"}</span>
+                              <ProductIcon name={productInfo?.icon || "coffee"} className="w-6 h-6 md:w-7 md:h-7" />
                               <div>
                                 <h3 className="font-semibold text-foreground text-sm md:text-base">
                                   {product.title}
@@ -583,7 +584,7 @@ export default async function MentorDetailPage({
                           className="flex items-center justify-between p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors group cursor-pointer"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="text-base">{productInfo?.icon || "📦"}</span>
+                            <ProductIcon name={productInfo?.icon || "coffee"} className="w-5 h-5" />
                             <div>
                               <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
                                 {product.title}

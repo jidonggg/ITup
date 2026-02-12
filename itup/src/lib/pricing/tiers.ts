@@ -11,9 +11,9 @@ export interface TierInfo {
 }
 
 export const MENTOR_TIERS: Record<MentorTier, TierInfo> = {
-  junior: { id: "junior", name: "주니어", badge: "🌱", multiplier: 1.0 },
-  senior: { id: "senior", name: "시니어", badge: "⭐", multiplier: 1.3 },
-  lead: { id: "lead", name: "리드", badge: "👑", multiplier: 1.6 },
+  junior: { id: "junior", name: "주니어", badge: "seedling", multiplier: 1.0 },
+  senior: { id: "senior", name: "시니어", badge: "star", multiplier: 1.3 },
+  lead: { id: "lead", name: "리드", badge: "crown", multiplier: 1.6 },
 };
 
 // 구조형("3-5년") 또는 자유형("8년") 경력 문자열에서 연차 추출

@@ -8,6 +8,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { Booking, Mentor } from "@/lib/supabase/types";
 import { VALIDATION } from "@/lib/constants";
+import { LogoIcon } from "@/components/icons";
 
 // =============================================
 // Star Rating Component
@@ -425,7 +426,7 @@ function ReviewWriteContent() {
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white text-sm">☕</span>
+                <LogoIcon className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold">커피챗</span>
             </Link>

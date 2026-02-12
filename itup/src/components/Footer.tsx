@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { SITE_CONFIG } from "@/lib/site-config";
+import { LogoIcon } from "@/components/icons";
 
 const footerLinks = {
   서비스: [
@@ -100,7 +101,7 @@ export default function Footer() {
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-5 group">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shadow-primary/15 group-hover:scale-105 transition-transform">
-                <span className="text-white text-xl">☕</span>
+                <LogoIcon className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold">커피챗</span>
             </Link>

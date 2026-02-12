@@ -15,6 +15,7 @@ import {
   ENGINE_TYPES,
   VALIDATION,
 } from "@/lib/constants";
+import { ProductIcon } from "@/components/icons";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1424,7 +1425,7 @@ export default function MentorApplyPage() {
                   {/* Header with toggle */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">{info.icon}</span>
+                      <ProductIcon name={info.icon} className="w-6 h-6 text-primary" />
                       <div>
                         <p className="font-semibold">{info.name}</p>
                         <p className="text-xs text-muted">

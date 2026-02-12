@@ -8,6 +8,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mentor, Consultation, Booking, SessionConfirmation, ProductType, Settlement, SettlementStatus } from "@/lib/supabase/types";
 import { PRODUCT_INFO, PAGINATION } from "@/lib/constants";
+import { ProductIcon } from "@/components/icons";
 
 type TabType = "overview" | "mentors" | "consultations" | "analytics" | "verification" | "bookings" | "disputes" | "settlements";
 
@@ -863,7 +864,7 @@ function AdminPageContent() {
   const getProductLabel = (type?: ProductType) => {
     if (!type) return "-";
     const info = PRODUCT_INFO[type];
-    return info ? `${info.icon} ${info.name}` : type;
+    return info ? info.name : type;
   };
 
   const getBookingStatusBadge = (status: string) => {

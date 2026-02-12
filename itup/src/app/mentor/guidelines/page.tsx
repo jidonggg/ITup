@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { SITE_CONFIG } from "@/lib/site-config";
+import { LogoIcon } from "@/components/icons";
 
 interface GuidelineItem {
   title: string;
@@ -73,7 +74,7 @@ const guidelinesData: GuidelineItem[] = [
     category: "수익/정산",
     title: "티어별 가격은 어떻게 되나요?",
     content:
-      "경력에 따라 주니어(🌱 3-5년, 1.0x), 시니어(⭐ 5-10년, 1.3x), 리드(👑 10년+, 1.6x) 등급이 적용돼요.\n예: 커피챗 — 주니어 15,000원, 시니어 20,000원, 리드 24,000원.\n예: 모의면접 — 주니어 59,000원, 시니어 77,000원, 리드 94,000원.",
+      "경력에 따라 주니어(3-5년, 1.0x), 시니어(5-10년, 1.3x), 리드(10년+, 1.6x) 등급이 적용돼요.\n예: 커피챗 — 주니어 15,000원, 시니어 20,000원, 리드 24,000원.\n예: 모의면접 — 주니어 59,000원, 시니어 77,000원, 리드 94,000원.",
   },
   {
     category: "수익/정산",
@@ -121,7 +122,7 @@ export default function MentorGuidelinesPage() {
         <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-white text-sm">☕</span>
+              <LogoIcon className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-foreground group-hover:text-primary transition-colors">
               {SITE_CONFIG.name}

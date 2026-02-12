@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { products, bundles, ProductType, BundleType } from "@/lib/payment/types";
 import { MENTOR_TIERS, MentorTier, getTieredPrice } from "@/lib/pricing/tiers";
+import { ProductIcon } from "@/components/icons";
 
 interface PricingProps {
   onConsultClick: () => void;
@@ -12,9 +13,9 @@ interface PricingProps {
 }
 
 const tierOptions: { id: MentorTier; label: string }[] = [
-  { id: "junior", label: `${MENTOR_TIERS.junior.badge} 주니어` },
-  { id: "senior", label: `${MENTOR_TIERS.senior.badge} 시니어 (1.3x)` },
-  { id: "lead", label: `${MENTOR_TIERS.lead.badge} 리드 (1.6x)` },
+  { id: "junior", label: "주니어" },
+  { id: "senior", label: "시니어 (1.3x)" },
+  { id: "lead", label: "리드 (1.6x)" },
 ];
 
 // 티어에 해당하는 experience 문자열
@@ -153,7 +154,7 @@ function ProductCard({ product, index, onProductClick, onConsultClick, tierExper
         {/* Icon + Name */}
         <div className={`text-center mb-6 ${isPopular ? "mt-2" : ""}`}>
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-            <span className="text-3xl">{product.icon}</span>
+            <ProductIcon name={product.icon} className="w-8 h-8 text-primary" />
           </div>
           <h4 className="text-xl font-bold mb-2">{product.name}</h4>
           <p className="text-muted text-sm mb-4">{product.description}</p>
@@ -245,7 +246,7 @@ function BundleCard({ bundle, index, onBundleClick, highlighted }: BundleCardPro
         {/* Icon + Name */}
         <div className="text-center mb-6 mt-2">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-accent/15 to-primary/15 flex items-center justify-center">
-            <span className="text-3xl">{bundle.icon}</span>
+            <ProductIcon name={bundle.icon} className="w-8 h-8 text-primary" />
           </div>
           <h4 className="text-xl font-bold mb-2">{bundle.name}</h4>
           <p className="text-muted text-sm mb-4">{bundle.description}</p>
