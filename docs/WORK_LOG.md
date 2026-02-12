@@ -58,6 +58,7 @@
 
 | 커밋 | 내용 | 변경 파일 |
 |------|------|-----------|
+| Phase 9 (`60bef5d`) | 전체 이모지 → 프로페셔널 SVG 아이콘 시스템 구축 | 33개 |
 | Phase 8-B (`6f9d19e`) | 전체 페이지 이모지 → SVG 라인 아이콘 교체 | 9개 |
 | Phase 8 (`9d2c9ac`) | 페이지 콘텐츠 리라이팅 - AI 느낌 제거, 자연스러운 톤 | 4개 |
 | Phase 7 (`f7cbfec`) | QA 재검증 + available_times 저장 수정 | 2개 |
@@ -72,6 +73,62 @@
 ---
 
 ## 작업 타임라인 (최신순)
+
+### Phase 9: 전체 이모지 → 프로페셔널 SVG 아이콘 시스템 구축
+
+**요청**: "이모지들 모두 아이콘 새로 만들어줘 좀 프로페셔널 하게" + "faq 손봐야하고"
+**커밋**: `60bef5d` (33개 파일, +319줄, -124줄)
+**배포**: Vercel 자동 배포, 19개 페이지 브라우저 확인 완료
+
+#### 아이콘 시스템 구축
+
+**`src/components/icons.tsx` 신규 생성:**
+- `LogoIcon` - 브랜드 커피컵 SVG (20개 페이지에 적용)
+- `ProductIcon` - 아이콘 ID 기반 렌더링 컴포넌트 (17개 파일에서 사용)
+- 총 17개 아이콘: coffee, document, microphone, gift, target, rocket, crown, seedling, star, monitor, wrench, clipboard, palette, link, unity, unreal, cog
+- 모든 SVG: `fill="none"`, `stroke="currentColor"`, `strokeWidth={1.5}` 일관 스타일
+
+#### 데이터 상수 변경
+
+| 파일 | 변경 전 (이모지) | 변경 후 (아이콘 ID) |
+|------|----------------|-------------------|
+| `constants.ts` PRODUCT_INFO | ☕📄🎯🎁 | coffee, document, target, gift |
+| `payment/types.ts` products | ☕📄🎤 | coffee, document, microphone |
+| `payment/types.ts` bundles | 🎯🚀👑 | target, rocket, crown |
+| `pricing/tiers.ts` badges | 🌱⭐👑 | seedling, star, crown |
+
+#### 브랜드 로고 교체 (20개 파일)
+`<span className="text-white">☕</span>` → `<LogoIcon className="w-4 h-4 text-white" />`
+
+대상: Header, Footer, login, signup, mentors, mentors/[id], free-trial, booking, onboarding, mypage, terms, privacy, auth/reset-password, mentor/dashboard, earnings, settlement, guidelines, feedback, session/confirm, review/write
+
+#### 상품 아이콘 렌더링 교체 (17개 파일)
+`{product.icon}` (이모지 텍스트) → `<ProductIcon name={product.icon} className="..." />`
+
+대상: Pricing, ConsultModal, MentorDetailModal, PaymentModal, BookingCalendar, mypage, admin, booking, mentors/[id], mentors, onboarding, mentor/dashboard, apply, earnings, feedback, session/confirm
+
+#### 기타 교체
+- 온보딩 직군 아이콘: 🖥️🔧📋🎨🔗 → ProductIcon (monitor/wrench/clipboard/palette/link)
+- 온보딩 엔진 아이콘: 🔷🔶⚙️ → ProductIcon (unity/unreal/cog)
+- 가이드라인 티어 텍스트: 🌱⭐👑 제거 (텍스트만 유지)
+- OG 이미지: ☕ → SVG 커피컵 인라인 렌더링
+
+#### FAQ 페이지 개선
+- 그라데이션 히어로 섹션 추가 (물음표 아이콘 뱃지 + 제목 + 설명)
+- 문의 섹션: 그라데이션 카드 + 채팅 아이콘 + 이메일 버튼
+- 뒤로가기 링크: 호버 애니메이션 추가
+
+#### QA 결과 (2개 에이전트 병렬)
+
+| 에이전트 | 검증 범위 | CRITICAL | HIGH | MEDIUM | LOW | 결과 |
+|---------|----------|---------|------|--------|-----|------|
+| qa-mentee | 25개 파일 (아이콘, FAQ, 콘텐츠, 데이터) | 0 | 0 | 0 | 0 | **ALL PASS** |
+| qa-mentor | 15개 파일 (멘토/관리자, OG, 미들웨어, 이전 수정 6건) | 0 | 0 | 0 | 0 | **ALL PASS** |
+
+- 이모지 잔존: **0개** (src/ 전체 스캔 완료)
+- 이전 수정사항: **6/6 전부 유지** (available_times, 멘토 승인, expected_amount, 할인 상태, open redirect, 미들웨어)
+
+---
 
 ### Phase 8-B: 전체 이모지 → SVG 아이콘 교체
 
@@ -533,6 +590,6 @@
 ---
 
 *작성: team-lead (Claude Agent Team)*
-*작업 시간: 2026-02-11 13:20 ~ 13:35 (약 15분)*
-*참여 에이전트: 12명*
-*총 수정 파일: 46개+*
+*작업 시간: 2026-02-11 13:20 ~ 진행중*
+*참여 에이전트: 12명 + QA 에이전트 다수*
+*총 수정 파일: 80개+*
