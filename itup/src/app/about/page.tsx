@@ -62,6 +62,11 @@ export default function AboutPage() {
 
             <div className="grid sm:grid-cols-2 gap-5">
               <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </div>
                 <h3 className="font-semibold mb-2">커피챗</h3>
                 <p className="text-sm text-muted leading-relaxed">
                   현직자와 15분~30분 가볍게 이야기해요.
@@ -69,6 +74,11 @@ export default function AboutPage() {
                 </p>
               </div>
               <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                </div>
                 <h3 className="font-semibold mb-2">이력서 & 포폴 리뷰</h3>
                 <p className="text-sm text-muted leading-relaxed">
                   실제 채용에 관여했던 분들이 이력서와 포트폴리오를 봐줘요.
@@ -76,6 +86,11 @@ export default function AboutPage() {
                 </p>
               </div>
               <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                  </svg>
+                </div>
                 <h3 className="font-semibold mb-2">모의면접</h3>
                 <p className="text-sm text-muted leading-relaxed">
                   실전처럼 면접을 연습하고, 바로 피드백을 받아요.
@@ -83,6 +98,11 @@ export default function AboutPage() {
                 </p>
               </div>
               <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+                  </svg>
+                </div>
                 <h3 className="font-semibold mb-2">게임 업계 전문</h3>
                 <p className="text-sm text-muted leading-relaxed">
                   기획, 프로그래밍, 아트, QA, 마케팅까지.
