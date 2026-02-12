@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { getVerificationCode, deleteVerificationCode } from "@/lib/verification-store";
 import { verifyCodeLimiter } from "@/lib/rate-limit";
@@ -67,8 +68,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 코드 검증
-    if (stored.code !== code) {
+    // 코드 검증 (timing-safe comparison)
+    const storedBuf = Buffer.from(stored.code, "utf8");
+    const inputBuf = Buffer.from(String(code), "utf8");
+    const codeMatch = storedBuf.length === inputBuf.length && timingSafeEqual(storedBuf, inputBuf);
+    if (!codeMatch) {
       return NextResponse.json(
         { error: "인증 코드가 일치하지 않습니다." },
         { status: 400 }

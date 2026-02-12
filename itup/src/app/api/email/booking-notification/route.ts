@@ -11,6 +11,7 @@ import {
 } from "@/lib/email/templates";
 import { SITE_CONFIG } from "@/lib/site-config";
 import { emailLimiter, getClientIp } from "@/lib/rate-limit";
+import { safeCompare } from "@/lib/security";
 
 // 내부 API 시크릿 (서버-서버 통신용)
 const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
@@ -44,7 +45,7 @@ function getServiceSupabase() {
 async function verifyAuth(request: NextRequest): Promise<boolean> {
   // 1. 내부 API 시크릿 확인 (서버-서버 통신)
   const apiSecret = request.headers.get("x-api-secret");
-  if (INTERNAL_API_SECRET && apiSecret === INTERNAL_API_SECRET) {
+  if (INTERNAL_API_SECRET && apiSecret && safeCompare(apiSecret, INTERNAL_API_SECRET)) {
     return true;
   }
 
@@ -94,11 +95,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "요청이 너무 많아요." }, { status: 429 });
     }
 
-    const body = await request.json();
-    const { type, bookingId } = body as {
-      type: NotificationType;
-      bookingId: string;
-    };
+    let body: { type?: NotificationType; bookingId?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 },
+      );
+    }
+    const { type, bookingId } = body;
 
     if (!type || !bookingId) {
       return NextResponse.json(

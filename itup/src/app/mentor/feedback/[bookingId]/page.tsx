@@ -377,6 +377,7 @@ export default function MentorFeedbackPage({
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="멘티에게 전달할 피드백을 작성해주세요. 세션에서 다룬 내용, 조언, 추천 자료 등을 포함할 수 있어요."
                   rows={8}
+                  maxLength={VALIDATION.MAX_FEEDBACK_LENGTH}
                   className="w-full p-4 bg-background border border-card-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
                 <div className="flex justify-between mt-2 text-xs text-muted">

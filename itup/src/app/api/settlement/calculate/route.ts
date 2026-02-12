@@ -28,7 +28,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "요청이 너무 많아요." }, { status: 429 });
     }
 
-    const body = await request.json();
+    let body: { mentorId?: string; periodStart?: string; periodEnd?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "유효하지 않은 요청 형식입니다." },
+        { status: 400 },
+      );
+    }
     const { mentorId, periodStart, periodEnd } = body;
 
     if (!mentorId || !periodStart || !periodEnd) {

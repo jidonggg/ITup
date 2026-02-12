@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,10 +37,10 @@ export default function FreeTrialPage({
 }: {
   params: Promise<{ mentorId: string }>;
 }) {
+  const { mentorId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
   const { showToast } = useToast();
-  const [mentorId, setMentorId] = useState<string>("");
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [schedules, setSchedules] = useState<MentorSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,12 +56,6 @@ export default function FreeTrialPage({
   const [bookingResult, setBookingResult] = useState<{ id: string; mentor_name: string; scheduled_at: string } | null>(null);
 
   useEffect(() => {
-    params.then(({ mentorId: id }) => setMentorId(id));
-  }, [params]);
-
-  useEffect(() => {
-    if (!mentorId) return;
-
     const fetchData = async () => {
       if (!isSupabaseConfigured()) {
         setIsLoading(false);
@@ -346,7 +340,7 @@ export default function FreeTrialPage({
             {availableSlots.length > 0 ? (
               <div className="space-y-3">
                 {availableSlots.map((slot, i) => {
-                  const dateStr = slot.date.toISOString().split("T")[0];
+                  const dateStr = `${slot.date.getFullYear()}-${String(slot.date.getMonth() + 1).padStart(2, "0")}-${String(slot.date.getDate()).padStart(2, "0")}`;
                   const isSelected = selectedDate === dateStr && selectedTime === slot.time;
 
                   return (

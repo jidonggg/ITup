@@ -18,6 +18,7 @@ import {
   type SendAlimtalkResult,
 } from "@/lib/kakao/alimtalk";
 import { type AlimtalkTemplateCode } from "@/lib/kakao/templates";
+import { safeCompare } from "@/lib/security";
 
 // =============================================
 // 설정
@@ -54,7 +55,7 @@ function getServiceSupabase() {
 async function verifyAuth(request: NextRequest): Promise<boolean> {
   // 1. 내부 API 시크릿 확인 (서버-서버 통신)
   const apiSecret = request.headers.get("x-api-secret");
-  if (INTERNAL_API_SECRET && apiSecret === INTERNAL_API_SECRET) {
+  if (INTERNAL_API_SECRET && apiSecret && safeCompare(apiSecret, INTERNAL_API_SECRET)) {
     return true;
   }
 
@@ -169,7 +170,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const body: AlimtalkRequestBody = await request.json();
+    let body: AlimtalkRequestBody;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: "유효하지 않은 요청 형식입니다." },
+        { status: 400 },
+      );
+    }
     const { type, bookingId, recipientPhone, variables } = body;
 
     if (!type) {

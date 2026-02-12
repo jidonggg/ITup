@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { ADMIN_EMAILS, isAdmin } from "@/lib/admin";
+import { isAdmin } from "@/lib/admin";
 import { getYearsFromExperience } from "@/lib/pricing/tiers";
 import { adminLimiter } from "@/lib/rate-limit";
 

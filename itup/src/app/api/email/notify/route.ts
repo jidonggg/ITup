@@ -10,6 +10,7 @@ import {
 import { SITE_CONFIG } from "@/lib/site-config";
 import { isAdmin } from "@/lib/admin";
 import { emailLimiter, getClientIp } from "@/lib/rate-limit";
+import { safeCompare } from "@/lib/security";
 
 // 내부 API 시크릿 (서버-서버 통신용)
 const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
@@ -37,7 +38,7 @@ type AuthResult =
 async function verifyAuth(request: NextRequest): Promise<AuthResult> {
   // 1. 내부 API 시크릿 확인 (서버-서버 통신)
   const apiSecret = request.headers.get("x-api-secret");
-  if (INTERNAL_API_SECRET && apiSecret === INTERNAL_API_SECRET) {
+  if (INTERNAL_API_SECRET && apiSecret && safeCompare(apiSecret, INTERNAL_API_SECRET)) {
     return { authorized: true, userEmail: null, viaApiSecret: true };
   }
 
@@ -77,7 +78,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const body = await request.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: { type?: string; data?: Record<string, any> };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 },
+      );
+    }
     const { type, data } = body;
 
     if (!type || !data) {

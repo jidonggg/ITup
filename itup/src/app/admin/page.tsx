@@ -602,6 +602,8 @@ function AdminPageContent() {
         return;
       }
 
+      showToast(approve ? "멘토가 승인되었습니다." : "멘토가 보류 처리되었습니다.", "success");
+
       // Update local state
       const targetMentor = mentors.find(m => m.id === mentorId);
       const wasApproved = targetMentor?.is_approved ?? false;

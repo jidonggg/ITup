@@ -223,9 +223,9 @@ export default function MentorDashboardPage() {
     }
   };
 
-  // v2: Save meeting link
-  const saveMeetingLink = async (bookingId: string) => {
-    if (!isSupabaseConfigured()) return;
+  // v2: Save meeting link (returns true on success, false on failure)
+  const saveMeetingLink = async (bookingId: string): Promise<boolean> => {
+    if (!isSupabaseConfigured()) return false;
 
     const linkValue = meetingLinkInput[bookingId]?.trim();
 
@@ -236,11 +236,11 @@ export default function MentorDashboardPage() {
         // http 또는 https 프로토콜만 허용
         if (!["http:", "https:"].includes(url.protocol)) {
           showToast("올바른 미팅 링크 형식이 아니에요. (http:// 또는 https://로 시작해야 해요)", "error");
-          return;
+          return false;
         }
       } catch {
         showToast("올바른 미팅 링크 형식이 아니에요. (예: https://meet.google.com/...)", "error");
-        return;
+        return false;
       }
     }
 
@@ -248,7 +248,7 @@ export default function MentorDashboardPage() {
     const supabase = createClient();
 
     try {
-      if (!mentor) return;
+      if (!mentor) return false;
       const { error } = await supabase
         .from("bookings")
         .update({ meeting_link: meetingLinkInput[bookingId] || null })
@@ -257,7 +257,7 @@ export default function MentorDashboardPage() {
 
       if (error) {
         showToast("미팅 링크 저장에 실패했어요.", "error");
-        return;
+        return false;
       }
       showToast("미팅 링크가 저장되었어요.", "success");
 
@@ -266,8 +266,10 @@ export default function MentorDashboardPage() {
           b.id === bookingId ? { ...b, meeting_link: meetingLinkInput[bookingId] || null } : b
         )
       );
+      return true;
     } catch {
       showToast("오류가 발생했어요.", "error");
+      return false;
     } finally {
       setSavingMeetingLink(null);
     }
@@ -803,8 +805,9 @@ export default function MentorDashboardPage() {
                               showToast("미팅 링크를 먼저 입력해주세요.", "error");
                               return;
                             }
-                            // 미팅링크 저장 후 확정
-                            await saveMeetingLink(booking.id);
+                            // 미팅링크 저장 후 확정 (저장 실패 시 확정하지 않음)
+                            const saved = await saveMeetingLink(booking.id);
+                            if (!saved) return;
                             await updateBookingStatus(booking.id, "confirmed");
                           }}
                           disabled={updatingBookingId === booking.id || savingMeetingLink === booking.id}

@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { SITE_CONFIG } from "@/lib/site-config";
+import { safeCompare } from "@/lib/security";
 
 // =============================================
 // Configuration
@@ -92,10 +93,9 @@ function getServiceSupabase(): SupabaseClient | null {
  */
 function verifyCronAuth(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
-  if (authHeader === `Bearer ${CRON_SECRET}` && CRON_SECRET) {
-    return true;
-  }
-  return false;
+  if (!authHeader || !CRON_SECRET) return false;
+  const token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : "";
+  return safeCompare(token, CRON_SECRET);
 }
 
 /**

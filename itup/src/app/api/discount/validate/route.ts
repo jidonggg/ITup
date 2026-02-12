@@ -248,8 +248,8 @@ export async function POST(request: NextRequest) {
 
     const finalAmount = amount - discountAmount;
 
-    // Increment usage count
-    usageCounts.set(discountCode.code, (usageCounts.get(discountCode.code) || 0) + 1);
+    // NOTE: Usage count is NOT incremented here (validation only).
+    // Actual usage tracking should happen at payment confirmation time.
 
     return NextResponse.json({
       valid: true,
@@ -269,16 +269,22 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  // Return available discount codes (public info only)
-  const publicCodes = DISCOUNT_CODES.map((code) => ({
-    code: code.code,
-    percentage: code.percentage,
-    description: code.description,
-    minAmount: code.minAmount,
-    maxDiscount: code.maxDiscount,
-    firstTimeOnly: code.firstTimeOnly,
-    requiresFreeTrial: code.requiresFreeTrial,
-  }));
+  // Return available discount info (descriptions only, codes hidden)
+  const now = new Date();
+  const publicCodes = DISCOUNT_CODES
+    .filter((dc) => {
+      if (dc.validFrom && now < dc.validFrom) return false;
+      if (dc.validUntil && now > dc.validUntil) return false;
+      return true;
+    })
+    .map((dc) => ({
+      percentage: dc.percentage,
+      description: dc.description,
+      minAmount: dc.minAmount,
+      maxDiscount: dc.maxDiscount,
+      firstTimeOnly: dc.firstTimeOnly,
+      requiresFreeTrial: dc.requiresFreeTrial,
+    }));
 
   return NextResponse.json({ codes: publicCodes });
 }

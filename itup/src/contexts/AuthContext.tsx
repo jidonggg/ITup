@@ -84,11 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // fetch 실패 시 기존 profile 유지 (캐시에서 복원된 것 포함)
   }, [supabase]);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
       await fetchProfile(user.id, user.user_metadata?.name);
     }
-  };
+  }, [user, fetchProfile]);
 
   useEffect(() => {
     // Supabase 응답 없을 시 안전 장치

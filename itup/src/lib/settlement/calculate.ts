@@ -57,5 +57,6 @@ export function calculateSettlement(
  * Format currency in Korean Won
  */
 export function formatKRW(amount: number): string {
+  if (!Number.isFinite(amount)) return "0원";
   return amount.toLocaleString("ko-KR") + "원";
 }

@@ -33,7 +33,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "요청이 너무 많아요." }, { status: 429 });
     }
 
-    const body = await request.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: Record<string, any>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "유효하지 않은 요청 형식입니다." },
+        { status: 400 },
+      );
+    }
     const { action } = body;
 
     if (!action) {

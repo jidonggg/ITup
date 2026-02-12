@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, ReactNode } from "react";
+import { useEffect, useState, useRef, ReactNode } from "react";
 
 interface StickyBottomCTAProps {
   children: ReactNode;
@@ -22,22 +22,22 @@ export default function StickyBottomCTA({
   showShadow = true,
 }: StickyBottomCTAProps) {
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
     if (!hideOnScrollDown) return;
 
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      const isScrollingDown = currentScrollY > lastScrollY && currentScrollY > 100;
+      const isScrollingDown = currentScrollY > lastScrollY.current && currentScrollY > 100;
 
       setIsVisible(!isScrollingDown);
-      setLastScrollY(currentScrollY);
+      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [hideOnScrollDown, lastScrollY]);
+  }, [hideOnScrollDown]);
 
   return (
     <div

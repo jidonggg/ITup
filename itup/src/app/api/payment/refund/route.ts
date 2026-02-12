@@ -44,6 +44,7 @@ async function verifyAdmin(request: NextRequest) {
 
 // POST: 환불 처리
 export async function POST(request: NextRequest) {
+  try {
   const adminCheck = await verifyAdmin(request);
   if ("error" in adminCheck) {
     return NextResponse.json(
@@ -68,7 +69,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body = await request.json();
+  let body: { paymentId?: string; reason?: string; cancelAmount?: number };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "유효하지 않은 요청 형식이에요." },
+      { status: 400 },
+    );
+  }
   const { paymentId, reason, cancelAmount } = body;
 
   if (!paymentId) {
@@ -205,6 +214,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { error: "환불 처리 중 오류가 발생했어요." },
+      { status: 500 }
+    );
+  }
+  } catch {
+    return NextResponse.json(
+      { error: "서버 오류가 발생했어요." },
       { status: 500 }
     );
   }

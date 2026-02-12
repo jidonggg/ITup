@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomInt } from "crypto";
+import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { saveVerificationCode } from "@/lib/verification-store";
 import { verificationLimiter } from "@/lib/rate-limit";
 import { getEmailFrom, SITE_CONFIG } from "@/lib/site-config";
+
+// 사용자 인증 검증 (로그인한 사용자만 인증 코드 요청 가능)
+async function verifyUser(request: NextRequest) {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
+
+  const token = authHeader.substring(7);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceKey) return null;
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return null;
+  return user;
+}
 
 // 게임 회사 도메인 목록
 const GAME_COMPANY_DOMAINS = [
@@ -44,11 +62,20 @@ function isValidCompanyEmail(email: string): boolean {
 }
 
 function generateCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return randomInt(100000, 1000000).toString();
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // 인증 필수 - 로그인한 사용자만 인증 코드 요청 가능 (스팸 방지)
+    const user = await verifyUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
+
     const { email } = await request.json();
 
     if (!email || typeof email !== "string") {

@@ -17,7 +17,7 @@ export default function MobileStepIndicator({
   currentStep,
   sticky = true,
 }: MobileStepIndicatorProps) {
-  const progress = ((currentStep - 1) / (steps.length - 1)) * 100;
+  const progress = steps.length > 1 ? ((currentStep - 1) / (steps.length - 1)) * 100 : 100;
 
   return (
     <div

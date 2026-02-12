@@ -47,7 +47,15 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "요청이 너무 많아요." }, { status: 429 });
     }
 
-    const body = await request.json();
+    let body: { confirmationId?: string; finalStatus?: string; bookingId?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "유효하지 않은 요청 형식입니다." },
+        { status: 400 },
+      );
+    }
     const { confirmationId, finalStatus, bookingId } = body;
 
     if (!confirmationId || !finalStatus) {

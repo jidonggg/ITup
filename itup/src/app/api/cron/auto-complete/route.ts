@@ -10,15 +10,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { AUTO_COMPLETE_HOURS } from "@/lib/constants";
+import { safeCompare } from "@/lib/security";
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
 function verifyCronAuth(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
-  if (authHeader === `Bearer ${CRON_SECRET}` && CRON_SECRET) {
-    return true;
-  }
-  return false;
+  if (!authHeader || !CRON_SECRET) return false;
+  const token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : "";
+  return safeCompare(token, CRON_SECRET);
 }
 
 function getServiceSupabase() {

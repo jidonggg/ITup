@@ -163,7 +163,7 @@ export default function SettlementPage() {
   };
 
   const handleDeleteBankAccount = async () => {
-    if (!bankAccount || !isSupabaseConfigured()) return;
+    if (!bankAccount || !mentor || !isSupabaseConfigured()) return;
 
     const supabase = createClient();
 
@@ -171,7 +171,8 @@ export default function SettlementPage() {
       const { error } = await supabase
         .from("mentor_bank_accounts")
         .delete()
-        .eq("id", bankAccount.id);
+        .eq("id", bankAccount.id)
+        .eq("mentor_id", mentor.id);
 
       if (error) {
         showToast("계좌 삭제에 실패했어요.", "error");

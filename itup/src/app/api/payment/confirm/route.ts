@@ -109,7 +109,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    let body: { paymentKey?: string; orderId?: string; amount?: number; };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "유효하지 않은 요청 형식이에요." },
+        { status: 400 },
+      );
+    }
     const { paymentKey, orderId, amount } = body;
 
     if (!paymentKey || !orderId || !amount) {
