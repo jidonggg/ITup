@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomInt } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { saveVerificationCode } from "@/lib/verification-store";
+import { saveVerificationCode, deleteVerificationCode } from "@/lib/verification-store";
 import { verificationLimiter } from "@/lib/rate-limit";
 import { getEmailFrom, SITE_CONFIG } from "@/lib/site-config";
 
@@ -112,31 +112,40 @@ export async function POST(request: NextRequest) {
 
     // 이메일 발송
     if (process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: getEmailFrom("noreply"),
-        to: email,
-        subject: `[${SITE_CONFIG.name}] 멘토 인증 코드`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #A0714F;">커피챗 멘토 인증</h2>
-            <p>안녕하세요, 커피챗 멘토 인증을 위한 코드입니다.</p>
-            <div style="background: #F3F4F6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #A0714F;">
-                ${code}
-              </span>
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: getEmailFrom("noreply"),
+          to: email,
+          subject: `[${SITE_CONFIG.name}] 멘토 인증 코드`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #A0714F;">커피챗 멘토 인증</h2>
+              <p>안녕하세요, 커피챗 멘토 인증을 위한 코드입니다.</p>
+              <div style="background: #F3F4F6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #A0714F;">
+                  ${code}
+                </span>
+              </div>
+              <p style="color: #6B7280; font-size: 14px;">
+                - 이 코드는 5분간 유효합니다.<br>
+                - 본인이 요청하지 않은 경우 이 이메일을 무시하세요.
+              </p>
+              <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;">
+              <p style="color: #9CA3AF; font-size: 12px;">
+                이 이메일은 커피챗 멘토 인증을 위해 발송되었습니다.
+              </p>
             </div>
-            <p style="color: #6B7280; font-size: 14px;">
-              - 이 코드는 5분간 유효합니다.<br>
-              - 본인이 요청하지 않은 경우 이 이메일을 무시하세요.
-            </p>
-            <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;">
-            <p style="color: #9CA3AF; font-size: 12px;">
-              이 이메일은 커피챗 멘토 인증을 위해 발송되었습니다.
-            </p>
-          </div>
-        `,
-      });
+          `,
+        });
+      } catch (emailError) {
+        console.error("[send-code] 이메일 발송 실패:", emailError);
+        await deleteVerificationCode(email);
+        return NextResponse.json(
+          { error: "인증 코드 이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요." },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({
