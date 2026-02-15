@@ -24,7 +24,6 @@ export default function robots(): MetadataRoute.Robots {
           "/session/",
           "/review/write",
           "/onboarding",
-          "/debug",
           "/free-trial/",
         ],
       },
