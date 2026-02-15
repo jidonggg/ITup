@@ -12,13 +12,16 @@ interface AnalyticsContextType {
 
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(undefined);
 
-// 세션 ID 생성/가져오기
+// UUID v4 형식 검증
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// 세션 ID 생성/가져오기 (UUID v4 형식)
 function getSessionId(): string {
   if (typeof window === "undefined") return "";
 
   let sessionId = sessionStorage.getItem("analytics_session_id");
-  if (!sessionId) {
-    sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  if (!sessionId || !UUID_REGEX.test(sessionId)) {
+    sessionId = crypto.randomUUID();
     sessionStorage.setItem("analytics_session_id", sessionId);
   }
   return sessionId;
