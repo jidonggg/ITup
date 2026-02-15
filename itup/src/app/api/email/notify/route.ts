@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     // API_SECRET 인증 시 허용되는 타입 제한 (내부 서비스 호출용)
-    const apiSecretAllowedTypes = ["consultation_request", "consultation_confirmed"];
+    const apiSecretAllowedTypes = ["consultation_request", "consultation_confirmed", "mentor_approved", "mentor_rejected"];
     if (authResult.viaApiSecret && !apiSecretAllowedTypes.includes(type)) {
       return NextResponse.json(
         { error: "Forbidden: this type is not allowed via API secret" },

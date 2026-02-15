@@ -19,8 +19,7 @@ const MentorDetailModal = dynamic(() => import("@/components/MentorDetailModal")
 const LoginModal = dynamic(() => import("@/components/auth/LoginModal"), { ssr: false });
 const SignupModal = dynamic(() => import("@/components/auth/SignupModal"), { ssr: false });
 const ForgotPasswordModal = dynamic(() => import("@/components/auth/ForgotPasswordModal"), { ssr: false });
-const PaymentModal = dynamic(() => import("@/components/PaymentModal"), { ssr: false });
-import { ProductType, BundleInfo, bundles } from "@/lib/payment/types";
+import { ProductType } from "@/lib/payment/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -35,8 +34,6 @@ export default function HomeClient() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedBundle, setSelectedBundle] = useState<BundleInfo | null>(null);
   const [selectedProductType, setSelectedProductType] = useState<ProductType | undefined>();
 
   // Handle auth callback code
@@ -116,18 +113,6 @@ export default function HomeClient() {
     openForgotPasswordModal();
   };
 
-  const openBundleModal = (bundleId: string) => {
-    const bundle = bundles.find((b) => b.id === bundleId);
-    if (bundle) {
-      setSelectedBundle(bundle);
-      setIsPaymentModalOpen(true);
-    }
-  };
-  const closePaymentModal = () => {
-    setIsPaymentModalOpen(false);
-    setSelectedBundle(null);
-  };
-
   return (
     <>
       <Header onLoginClick={openLoginModal} onSignupClick={openSignupModal} />
@@ -139,7 +124,6 @@ export default function HomeClient() {
       <Pricing
         onConsultClick={() => openConsultModal()}
         onProductClick={(productId) => openConsultModal(productId)}
-        onBundleClick={openBundleModal}
       />
       <CTA onConsultClick={() => openConsultModal()} />
       <Footer />
@@ -180,11 +164,6 @@ export default function HomeClient() {
         isOpen={isForgotPasswordModalOpen}
         onClose={closeForgotPasswordModal}
         onSwitchToLogin={switchToLogin}
-      />
-      <PaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={closePaymentModal}
-        bundle={selectedBundle}
       />
     </>
   );

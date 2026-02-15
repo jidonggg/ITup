@@ -10,13 +10,6 @@ const PRODUCT_PRICES: Record<string, number> = {
   INTERVIEW: 59000,
 };
 
-// 번들 가격 (서버에서 검증용)
-const BUNDLE_PRICES: Record<string, number> = {
-  BUNDLE_STARTER: 39000,
-  BUNDLE_ALLINONE: 79000,
-  BUNDLE_FULL: 99000,
-};
-
 // 플랫폼 수수료율 (단계별: 0%→15%→20%→25%)
 // 현재 런칭 초기 → 15%
 const PLATFORM_COMMISSION_RATE = 0.15;
@@ -33,14 +26,9 @@ function getServiceSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-// orderId 프리픽스 추출 (BUNDLE_STARTER, BUNDLE_ALLINONE, BUNDLE_FULL, COFFEE, RESUME, INTERVIEW)
+// orderId 프리픽스 추출 (COFFEE, RESUME, INTERVIEW)
 function getOrderPrefix(orderId: string): string {
   const parts = orderId.split("_");
-  // 번들: BUNDLE_STARTER_xxx, BUNDLE_ALLINONE_xxx, BUNDLE_FULL_xxx
-  if (parts[0] === "BUNDLE" && parts.length > 2) {
-    return `${parts[0]}_${parts[1]}`;
-  }
-  // 상품: COFFEE_xxx, RESUME_xxx, INTERVIEW_xxx
   return parts[0].toUpperCase();
 }
 
@@ -49,15 +37,8 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 function getUserIdFromOrder(orderId: string): string | null {
   const parts = orderId.split("_");
-  let userId: string | null = null;
-  // 번들: BUNDLE_TYPE_userId_ts_rand (index 2)
-  if (parts[0] === "BUNDLE" && parts.length > 4) {
-    userId = parts[2];
-  }
   // 상품: TYPE_userId_ts_rand (index 1)
-  else if (parts.length > 3) {
-    userId = parts[1];
-  }
+  const userId = parts.length > 3 ? parts[1] : null;
   // UUID 형식 검증
   if (userId && !UUID_REGEX.test(userId)) {
     return null;
@@ -153,39 +134,35 @@ export async function POST(request: NextRequest) {
 
     // 1. 결제 금액 서버 검증
     let expectedAmount: number | null = null;
-    const isProductOrder = !!PRODUCT_PRICES[prefix];
-    const isBundleOrder = !!BUNDLE_PRICES[prefix];
 
-    if (isProductOrder) {
-      // 상품 결제: DB에서 expected_amount 조회 + 소유권 검증
-      if (supabase && consultationId && consultationId !== "local") {
-        const { data: consultation } = await supabase
-          .from("consultations")
-          .select("expected_amount, user_id")
-          .eq("id", consultationId)
-          .single();
-
-        // consultation 소유권 검증
-        if (consultation && consultation.user_id !== user.id) {
-          return NextResponse.json(
-            { error: "본인의 상담 건만 결제할 수 있어요." },
-            { status: 403 }
-          );
-        }
-
-        expectedAmount = consultation?.expected_amount ?? null;
-      }
-      if (!expectedAmount) {
-        // DB 조회 실패 시 상수로 폴백
-        expectedAmount = PRODUCT_PRICES[prefix];
-      }
-    } else if (isBundleOrder) {
-      expectedAmount = BUNDLE_PRICES[prefix];
-    } else {
+    if (!PRODUCT_PRICES[prefix]) {
       return NextResponse.json(
         { error: "알 수 없는 주문 유형이에요." },
         { status: 400 }
       );
+    }
+
+    // 상품 결제: DB에서 expected_amount 조회 + 소유권 검증
+    if (supabase && consultationId && consultationId !== "local") {
+      const { data: consultation } = await supabase
+        .from("consultations")
+        .select("expected_amount, user_id")
+        .eq("id", consultationId)
+        .single();
+
+      // consultation 소유권 검증
+      if (consultation && consultation.user_id !== user.id) {
+        return NextResponse.json(
+          { error: "본인의 상담 건만 결제할 수 있어요." },
+          { status: 403 }
+        );
+      }
+
+      expectedAmount = consultation?.expected_amount ?? null;
+    }
+    if (!expectedAmount) {
+      // DB 조회 실패 시 상수로 폴백
+      expectedAmount = PRODUCT_PRICES[prefix];
     }
 
     if (Number(amount) !== expectedAmount) {
@@ -275,9 +252,7 @@ export async function POST(request: NextRequest) {
     if (supabase) {
       const userId = getUserIdFromOrder(orderId);
 
-      // product_type / bundle_type 결정
-      const productType = isProductOrder ? prefix.toLowerCase() : null;
-      const bundleType = isBundleOrder ? prefix.replace("BUNDLE_", "").toLowerCase() : null;
+      const productType = prefix.toLowerCase();
 
       // 수수료 계산 (런칭 초기 15%) - Toss 확인 금액 기준
       const confirmedAmount = tossResult.totalAmount;
@@ -297,7 +272,7 @@ export async function POST(request: NextRequest) {
           mentor_amount: mentorAmount,
           status: "completed",
           product_type: productType,
-          bundle_type: bundleType,
+          bundle_type: null,
           payment_method: tossResult.method || "card",
           approved_at: tossResult.approvedAt,
           receipt_url: tossResult.receipt?.url,
@@ -329,7 +304,7 @@ export async function POST(request: NextRequest) {
               mentor_amount: mentorAmount,
               status: "completed",
               product_type: productType,
-              bundle_type: bundleType,
+              bundle_type: null,
               payment_method: tossResult.method || "card",
               approved_at: tossResult.approvedAt,
               receipt_url: tossResult.receipt?.url,
@@ -409,8 +384,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 상품 결제인 경우: 상담 상태를 confirmed로 업데이트
-      if (isProductOrder && consultationId && consultationId !== "local") {
+      // 상담 상태를 confirmed로 업데이트
+      if (consultationId && consultationId !== "local") {
         const { error: consultError } = await supabase
           .from("consultations")
           .update({
@@ -469,21 +444,6 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 번들 결제인 경우: consultation 1건 생성 (bundle_type 기록)
-      if (isBundleOrder && userId) {
-        await supabase.from("consultations").insert({
-          user_id: userId,
-          user_name: tossResult.customerName || "",
-          user_phone: "",
-          user_email: tossResult.customerEmail || "",
-          product_type: null,
-          interest: null,
-          preferred_time: null,
-          message: `${prefix.replace("BUNDLE_", "")} 번들 구매`,
-          expected_amount: Number(amount),
-          payment_id: paymentData?.id || null,
-        });
-      }
     }
 
     return NextResponse.json({

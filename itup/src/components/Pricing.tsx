@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { products, bundles, ProductType, BundleType } from "@/lib/payment/types";
+import { products, ProductType } from "@/lib/payment/types";
 import { MENTOR_TIERS, MentorTier, getTieredPrice } from "@/lib/pricing/tiers";
 import { ProductIcon } from "@/components/icons";
 
 interface PricingProps {
   onConsultClick: () => void;
   onProductClick?: (productId: ProductType) => void;
-  onBundleClick?: (bundleId: BundleType) => void;
 }
 
 const tierOptions: { id: MentorTier; label: string }[] = [
@@ -25,7 +24,7 @@ const TIER_EXPERIENCE: Record<MentorTier, string> = {
   lead: "10년 이상",
 };
 
-export default function Pricing({ onConsultClick, onProductClick, onBundleClick }: PricingProps) {
+export default function Pricing({ onConsultClick, onProductClick }: PricingProps) {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
   const [selectedTier, setSelectedTier] = useState<MentorTier>("junior");
 
@@ -44,7 +43,7 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
             딱 필요한 만큼만 <span className="text-primary">골라봐요</span>
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
-            구독 없이 건당 결제. 번들로 묶으면 더 합리적이에요.
+            구독 없이 건당 결제.
           </p>
         </div>
 
@@ -67,7 +66,7 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
 
         {/* Product Cards (3) */}
         <h3 className="text-xl font-semibold text-center mb-6">상품</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
           {products.map((product, index) => (
             <ProductCard
               key={product.id}
@@ -76,20 +75,6 @@ export default function Pricing({ onConsultClick, onProductClick, onBundleClick 
               onProductClick={onProductClick}
               onConsultClick={onConsultClick}
               tierExperience={TIER_EXPERIENCE[selectedTier]}
-            />
-          ))}
-        </div>
-
-        {/* Bundle Cards (3) */}
-        <h3 className="text-xl font-semibold text-center mb-6">번들 (더 합리적!)</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
-          {bundles.map((bundle, index) => (
-            <BundleCard
-              key={bundle.id}
-              bundle={bundle}
-              index={index}
-              onBundleClick={onBundleClick}
-              highlighted={bundle.id === "allinone"}
             />
           ))}
         </div>
@@ -207,94 +192,3 @@ function ProductCard({ product, index, onProductClick, onConsultClick, tierExper
   );
 }
 
-interface BundleCardProps {
-  bundle: (typeof bundles)[number];
-  index: number;
-  onBundleClick?: (bundleId: BundleType) => void;
-  highlighted: boolean;
-}
-
-function BundleCard({ bundle, index, onBundleClick, highlighted }: BundleCardProps) {
-  const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
-  const discountPercent = Math.round((1 - bundle.price / bundle.originalPrice) * 100);
-
-  return (
-    <div
-      ref={ref}
-      className={`scroll-animate ${isVisible ? "visible" : ""}`}
-      style={{ transitionDelay: `${index * 100}ms` }}
-    >
-      <div
-        className={`relative h-full p-6 md:p-8 rounded-2xl border transition-all duration-300 ${
-          highlighted
-            ? "bg-gradient-to-b from-primary/8 to-white/60 backdrop-blur-sm border-primary/60 shadow-xl shadow-primary/15 hover:-translate-y-1"
-            : "bg-white/50 backdrop-blur-sm border-card-border/50 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.06] hover:-translate-y-1"
-        }`}
-      >
-        {/* Discount Badge */}
-        <div className="absolute -top-3 right-4 px-3 py-1.5 bg-gradient-to-r from-red-500 to-orange-500 rounded-full text-white text-xs font-bold shadow-md shadow-red-500/20">
-          {discountPercent}% 할인
-        </div>
-
-        {/* Popular Badge */}
-        {highlighted && (
-          <div className="absolute -top-3 left-4 px-3 py-1.5 bg-gradient-to-r from-primary to-accent rounded-full text-white text-xs font-bold shadow-md shadow-primary/20">
-            인기
-          </div>
-        )}
-
-        {/* Icon + Name */}
-        <div className="text-center mb-6 mt-2">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-accent/15 to-primary/15 flex items-center justify-center">
-            <ProductIcon name={bundle.icon} className="w-8 h-8 text-primary" />
-          </div>
-          <h4 className="text-xl font-bold mb-2">{bundle.name}</h4>
-          <p className="text-muted text-sm mb-4">{bundle.description}</p>
-          <div className="flex items-end justify-center gap-1">
-            <span className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {bundle.price.toLocaleString()}
-            </span>
-            <span className="text-muted mb-1">원</span>
-          </div>
-          <p className="text-xs text-muted mt-1 line-through">
-            정가 {bundle.originalPrice.toLocaleString()}원
-          </p>
-        </div>
-
-        {/* Includes */}
-        <ul className="space-y-3 mb-8">
-          {bundle.includes.map((item, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <svg
-                className="w-5 h-5 text-accent flex-shrink-0 mt-0.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <span className="text-sm text-foreground/80">{item}</span>
-            </li>
-          ))}
-        </ul>
-
-        {/* CTA */}
-        <button
-          onClick={() => onBundleClick?.(bundle.id)}
-          className={`w-full py-3.5 font-semibold transition-all duration-300 cursor-pointer rounded-full ${
-            highlighted
-              ? "shine-effect bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5"
-              : "border border-card-border/60 text-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5"
-          }`}
-        >
-          {highlighted ? `${discountPercent}% 할인받고 시작하기` : "번들로 할인받기"}
-        </button>
-      </div>
-    </div>
-  );
-}

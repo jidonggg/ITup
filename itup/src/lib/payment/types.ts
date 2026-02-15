@@ -3,8 +3,6 @@ import { PRICES } from "@/lib/constants";
 export type PaymentProductType = "coffee" | "resume" | "interview";
 /** @deprecated Use PaymentProductType instead — 'ProductType'은 @/lib/supabase/types와 이름 충돌 */
 export type ProductType = PaymentProductType;
-export type BundleType = "starter" | "allinone" | "full";
-
 export interface ProductInfo {
   id: ProductType;
   name: string;
@@ -13,17 +11,6 @@ export interface ProductInfo {
   features: string[];
   icon: string;
   duration: string;
-}
-
-export interface BundleInfo {
-  id: BundleType;
-  name: string;
-  price: number;
-  originalPrice: number;
-  description: string;
-  includes: string[];
-  includedProducts: { productType: ProductType; quantity: number }[];
-  icon: string;
 }
 
 export const products: ProductInfo[] = [
@@ -71,50 +58,6 @@ export const products: ProductInfo[] = [
   },
 ];
 
-export const bundles: BundleInfo[] = [
-  {
-    id: "starter",
-    name: "스타터 번들",
-    price: PRICES.STARTER_BUNDLE,
-    originalPrice: PRICES.COFFEE_CHAT + PRICES.RESUME_REVIEW,
-    description: "커피챗 + 이력서 첨삭을 한 번에",
-    includes: ["커피챗 1회", "이력서/포폴 첨삭 1회"],
-    includedProducts: [
-      { productType: "coffee", quantity: 1 },
-      { productType: "resume", quantity: 1 },
-    ],
-    icon: "target",
-  },
-  {
-    id: "allinone",
-    name: "올인원 번들",
-    price: PRICES.ALLINONE_BUNDLE,
-    originalPrice: PRICES.COFFEE_CHAT + PRICES.RESUME_REVIEW + PRICES.MOCK_INTERVIEW,
-    description: "3가지 상품을 모두 포함",
-    includes: ["커피챗 1회", "이력서/포폴 첨삭 1회", "모의면접 1회"],
-    includedProducts: [
-      { productType: "coffee", quantity: 1 },
-      { productType: "resume", quantity: 1 },
-      { productType: "interview", quantity: 1 },
-    ],
-    icon: "rocket",
-  },
-  {
-    id: "full",
-    name: "풀패키지 번들",
-    price: PRICES.FULL_BUNDLE,
-    originalPrice: PRICES.COFFEE_CHAT * 2 + PRICES.RESUME_REVIEW + PRICES.MOCK_INTERVIEW,
-    description: "커피챗 2회 포함 풀 코스",
-    includes: ["커피챗 2회", "이력서/포폴 첨삭 1회", "모의면접 1회"],
-    includedProducts: [
-      { productType: "coffee", quantity: 2 },
-      { productType: "resume", quantity: 1 },
-      { productType: "interview", quantity: 1 },
-    ],
-    icon: "crown",
-  },
-];
-
 export interface PaymentRequest {
   orderId: string;
   orderName: string;
@@ -122,7 +65,6 @@ export interface PaymentRequest {
   customerEmail: string;
   customerName: string;
   productType?: ProductType;
-  bundleType?: BundleType;
 }
 
 export interface PaymentResult {

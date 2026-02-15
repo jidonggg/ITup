@@ -210,24 +210,6 @@ function PaymentSuccessContent() {
 
           {/* Upsell CTA Section */}
           <div className="mt-8 pt-8 border-t border-card-border space-y-4">
-            {orderId && !orderId.startsWith("BUNDLE_") && (
-              <Link
-                href="/#pricing"
-                className="block bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-xl p-4 text-left transition-all hover:border-primary/40 hover:shadow-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
-                  <div>
-                    <p className="font-semibold text-foreground">번들로 구매하면 최대 30% 절약!</p>
-                    <p className="text-sm text-muted">여러 세션을 묶으면 더 합리적인 가격에 이용할 수 있어요</p>
-                  </div>
-                  <svg className="w-5 h-5 text-primary ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
-            )}
-
             <Link
               href="/mentors"
               className="block bg-card-bg border border-card-border rounded-xl p-4 text-left transition-all hover:border-primary/30 hover:shadow-lg"
