@@ -3,16 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getTossAuthHeader, isTossConfigured, TOSS_API_BASE } from "@/lib/payment/toss";
 import { paymentConfirmLimiter } from "@/lib/rate-limit";
 
-// 상품 가격 (서버에서 검증용)
-const PRODUCT_PRICES: Record<string, number> = {
-  COFFEE: 15000,
-  RESUME: 39000,
-  INTERVIEW: 59000,
-};
-
-// 플랫폼 수수료율 (단계별: 0%→15%→20%→25%)
-// 현재 런칭 초기 → 15%
-const PLATFORM_COMMISSION_RATE = 0.15;
+import { PLATFORM_FEE_RATE } from "@/lib/constants";
 
 // 서버사이드 Supabase 클라이언트
 function getServiceSupabase() {
@@ -132,17 +123,19 @@ export async function POST(request: NextRequest) {
     const url = new URL(request.url);
     const consultationId = url.searchParams.get("consultationId");
 
-    // 1. 결제 금액 서버 검증
+    // 1. 결제 금액 서버 검증 (DB expected_amount 기준)
     let expectedAmount: number | null = null;
 
-    if (!PRODUCT_PRICES[prefix]) {
+    // 주문 유형 검증 (orderId prefix)
+    const validPrefixes = ["COFFEE", "RESUME", "INTERVIEW"];
+    if (!validPrefixes.includes(prefix)) {
       return NextResponse.json(
         { error: "알 수 없는 주문 유형이에요." },
         { status: 400 }
       );
     }
 
-    // 상품 결제: DB에서 expected_amount 조회 + 소유권 검증
+    // DB에서 expected_amount 조회 + 소유권 검증
     if (supabase && consultationId && consultationId !== "local") {
       const { data: consultation } = await supabase
         .from("consultations")
@@ -160,9 +153,12 @@ export async function POST(request: NextRequest) {
 
       expectedAmount = consultation?.expected_amount ?? null;
     }
+
     if (!expectedAmount) {
-      // DB 조회 실패 시 상수로 폴백
-      expectedAmount = PRODUCT_PRICES[prefix];
+      return NextResponse.json(
+        { error: "결제 정보를 확인할 수 없어요. 상담 신청 후 다시 시도해주세요." },
+        { status: 400 }
+      );
     }
 
     if (Number(amount) !== expectedAmount) {
@@ -256,7 +252,7 @@ export async function POST(request: NextRequest) {
 
       // 수수료 계산 (런칭 초기 15%) - Toss 확인 금액 기준
       const confirmedAmount = tossResult.totalAmount;
-      const platformFee = Math.round(confirmedAmount * PLATFORM_COMMISSION_RATE);
+      const platformFee = Math.round(confirmedAmount * PLATFORM_FEE_RATE);
       const mentorAmount = confirmedAmount - platformFee;
 
       // payments 테이블에 저장

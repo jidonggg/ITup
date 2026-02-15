@@ -1,4 +1,4 @@
-import { PRICES } from "@/lib/constants";
+import { RECOMMENDED_PRICES } from "@/lib/constants";
 
 export type PaymentProductType = "coffee" | "resume" | "interview";
 /** @deprecated Use PaymentProductType instead — 'ProductType'은 @/lib/supabase/types와 이름 충돌 */
@@ -17,7 +17,7 @@ export const products: ProductInfo[] = [
   {
     id: "coffee",
     name: "커피챗",
-    price: PRICES.COFFEE_CHAT,
+    price: RECOMMENDED_PRICES.coffee_chat,
     description: "가볍게 현직자와 이야기 나눠봐요",
     features: [
       "1:1 화상/대면 상담 30분",
@@ -31,7 +31,7 @@ export const products: ProductInfo[] = [
   {
     id: "resume",
     name: "이력서/포폴 첨삭",
-    price: PRICES.RESUME_REVIEW,
+    price: RECOMMENDED_PRICES.document_review,
     description: "이력서와 포트폴리오를 꼼꼼히 봐드려요",
     features: [
       "이력서/포트폴리오 상세 리뷰",
@@ -45,7 +45,7 @@ export const products: ProductInfo[] = [
   {
     id: "interview",
     name: "모의면접",
-    price: PRICES.MOCK_INTERVIEW,
+    price: RECOMMENDED_PRICES.mock_interview,
     description: "실전처럼 면접을 연습해봐요",
     features: [
       "실전형 모의면접 60분",

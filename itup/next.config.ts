@@ -41,11 +41,6 @@ const nextConfig: NextConfig = {
         destination: "/mentor/apply",
         permanent: true,
       },
-      {
-        source: "/mentor/recruit",
-        destination: "/mentor/apply",
-        permanent: true,
-      },
     ];
   },
 };

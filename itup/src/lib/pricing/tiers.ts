@@ -1,4 +1,4 @@
-import { PRICES } from "@/lib/constants";
+import { RECOMMENDED_PRICES } from "@/lib/constants";
 import type { ProductType } from "@/lib/payment/types";
 
 export type MentorTier = "junior" | "senior" | "lead";
@@ -44,11 +44,11 @@ export function getTierInfo(experience: string): TierInfo {
   return MENTOR_TIERS[getMentorTier(experience)];
 }
 
-// 베이스 가격 (주니어 = 1.0x)
+// 베이스 가격 (주니어 = 1.0x, 권장 가격 기준)
 const BASE_PRICES: Record<ProductType, number> = {
-  coffee: PRICES.COFFEE_CHAT,
-  resume: PRICES.RESUME_REVIEW,
-  interview: PRICES.MOCK_INTERVIEW,
+  coffee: RECOMMENDED_PRICES.coffee_chat,
+  resume: RECOMMENDED_PRICES.document_review,
+  interview: RECOMMENDED_PRICES.mock_interview,
 };
 
 export function getTieredPrice(productType: ProductType, experience?: string): number {

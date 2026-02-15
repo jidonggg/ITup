@@ -209,11 +209,11 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
     }
 
-    // 거절 시 프로필 역할을 "user"로 복원
+    // 거절 시 프로필 역할을 "mentee"로 복원
     if (rejectMentor?.user_id) {
       await supabase
         .from("profiles")
-        .update({ role: "user" })
+        .update({ role: "mentee" })
         .eq("id", rejectMentor.user_id);
     }
 
@@ -394,11 +394,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
     }
 
-    // 삭제 시 프로필 역할을 "user"로 복원
+    // 삭제 시 프로필 역할을 "mentee"로 복원
     if (deleteMentor?.user_id) {
       await supabase
         .from("profiles")
-        .update({ role: "user" })
+        .update({ role: "mentee" })
         .eq("id", deleteMentor.user_id);
     }
 

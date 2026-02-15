@@ -61,18 +61,8 @@ export const FIRST_BOOKING_DISCOUNT = {
   OFFER_DURATION_HOURS: 48,
 } as const;
 
-// 레거시 가격 (기존 상품 호환)
-export const PRICES = {
-  COFFEE_CHAT: 15000,
-  RESUME_REVIEW: 39000,
-  MOCK_INTERVIEW: 59000,
-} as const;
-
 // 플랫폼 수수료율
 export const PLATFORM_FEE_RATE = 0.15; // 15%
-
-// 레거시 호환
-export const COMMISSION_RATE = PLATFORM_FEE_RATE;
 
 // 환불 정책
 export const REFUND_POLICY = {
