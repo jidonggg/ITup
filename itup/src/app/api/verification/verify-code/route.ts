@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       // mentorId와 인증 이메일 도메인의 연관성 검증
       const { data: mentor } = await supabase
         .from("mentors")
-        .select("id, company_email, user_id")
+        .select("id, verified_email, user_id")
         .eq("id", mentorId)
         .single();
 
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
       // 인증 요청된 이메일과 멘토가 등록한 회사 이메일의 도메인이 일치하는지 확인
       const requestedDomain = email.split("@")[1]?.toLowerCase();
-      const mentorEmailDomain = mentor.company_email?.split("@")[1]?.toLowerCase();
+      const mentorEmailDomain = mentor.verified_email?.split("@")[1]?.toLowerCase();
       if (mentorEmailDomain && requestedDomain !== mentorEmailDomain) {
         return NextResponse.json(
           { error: "멘토 등록 시 사용한 회사 이메일과 일치하지 않습니다." },
