@@ -13,20 +13,21 @@ export const SITE_CONFIG = {
   shortDescription: "게임 업계 멘토링 플랫폼",
 
   // URL (환경변수 우선, 없으면 기본값 사용)
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://coffeechat-kr.vercel.app",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://coffeechat.it.kr",
 
   // 공개 연락처용 이메일 (환경변수 우선, 페이지에 표시되는 이메일)
   contactEmail: {
-    support: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@itup.kr",
-    privacy: process.env.NEXT_PUBLIC_PRIVACY_EMAIL || "privacy@itup.kr",
+    support: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@coffeechat.it.kr",
+    privacy: process.env.NEXT_PUBLIC_PRIVACY_EMAIL || "privacy@coffeechat.it.kr",
   },
 
   // 발신용 이메일 (Resend 등 이메일 서비스용)
+  // Resend 도메인 인증 전까지는 onboarding@resend.dev 사용 (테스트용)
   email: {
-    support: "onboarding@resend.dev",
-    noreply: "onboarding@resend.dev",
-    privacy: "onboarding@resend.dev",
-    admin: (process.env.ADMIN_EMAILS?.split(",")[0]?.trim()) || "admin@itup.kr",
+    support: process.env.RESEND_DOMAIN_VERIFIED === "true" ? "support@coffeechat.it.kr" : "onboarding@resend.dev",
+    noreply: process.env.RESEND_DOMAIN_VERIFIED === "true" ? "noreply@coffeechat.it.kr" : "onboarding@resend.dev",
+    privacy: process.env.RESEND_DOMAIN_VERIFIED === "true" ? "privacy@coffeechat.it.kr" : "onboarding@resend.dev",
+    admin: (process.env.ADMIN_EMAILS?.split(",")[0]?.trim()) || "admin@coffeechat.it.kr",
   },
 
   // 소셜/연락처
