@@ -8,6 +8,7 @@ import Stats from "@/components/Stats";
 import Features from "@/components/Features";
 import Mentors from "@/components/Mentors";
 import Pricing from "@/components/Pricing";
+import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 import FreeTrialBanner from "@/components/FreeTrialBanner";
@@ -125,6 +126,7 @@ export default function HomeClient() {
         onConsultClick={() => openConsultModal()}
         onProductClick={(productId) => openConsultModal(productId)}
       />
+      <Testimonials />
       <CTA onConsultClick={() => openConsultModal()} />
       <Footer />
       <ConsultModal
