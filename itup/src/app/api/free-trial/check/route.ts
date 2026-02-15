@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       .select("id")
       .eq("mentee_id", user.id)
       .eq("payment_method", "free_trial")
-      .not("status", "eq", "cancelled");
+      .in("status", ["confirmed", "completed", "paid"]);
 
     if (error) {
       // Fail-Closed: 에러 시 자격 없음 처리

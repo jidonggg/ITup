@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       .select("id")
       .eq("mentee_id", user.id)
       .eq("payment_method", "free_trial")
-      .not("status", "eq", "cancelled");
+      .in("status", ["confirmed", "completed", "paid"]);
 
     if (existingTrials && existingTrials.length >= FREE_TRIAL_LIMIT) {
       return NextResponse.json(
