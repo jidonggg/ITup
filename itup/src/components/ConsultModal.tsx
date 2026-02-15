@@ -230,12 +230,6 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
 
     setIsLoading(true);
     try {
-      // 할인 적용된 최종 금액으로 expected_amount 업데이트
-      if (consultationId && consultationId !== "local" && finalPrice !== price) {
-        const supabase = createClient();
-        await supabase.from("consultations").update({ expected_amount: finalPrice }).eq("id", consultationId);
-      }
-
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
       const customerKey = user.id;
       const uid = user.id;

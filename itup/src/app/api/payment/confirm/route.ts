@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getTossAuthHeader, isTossConfigured, TOSS_API_BASE } from "@/lib/payment/toss";
 import { paymentConfirmLimiter } from "@/lib/rate-limit";
+import { findDiscountCode, isDiscountCodeActive, calculateDiscountAmount } from "@/lib/discount/codes";
 
 import { PLATFORM_FEE_RATE } from "@/lib/constants";
 
@@ -159,6 +160,45 @@ export async function POST(request: NextRequest) {
         { error: "결제 정보를 확인할 수 없어요. 상담 신청 후 다시 시도해주세요." },
         { status: 400 }
       );
+    }
+
+    // 할인 코드 서버 재검증 (클라이언트 조작 방지)
+    const discountCodeParam = url.searchParams.get("discountCode");
+    if (discountCodeParam && supabase) {
+      const dc = findDiscountCode(discountCodeParam);
+      if (dc && isDiscountCodeActive(dc) && expectedAmount >= dc.minAmount) {
+        let eligible = true;
+
+        // 무료 체험 완료 검증
+        if (dc.requiresFreeTrial) {
+          const { data: ftBookings } = await supabase
+            .from("bookings")
+            .select("id")
+            .eq("mentee_id", user.id)
+            .eq("payment_method", "free_trial")
+            .eq("status", "completed")
+            .limit(1);
+          if (!ftBookings || ftBookings.length === 0) eligible = false;
+        }
+
+        // 첫 유료 예약 검증
+        if (dc.firstTimeOnly && eligible) {
+          const { data: paidBookings } = await supabase
+            .from("bookings")
+            .select("id")
+            .eq("mentee_id", user.id)
+            .neq("payment_method", "free_trial")
+            .not("status", "eq", "cancelled")
+            .gt("amount", 0)
+            .limit(1);
+          if (paidBookings && paidBookings.length > 0) eligible = false;
+        }
+
+        if (eligible) {
+          const discountAmount = calculateDiscountAmount(dc, expectedAmount);
+          expectedAmount = expectedAmount - discountAmount;
+        }
+      }
     }
 
     if (Number(amount) !== expectedAmount) {

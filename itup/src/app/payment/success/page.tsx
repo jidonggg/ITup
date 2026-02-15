@@ -17,6 +17,7 @@ function PaymentSuccessContent() {
   const orderId = searchParams.get("orderId");
   const amount = searchParams.get("amount");
   const consultationId = searchParams.get("consultationId");
+  const discountCode = searchParams.get("discountCode");
 
   useEffect(() => {
     // ref로 중복 호출 방지 (StrictMode 재실행에도 유지)
@@ -43,10 +44,12 @@ function PaymentSuccessContent() {
           accessToken = session?.access_token || "";
         }
 
-        // 서버 API 호출하여 결제 검증 및 승인 (consultationId 전달)
-        const confirmUrl = consultationId
-          ? `/api/payment/confirm?consultationId=${consultationId}`
-          : "/api/payment/confirm";
+        // 서버 API 호출하여 결제 검증 및 승인 (consultationId, discountCode 전달)
+        const confirmParams = new URLSearchParams();
+        if (consultationId) confirmParams.set("consultationId", consultationId);
+        if (discountCode) confirmParams.set("discountCode", discountCode);
+        const confirmQs = confirmParams.toString();
+        const confirmUrl = `/api/payment/confirm${confirmQs ? `?${confirmQs}` : ""}`;
 
         const response = await fetch(confirmUrl, {
           method: "POST",
