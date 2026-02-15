@@ -52,11 +52,13 @@ function getServiceSupabase() {
 /**
  * 인증 검증: 내부 API 시크릿 또는 인증된 사용자 토큰 필요
  */
-async function verifyAuth(request: NextRequest): Promise<boolean> {
+type AuthType = "api_secret" | "user_token";
+
+async function verifyAuth(request: NextRequest): Promise<AuthType | null> {
   // 1. 내부 API 시크릿 확인 (서버-서버 통신)
   const apiSecret = request.headers.get("x-api-secret");
   if (INTERNAL_API_SECRET && apiSecret && safeCompare(apiSecret, INTERNAL_API_SECRET)) {
-    return true;
+    return "api_secret";
   }
 
   // 2. 인증된 사용자 세션 토큰 확인
@@ -69,12 +71,12 @@ async function verifyAuth(request: NextRequest): Promise<boolean> {
         data: { user },
       } = await supabase.auth.getUser(token);
       if (user) {
-        return true;
+        return "user_token";
       }
     }
   }
 
-  return false;
+  return null;
 }
 
 /**
@@ -151,8 +153,8 @@ interface AlimtalkRequestBody {
 export async function POST(request: NextRequest) {
   try {
     // 인증 검증
-    const isAuthorized = await verifyAuth(request);
-    if (!isAuthorized) {
+    const authType = await verifyAuth(request);
+    if (!authType) {
       return NextResponse.json(
         { success: false, error: "인증되지 않은 요청입니다." },
         { status: 401 }
@@ -193,8 +195,14 @@ export async function POST(request: NextRequest) {
       return await handleBookingBasedNotification(type, bookingId);
     }
 
-    // 직접 변수 전달 방식
+    // 직접 변수 전달 방식 (서버 내부 호출만 허용)
     if (recipientPhone && variables) {
+      if (authType !== "api_secret") {
+        return NextResponse.json(
+          { success: false, error: "직접 알림 발송은 서버 내부에서만 가능합니다." },
+          { status: 403 }
+        );
+      }
       return await handleDirectNotification(type, recipientPhone, variables);
     }
 
@@ -502,8 +510,8 @@ async function handleDirectNotification(
 
 export async function GET(request: NextRequest) {
   // 인증 검증
-  const isAuthorized = await verifyAuth(request);
-  if (!isAuthorized) {
+  const authType = await verifyAuth(request);
+  if (!authType) {
     return NextResponse.json(
       { success: false, error: "인증되지 않은 요청입니다." },
       { status: 401 }
