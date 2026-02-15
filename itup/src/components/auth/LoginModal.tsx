@@ -200,33 +200,33 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup, onSwitch
             </div>
           </div>
 
-          {/* 소셜 로그인 버튼들 */}
+          {/* 소셜 로그인 버튼들 (준비 중) */}
           <div className="space-y-3">
             <button
               onClick={handleKakaoLogin}
-              className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-not-allowed opacity-50"
               style={{ backgroundColor: "#FEE500", color: "#000000" }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.87 5.33 4.67 6.73l-.95 3.53c-.08.29.24.54.5.39l4.2-2.78c.52.05 1.05.08 1.58.08 5.52 0 10-3.58 10-8s-4.48-8-10-8z" />
               </svg>
-              카카오로 계속하기
+              카카오로 계속하기 <span className="text-xs ml-1">(준비 중)</span>
             </button>
 
             <button
               onClick={handleNaverLogin}
-              className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-not-allowed opacity-50"
               style={{ backgroundColor: "#03C75A", color: "#FFFFFF" }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" />
               </svg>
-              네이버로 계속하기
+              네이버로 계속하기 <span className="text-xs ml-1">(준비 중)</span>
             </button>
 
             <button
               onClick={handleGoogleLogin}
-              className="w-full py-3 border border-card-border rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-secondary transition-colors cursor-pointer"
+              className="w-full py-3 border border-card-border rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-not-allowed opacity-50"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -246,7 +246,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup, onSwitch
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Google로 계속하기
+              Google로 계속하기 <span className="text-xs ml-1">(준비 중)</span>
             </button>
           </div>
 
