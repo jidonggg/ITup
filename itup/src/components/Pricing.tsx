@@ -143,7 +143,10 @@ function ProductCard({ product, index, onProductClick, onConsultClick, tierExper
           </div>
           <h4 className="text-xl font-bold mb-2">{product.name}</h4>
           <p className="text-muted text-sm mb-4">{product.description}</p>
-          <div className="flex items-end justify-center gap-1">
+          <div
+            key={tierExperience}
+            className="flex items-end justify-center gap-1 transition-all duration-300 animate-[pricePopIn_0.3s_ease-out]"
+          >
             <span className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               {tieredPrice.toLocaleString()}
             </span>

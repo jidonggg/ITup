@@ -21,8 +21,21 @@ export default function ForgotPasswordModal({
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
-  useModalClose(isOpen, onClose);
+  const handleAnimatedClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      setEmail("");
+      setError("");
+      setIsSubmitted(false);
+      onClose();
+    }, 200);
+  };
+
+  useModalClose(isOpen, handleAnimatedClose);
   useBodyScrollLock(isOpen);
 
   useEffect(() => {
@@ -75,12 +88,7 @@ export default function ForgotPasswordModal({
     }
   };
 
-  const handleClose = () => {
-    setEmail("");
-    setError("");
-    setIsSubmitted(false);
-    onClose();
-  };
+  const handleClose = handleAnimatedClose;
 
   if (!isOpen) return null;
 
@@ -88,13 +96,13 @@ export default function ForgotPasswordModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="비밀번호 재설정">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]"
+        className={`absolute inset-0 bg-black/80 backdrop-blur-md animate-[${isClosing ? 'fadeOut' : 'fadeIn'}_0.2s_ease-out_forwards]`}
         onClick={handleClose}
         aria-hidden="true"
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(139,92,246,0.4)] animate-[modalIn_0.3s_ease-out]">
+      <div className={`relative w-full max-w-md bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(160,113,79,0.25)] animate-[${isClosing ? 'modalOut' : 'modalIn'}_0.3s_ease-out_forwards]`}>
         {/* Close Button */}
         <button
           onClick={handleClose}

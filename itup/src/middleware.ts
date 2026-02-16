@@ -19,16 +19,19 @@ export async function middleware(request: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+    // 무한 리다이렉트 방지: 이미 알려진 에러 파라미터가 있으면 통과
+    // 주의: 빈 문자열이나 임의 값은 허용하지 않음 (우회 공격 방지)
+    const KNOWN_ERRORS = ["config", "unauthenticated", "forbidden"];
+    const existingError = request.nextUrl.searchParams.get("error");
+    if (existingError && KNOWN_ERRORS.includes(existingError)) {
+      return await updateSession(request);
+    }
+
     // 환경변수 미설정 시 → 클라이언트에서 에러 메시지 표시하도록 통과
     if (!supabaseUrl || !supabaseAnonKey || ADMIN_EMAILS.length === 0) {
       const url = new URL("/admin", request.url);
       url.searchParams.set("error", "config");
-      const response = NextResponse.redirect(url);
-      // 무한 루프 방지: 이미 error 파라미터가 있으면 통과
-      if (request.nextUrl.searchParams.has("error")) {
-        return await updateSession(request);
-      }
-      return response;
+      return NextResponse.redirect(url);
     }
 
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -50,9 +53,6 @@ export async function middleware(request: NextRequest) {
       // 로그인되지 않은 사용자 → 클라이언트에서 로그인 안내 표시하도록 통과
       const url = new URL("/admin", request.url);
       url.searchParams.set("error", "unauthenticated");
-      if (request.nextUrl.searchParams.has("error")) {
-        return await updateSession(request);
-      }
       return NextResponse.redirect(url);
     }
 
@@ -60,9 +60,6 @@ export async function middleware(request: NextRequest) {
       // 관리자가 아닌 사용자 → 클라이언트에서 권한 없음 안내 표시하도록 통과
       const url = new URL("/admin", request.url);
       url.searchParams.set("error", "forbidden");
-      if (request.nextUrl.searchParams.has("error")) {
-        return await updateSession(request);
-      }
       return NextResponse.redirect(url);
     }
   }

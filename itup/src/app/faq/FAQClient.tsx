@@ -68,15 +68,17 @@ export default function FAQClient({ faqData }: { faqData: FAQItem[] }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
-            {openIndex === index && (
-              <div className="px-6 pb-4">
-                <div className="pt-4 border-t border-card-border">
-                  <p className="text-foreground/80 leading-relaxed whitespace-pre-line">
-                    {item.answer}
-                  </p>
+            <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${openIndex === index ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+              <div className="overflow-hidden">
+                <div className="px-6 pb-4">
+                  <div className="pt-4 border-t border-card-border">
+                    <p className="text-foreground/80 leading-relaxed whitespace-pre-line">
+                      {item.answer}
+                    </p>
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         ))}
       </div>

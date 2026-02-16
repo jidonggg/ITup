@@ -54,7 +54,7 @@ export default function MentorRecruitPage() {
             <p className="text-muted mb-10">게임 업계 유일의 멘토링 플랫폼에서 활동하세요.</p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              <div className="bg-background border border-card-border rounded-xl p-6">
+              <div className="bg-background border border-card-border rounded-xl p-6 animate-fade-in-up [animation-delay:100ms]">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -67,7 +67,7 @@ export default function MentorRecruitPage() {
                 </p>
               </div>
 
-              <div className="bg-background border border-card-border rounded-xl p-6">
+              <div className="bg-background border border-card-border rounded-xl p-6 animate-fade-in-up [animation-delay:200ms]">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -80,7 +80,7 @@ export default function MentorRecruitPage() {
                 </p>
               </div>
 
-              <div className="bg-background border border-card-border rounded-xl p-6">
+              <div className="bg-background border border-card-border rounded-xl p-6 animate-fade-in-up [animation-delay:300ms]">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
@@ -93,7 +93,7 @@ export default function MentorRecruitPage() {
                 </p>
               </div>
 
-              <div className="bg-background border border-card-border rounded-xl p-6">
+              <div className="bg-background border border-card-border rounded-xl p-6 animate-fade-in-up [animation-delay:400ms]">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
@@ -106,7 +106,7 @@ export default function MentorRecruitPage() {
                 </p>
               </div>
 
-              <div className="bg-background border border-card-border rounded-xl p-6">
+              <div className="bg-background border border-card-border rounded-xl p-6 animate-fade-in-up [animation-delay:500ms]">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
@@ -119,7 +119,7 @@ export default function MentorRecruitPage() {
                 </p>
               </div>
 
-              <div className="bg-background border border-card-border rounded-xl p-6">
+              <div className="bg-background border border-card-border rounded-xl p-6 animate-fade-in-up [animation-delay:600ms]">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
@@ -270,8 +270,8 @@ export default function MentorRecruitPage() {
                   title: "멘토 활동 시작",
                   desc: "승인되면 바로 멘토 대시보드가 활성화돼요. 예약이 들어오면 알림을 받고, 일정에 맞춰 멘토링을 진행하세요.",
                 },
-              ].map((item) => (
-                <div key={item.step} className="flex gap-4 items-start">
+              ].map((item, index) => (
+                <div key={item.step} className="flex gap-4 items-start animate-fade-in-up" style={{ animationDelay: `${(index + 1) * 100}ms` }}>
                   <div className="w-8 h-8 shrink-0 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
                     {item.step}
                   </div>
@@ -291,55 +291,57 @@ export default function MentorRecruitPage() {
             <h2 className="text-2xl font-bold mb-3">수수료 구조</h2>
             <p className="text-muted mb-8">활동이 많아질수록 수수료가 낮아져요.</p>
 
-            <div className="bg-background border border-card-border rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-card-border">
-                    <th className="text-left px-5 py-3.5 font-semibold">구간</th>
-                    <th className="text-right px-5 py-3.5 font-semibold">멘토 수취</th>
-                    <th className="text-right px-5 py-3.5 font-semibold">플랫폼</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-card-border bg-primary/5">
-                    <td className="px-5 py-3.5">
-                      <span className="font-medium">파운딩 멘토</span>
-                      <span className="text-xs text-muted ml-1.5">(첫 3개월)</span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right font-semibold text-primary">100%</td>
-                    <td className="px-5 py-3.5 text-right text-muted">0%</td>
-                  </tr>
-                  <tr className="border-b border-card-border">
-                    <td className="px-5 py-3.5">기본</td>
-                    <td className="px-5 py-3.5 text-right font-medium">85%</td>
-                    <td className="px-5 py-3.5 text-right text-muted">15%</td>
-                  </tr>
-                  <tr className="border-b border-card-border">
-                    <td className="px-5 py-3.5">
-                      누적 정산 100만원+
-                      <span className="text-xs text-muted ml-1.5">(실버)</span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right font-medium">88%</td>
-                    <td className="px-5 py-3.5 text-right text-muted">12%</td>
-                  </tr>
-                  <tr className="border-b border-card-border">
-                    <td className="px-5 py-3.5">
-                      누적 정산 500만원+
-                      <span className="text-xs text-muted ml-1.5">(골드)</span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right font-medium">90%</td>
-                    <td className="px-5 py-3.5 text-right text-muted">10%</td>
-                  </tr>
-                  <tr>
-                    <td className="px-5 py-3.5">
-                      누적 정산 2,000만원+
-                      <span className="text-xs text-muted ml-1.5">(플래티넘)</span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right font-medium">92%</td>
-                    <td className="px-5 py-3.5 text-right text-muted">8%</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="overflow-x-auto -mx-4 px-4">
+              <div className="bg-background border border-card-border rounded-xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-card-border">
+                      <th className="text-left px-5 py-3.5 font-semibold">구간</th>
+                      <th className="text-right px-5 py-3.5 font-semibold">멘토 수취</th>
+                      <th className="text-right px-5 py-3.5 font-semibold">플랫폼</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-card-border bg-primary/5">
+                      <td className="px-5 py-3.5">
+                        <span className="font-medium">파운딩 멘토</span>
+                        <span className="text-xs text-muted ml-1.5">(첫 3개월)</span>
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-semibold text-primary">100%</td>
+                      <td className="px-5 py-3.5 text-right text-muted">0%</td>
+                    </tr>
+                    <tr className="border-b border-card-border">
+                      <td className="px-5 py-3.5">기본</td>
+                      <td className="px-5 py-3.5 text-right font-medium">85%</td>
+                      <td className="px-5 py-3.5 text-right text-muted">15%</td>
+                    </tr>
+                    <tr className="border-b border-card-border">
+                      <td className="px-5 py-3.5">
+                        누적 정산 100만원+
+                        <span className="text-xs text-muted ml-1.5">(실버)</span>
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-medium">88%</td>
+                      <td className="px-5 py-3.5 text-right text-muted">12%</td>
+                    </tr>
+                    <tr className="border-b border-card-border">
+                      <td className="px-5 py-3.5">
+                        누적 정산 500만원+
+                        <span className="text-xs text-muted ml-1.5">(골드)</span>
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-medium">90%</td>
+                      <td className="px-5 py-3.5 text-right text-muted">10%</td>
+                    </tr>
+                    <tr>
+                      <td className="px-5 py-3.5">
+                        누적 정산 2,000만원+
+                        <span className="text-xs text-muted ml-1.5">(플래티넘)</span>
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-medium">92%</td>
+                      <td className="px-5 py-3.5 text-right text-muted">8%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <p className="text-xs text-muted mt-4">

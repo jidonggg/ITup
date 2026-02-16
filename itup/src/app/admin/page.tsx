@@ -780,6 +780,10 @@ function AdminPageContent() {
         setMentors(prev => prev.map(m =>
           m.id === mentorId ? { ...m, verification_status: "verified" as const, is_approved: true } : m
         ));
+      } else {
+        setMentors(prev => prev.map(m =>
+          m.id === mentorId ? { ...m, verification_status: "rejected" as const } : m
+        ));
       }
     } catch (error) {
       showToast("오류가 발생했습니다.", "error");
@@ -822,7 +826,7 @@ function AdminPageContent() {
         return;
       }
 
-      showToast("분쟁이 해결되었습니다.", "success");
+      showToast(finalStatus === "disputed" ? "분쟁 상태가 유지됩니다." : "분쟁이 해결되었습니다.", "success");
 
       // Update local state
       if (finalStatus === "disputed") {
@@ -921,6 +925,8 @@ function AdminPageContent() {
 
   const filteredConsultations = consultations.filter(c => {
     if (consultFilter === "all") return true;
+    // "취소/환불" 필터: cancelled와 refunded 모두 표시
+    if (consultFilter === "cancelled") return c.status === "cancelled" || (c.status as string) === "refunded";
     return c.status === consultFilter;
   });
 
@@ -2001,6 +2007,7 @@ function AdminPageContent() {
                                     setProcessingSettlementId(settlement.id);
                                     try {
                                       const token = await getAuthToken();
+                                      if (!token) { showToast("인증이 필요합니다.", "error"); return; }
                                       const res = await fetch("/api/settlement/process", {
                                         method: "POST",
                                         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
@@ -2034,6 +2041,7 @@ function AdminPageContent() {
                                     setProcessingSettlementId(settlement.id);
                                     try {
                                       const token = await getAuthToken();
+                                      if (!token) { showToast("인증이 필요합니다.", "error"); return; }
                                       const res = await fetch("/api/settlement/process", {
                                         method: "POST",
                                         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
@@ -2067,6 +2075,7 @@ function AdminPageContent() {
                                     setProcessingSettlementId(settlement.id);
                                     try {
                                       const token = await getAuthToken();
+                                      if (!token) { showToast("인증이 필요합니다.", "error"); return; }
                                       const res = await fetch("/api/settlement/process", {
                                         method: "POST",
                                         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },

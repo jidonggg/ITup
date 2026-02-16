@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 interface ReviewData {
   id: string;
@@ -32,6 +33,7 @@ function StarRating({ rating }: { rating: number }) {
 export default function Testimonials() {
   const [reviews, setReviews] = useState<ReviewData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { ref: sectionRef, isVisible: sectionVisible } = useScrollAnimation<HTMLElement>();
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -84,8 +86,11 @@ export default function Testimonials() {
   if (!isLoading && reviews.length === 0) return null;
 
   return (
-    <section className="py-16 md:py-20 bg-background">
-      <div className="max-w-6xl mx-auto px-4">
+    <section
+      ref={sectionRef}
+      className={`py-24 bg-background scroll-animate ${sectionVisible ? "visible" : ""}`}
+    >
+      <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>

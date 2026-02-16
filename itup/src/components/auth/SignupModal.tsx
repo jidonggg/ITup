@@ -22,8 +22,24 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
-  useModalClose(isOpen, onClose);
+  const handleAnimatedClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setError("");
+      setIsSuccess(false);
+      onClose();
+    }, 200);
+  };
+
+  useModalClose(isOpen, handleAnimatedClose);
   useBodyScrollLock(isOpen);
 
   // 모달 오픈 추적
@@ -95,15 +111,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
     setIsSuccess(true);
   };
 
-  const handleClose = () => {
-    setName("");
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
-    setError("");
-    setIsSuccess(false);
-    onClose();
-  };
+  const handleClose = handleAnimatedClose;
 
   // 카카오 로그인 (사업자 등록 심사 중)
   const handleKakaoLogin = () => {
@@ -126,13 +134,13 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="회원가입">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]"
+        className={`absolute inset-0 bg-black/80 backdrop-blur-md animate-[${isClosing ? 'fadeOut' : 'fadeIn'}_0.2s_ease-out_forwards]`}
         onClick={handleClose}
         aria-hidden="true"
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(160,113,79,0.25)] animate-[modalIn_0.3s_ease-out]">
+      <div className={`relative w-full max-w-md max-h-[85vh] overflow-y-auto bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(160,113,79,0.25)] animate-[${isClosing ? 'modalOut' : 'modalIn'}_0.3s_ease-out_forwards]`}>
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -281,7 +289,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
               <div className="space-y-3">
                 <button
                   onClick={handleKakaoLogin}
-                  className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-not-allowed opacity-50"
+                  disabled aria-disabled="true" className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-not-allowed opacity-50"
                   style={{ backgroundColor: "#FEE500", color: "#000000" }}
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -292,7 +300,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
 
                 <button
                   onClick={handleNaverLogin}
-                  className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-not-allowed opacity-50"
+                  disabled aria-disabled="true" className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-not-allowed opacity-50"
                   style={{ backgroundColor: "#03C75A", color: "#FFFFFF" }}
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -303,7 +311,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: Signup
 
                 <button
                   onClick={handleGoogleLogin}
-                  className="w-full py-3 border border-card-border rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-not-allowed opacity-50"
+                  disabled aria-disabled="true" className="w-full py-3 border border-card-border rounded-xl font-medium flex items-center justify-center gap-2 transition-colors cursor-not-allowed opacity-50"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path

@@ -2,9 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import AuthButton from "@/components/auth/AuthButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { LogoIcon } from "@/components/icons";
+
+const LoginModal = dynamic(() => import("@/components/auth/LoginModal"), { ssr: false });
+const SignupModal = dynamic(() => import("@/components/auth/SignupModal"), { ssr: false });
+const ForgotPasswordModal = dynamic(() => import("@/components/auth/ForgotPasswordModal"), { ssr: false });
 
 interface HeaderProps {
   onLoginClick?: () => void;
@@ -16,6 +22,38 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const { user, profile } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+
+  // Internal modal state - used when no onLoginClick/onSignupClick props are provided
+  const useInternalModals = !onLoginClick && !onSignupClick;
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
+
+  const internalOpenLogin = () => setIsLoginOpen(true);
+  const internalCloseLogin = () => setIsLoginOpen(false);
+  const internalOpenSignup = () => setIsSignupOpen(true);
+  const internalCloseSignup = () => setIsSignupOpen(false);
+  const internalOpenForgot = () => setIsForgotOpen(true);
+  const internalCloseForgot = () => setIsForgotOpen(false);
+
+  const switchToSignup = () => {
+    internalCloseLogin();
+    internalOpenSignup();
+  };
+  const switchToLogin = () => {
+    internalCloseSignup();
+    internalCloseForgot();
+    internalOpenLogin();
+  };
+  const switchToForgotPassword = () => {
+    internalCloseLogin();
+    internalOpenForgot();
+  };
+
+  // Resolve which handlers to pass to AuthButton
+  const resolvedLoginClick = onLoginClick ?? (useInternalModals ? internalOpenLogin : undefined);
+  const resolvedSignupClick = onSignupClick ?? (useInternalModals ? internalOpenSignup : undefined);
 
   useEffect(() => {
     let ticking = false;
@@ -71,11 +109,12 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
   const navLinks = getNavLinks();
 
   return (
+    <>
     <header
       ref={headerRef}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
-          ? "bg-white/70 backdrop-blur-2xl shadow-lg shadow-black/[0.04] border-b border-card-border/50"
+          ? "bg-card-bg/70 backdrop-blur-2xl shadow-lg shadow-black/[0.04] border-b border-card-border/50"
           : "bg-transparent"
       }`}
     >
@@ -107,9 +146,20 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-foreground/60 hover:text-primary hover:bg-primary/10 transition-all duration-300 cursor-pointer"
+              aria-label={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
+            >
+              {theme === "dark" ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" strokeWidth={2}/><path strokeLinecap="round" strokeWidth={2} d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+              )}
+            </button>
             <AuthButton
-              onLoginClick={onLoginClick}
-              onSignupClick={onSignupClick}
+              onLoginClick={resolvedLoginClick}
+              onSignupClick={resolvedSignupClick}
               variant="desktop"
             />
           </div>
@@ -164,14 +214,25 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
                 {link.label}
               </Link>
             ))}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2 text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all px-3 py-2.5 rounded-xl font-medium text-sm cursor-pointer"
+            >
+              {theme === "dark" ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" strokeWidth={2}/><path strokeLinecap="round" strokeWidth={2} d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+              )}
+              {theme === "dark" ? "라이트 모드" : "다크 모드"}
+            </button>
             <AuthButton
-              onLoginClick={onLoginClick ? () => {
+              onLoginClick={resolvedLoginClick ? () => {
                 setIsMobileMenuOpen(false);
-                onLoginClick();
+                resolvedLoginClick();
               } : undefined}
-              onSignupClick={onSignupClick ? () => {
+              onSignupClick={resolvedSignupClick ? () => {
                 setIsMobileMenuOpen(false);
-                onSignupClick();
+                resolvedSignupClick();
               } : undefined}
               variant="mobile"
             />
@@ -179,5 +240,28 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
         </div>
       </nav>
     </header>
+
+    {/* Internal auth modals - rendered only when Header manages its own modal state */}
+    {useInternalModals && (
+      <>
+        <LoginModal
+          isOpen={isLoginOpen}
+          onClose={internalCloseLogin}
+          onSwitchToSignup={switchToSignup}
+          onSwitchToForgotPassword={switchToForgotPassword}
+        />
+        <SignupModal
+          isOpen={isSignupOpen}
+          onClose={internalCloseSignup}
+          onSwitchToLogin={switchToLogin}
+        />
+        <ForgotPasswordModal
+          isOpen={isForgotOpen}
+          onClose={internalCloseForgot}
+          onSwitchToLogin={switchToLogin}
+        />
+      </>
+    )}
+    </>
   );
 }

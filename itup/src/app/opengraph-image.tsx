@@ -32,7 +32,7 @@ export default function Image() {
             width: 400,
             height: 400,
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(160,113,79,0.1) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(200,121,65,0.1) 0%, transparent 70%)",
             display: "flex",
           }}
         />
@@ -44,7 +44,7 @@ export default function Image() {
             width: 500,
             height: 500,
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(212,165,116,0.1) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(200,121,65,0.08) 0%, transparent 70%)",
             display: "flex",
           }}
         />
@@ -55,7 +55,7 @@ export default function Image() {
             width: 80,
             height: 80,
             borderRadius: 20,
-            background: "linear-gradient(135deg, #A0714F, #D4A574)",
+            background: "linear-gradient(135deg, #A0714F, #C87941)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -72,9 +72,16 @@ export default function Image() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <path d="M17 8h1a4 4 0 110 8h-1" />
-            <path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z" />
-            <path d="M6 2v3M10 2v3M14 2v3" />
+            {/* Chat bubble */}
+            <path d="M7 1h6a2 2 0 012 2v2a2 2 0 01-2 2h-3l-1.5 2V7H7a2 2 0 01-2-2V3a2 2 0 012-2z" />
+            {/* Chat dots */}
+            <circle cx="8" cy="4" r="0.7" fill="white" stroke="none" />
+            <circle cx="10" cy="4" r="0.7" fill="white" stroke="none" />
+            <circle cx="12" cy="4" r="0.7" fill="white" stroke="none" />
+            {/* Cup body */}
+            <path d="M4 10h12v7a4 4 0 01-4 4H8a4 4 0 01-4-4v-7z" />
+            {/* Handle */}
+            <path d="M16 11h1.5a2.5 2.5 0 010 5H16" />
           </svg>
         </div>
 
@@ -97,7 +104,7 @@ export default function Image() {
           style={{
             fontSize: 28,
             fontWeight: 500,
-            background: "linear-gradient(90deg, #A0714F, #D4A574)",
+            background: "linear-gradient(90deg, #A0714F, #C87941)",
             backgroundClip: "text",
             color: "transparent",
             display: "flex",
@@ -135,8 +142,8 @@ export default function Image() {
               style={{
                 padding: "10px 24px",
                 borderRadius: 999,
-                border: "1px solid rgba(160,113,79,0.3)",
-                color: "#A0714F",
+                border: "1px solid rgba(200,121,65,0.3)",
+                color: "#C87941",
                 fontSize: 18,
                 display: "flex",
               }}

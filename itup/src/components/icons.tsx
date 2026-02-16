@@ -1,14 +1,18 @@
 import type { ReactNode } from "react";
 
 // ─────────────────────────────────────────────
-// Brand Logo Icon (coffee cup) — Geometric, polished
+// Brand Logo Icon (coffee cup + chat bubble)
+// 커피챗 = coffee + chat — 커피컵 위 말풍선
 // ─────────────────────────────────────────────
 export function LogoIcon({ className = "w-5 h-5 text-white" }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-      {/* Steam wisps */}
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 3c0 1.5-.5 2 .5 3s-.5 1.5-.5 3" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2c0 1.5-.5 2 .5 3s-.5 1.5-.5 3" />
+      {/* Chat bubble */}
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 1h6a2 2 0 012 2v2a2 2 0 01-2 2h-3l-1.5 2V7H7a2 2 0 01-2-2V3a2 2 0 012-2z" />
+      {/* Chat dots */}
+      <circle cx="8" cy="4" r="0.7" fill="currentColor" stroke="none" />
+      <circle cx="10" cy="4" r="0.7" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="4" r="0.7" fill="currentColor" stroke="none" />
       {/* Cup body */}
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 10h12v7a4 4 0 01-4 4H8a4 4 0 01-4-4v-7z" />
       {/* Handle */}
@@ -28,11 +32,13 @@ type IconRenderer = (props: { className?: string }) => ReactNode;
 const s = { strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
 const iconMap: Record<string, IconRenderer> = {
-  // ── Coffee ──────────────────────────────────
+  // ── Coffee (matches LogoIcon — cup + chat bubble) ──
   coffee: ({ className = "w-5 h-5" }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-      <path {...s} d="M8 3c0 1.5-.5 2 .5 3s-.5 1.5-.5 3" />
-      <path {...s} d="M12 2c0 1.5-.5 2 .5 3s-.5 1.5-.5 3" />
+      <path {...s} d="M7 1h6a2 2 0 012 2v2a2 2 0 01-2 2h-3l-1.5 2V7H7a2 2 0 01-2-2V3a2 2 0 012-2z" />
+      <circle cx="8" cy="4" r="0.7" fill="currentColor" stroke="none" />
+      <circle cx="10" cy="4" r="0.7" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="4" r="0.7" fill="currentColor" stroke="none" />
       <path {...s} d="M4 10h12v7a4 4 0 01-4 4H8a4 4 0 01-4-4v-7z" />
       <path {...s} d="M16 11h1.5a2.5 2.5 0 010 5H16" />
     </svg>

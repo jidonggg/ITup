@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { isAdmin } from "@/lib/admin";
 import { adminLimiter } from "@/lib/rate-limit";
 import { getTossAuthHeader, TOSS_API_BASE, isTossConfigured } from "@/lib/payment/toss";
+import { isValidUUID } from "@/lib/validation";
 
 // =============================================
 // PATCH /api/admin/disputes
@@ -62,9 +63,22 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "confirmationId와 finalStatus는 필수입니다." }, { status: 400 });
     }
 
+    if (!isValidUUID(confirmationId)) {
+      return NextResponse.json({ error: "유효하지 않은 confirmationId 형식입니다." }, { status: 400 });
+    }
+
+    if (bookingId && !isValidUUID(bookingId)) {
+      return NextResponse.json({ error: "유효하지 않은 bookingId 형식입니다." }, { status: 400 });
+    }
+
     const validStatuses = ["completed", "mentee_noshow", "mentor_noshow", "disputed"];
     if (!validStatuses.includes(finalStatus)) {
       return NextResponse.json({ error: "유효하지 않은 상태입니다." }, { status: 400 });
+    }
+
+    // 노쇼 판정 시 bookingId 필수
+    if ((finalStatus === "mentor_noshow" || finalStatus === "mentee_noshow") && !bookingId) {
+      return NextResponse.json({ error: "노쇼 판정에는 bookingId가 필수입니다." }, { status: 400 });
     }
 
     const supabase = getServiceSupabase();

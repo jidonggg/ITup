@@ -76,7 +76,7 @@ export default function Hero() {
       <div
         className="absolute inset-0 opacity-[0.15]"
         style={{
-          backgroundImage: `radial-gradient(rgba(160, 113, 79, 0.3) 1px, transparent 1px)`,
+          backgroundImage: `radial-gradient(rgba(200, 121, 65, 0.3) 1px, transparent 1px)`,
           backgroundSize: "32px 32px",
         }}
       />
@@ -127,11 +127,11 @@ export default function Hero() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+              <div className="absolute inset-0 bg-gradient-to-r from-accent via-primary-dark to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
             </button>
             <button
               onClick={handleLearnMoreClick}
-              className="group px-10 py-4.5 border border-white/30 bg-white/10 backdrop-blur-sm text-foreground font-semibold text-lg transform hover:-translate-y-1.5 hover:bg-white/20 hover:border-primary/40 hover:shadow-lg transition-all duration-300 cursor-pointer rounded-full"
+              className="group px-10 py-4.5 bg-white/80 border border-card-border text-foreground hover:bg-white hover:border-primary/30 hover:shadow-lg backdrop-blur-sm font-semibold text-lg transform hover:-translate-y-1.5 transition-all duration-300 cursor-pointer rounded-full"
             >
               <span className="flex items-center gap-2">
                 서비스 알아보기

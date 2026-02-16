@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -119,7 +121,7 @@ function PaymentSuccessContent() {
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-12 h-12 mx-auto mb-4 border-3 border-primary border-t-transparent rounded-full" />
           <h1 className="text-xl font-semibold mb-2">결제 확인 중...</h1>
@@ -131,7 +133,7 @@ function PaymentSuccessContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-500/20 flex items-center justify-center">
             <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +155,7 @@ function PaymentSuccessContent() {
 
   if (isVerified) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center py-12">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center">
             <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,14 +241,18 @@ function PaymentSuccessContent() {
 
 export default function PaymentSuccessPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-        </div>
-      }
-    >
-      <PaymentSuccessContent />
-    </Suspense>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      <Suspense
+        fallback={
+          <div className="flex-1 flex items-center justify-center">
+            <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+          </div>
+        }
+      >
+        <PaymentSuccessContent />
+      </Suspense>
+      <Footer />
+    </div>
   );
 }

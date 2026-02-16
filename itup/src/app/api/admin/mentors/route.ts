@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { isAdmin } from "@/lib/admin";
 import { getYearsFromExperience } from "@/lib/pricing/tiers";
 import { adminLimiter } from "@/lib/rate-limit";
+import { isValidUUID, sanitizeInput } from "@/lib/validation";
 
 const MIN_MENTOR_EXPERIENCE_YEARS = 3;
 
@@ -103,11 +104,15 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json();
   const { mentorId, action } = body;
 
-  if (!mentorId || !action) {
+  if (!mentorId || typeof mentorId !== "string" || !action) {
     return NextResponse.json(
       { error: "mentorId and action are required" },
       { status: 400 }
     );
+  }
+
+  if (!isValidUUID(mentorId)) {
+    return NextResponse.json({ error: "유효하지 않은 mentorId 형식입니다." }, { status: 400 });
   }
 
   // action 값 검증
@@ -198,6 +203,10 @@ export async function PATCH(request: NextRequest) {
       .select("user_id")
       .eq("id", mentorId)
       .single();
+
+    if (!rejectMentor) {
+      return NextResponse.json({ error: "멘토를 찾을 수 없습니다." }, { status: 404 });
+    }
 
     const { error } = await supabase
       .from("mentors")
@@ -293,7 +302,8 @@ export async function PATCH(request: NextRequest) {
 
   // 멘토 검증 거절
   if (action === "verify_reject") {
-    const { reason } = body; // 거절 사유 (선택사항)
+    const rawReason = body.reason; // 거절 사유 (선택사항)
+    const reason = rawReason ? sanitizeInput(String(rawReason).slice(0, 500)) : null;
 
     // 멘토 정보 조회
     const { data: mentor } = await supabase
@@ -375,6 +385,10 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    if (!isValidUUID(mentorId)) {
+      return NextResponse.json({ error: "유효하지 않은 mentorId 형식입니다." }, { status: 400 });
+    }
+
     const supabase = getServiceSupabase();
 
     // 삭제 전 user_id 조회 (role 복원용)
@@ -383,6 +397,10 @@ export async function DELETE(request: NextRequest) {
       .select("user_id")
       .eq("id", mentorId)
       .single();
+
+    if (!deleteMentor) {
+      return NextResponse.json({ error: "멘토를 찾을 수 없습니다." }, { status: 404 });
+    }
 
     const { error } = await supabase
       .from("mentors")

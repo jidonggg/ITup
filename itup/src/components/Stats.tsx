@@ -68,7 +68,7 @@ export default function Stats() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-8">
           {highlights.map((item) => (
             <div key={item.label} className="text-center">
-              <div className="text-xl md:text-2xl font-bold text-primary">
+              <div className="text-2xl md:text-4xl font-bold text-primary">
                 {item.value}
               </div>
               <div className="text-muted text-sm mt-1">{item.label}</div>
