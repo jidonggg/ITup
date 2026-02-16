@@ -128,7 +128,7 @@ const initialStepThree: StepThreeData = {
 
 export default function MentorApplyPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, session, isLoading: authLoading } = useAuth();
   const { showToast } = useToast();
 
   // Step state
@@ -199,7 +199,10 @@ export default function MentorApplyPage() {
     try {
       const res = await fetch("/api/verification/send-code", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token && { Authorization: `Bearer ${session.access_token}` }),
+        },
         body: JSON.stringify({ email: stepOne.companyEmail }),
       });
       const data = await res.json();
@@ -230,7 +233,10 @@ export default function MentorApplyPage() {
     try {
       const res = await fetch("/api/verification/verify-code", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token && { Authorization: `Bearer ${session.access_token}` }),
+        },
         body: JSON.stringify({
           email: stepOne.companyEmail,
           code: stepOne.verificationCode,

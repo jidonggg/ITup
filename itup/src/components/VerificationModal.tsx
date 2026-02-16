@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useModalClose, useBodyScrollLock } from "@/hooks/useModal";
 import { useToast } from "@/contexts/ToastContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface VerificationModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export default function VerificationModal({
   onVerified,
 }: VerificationModalProps) {
   const { showToast } = useToast();
+  const { session } = useAuth();
   const [step, setStep] = useState<Step>("input");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -46,7 +48,10 @@ export default function VerificationModal({
     try {
       const response = await fetch("/api/verification/send-code", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token && { Authorization: `Bearer ${session.access_token}` }),
+        },
         body: JSON.stringify({ email, mentorId }),
       });
 
@@ -78,7 +83,10 @@ export default function VerificationModal({
     try {
       const response = await fetch("/api/verification/verify-code", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token && { Authorization: `Bearer ${session.access_token}` }),
+        },
         body: JSON.stringify({ email, code, mentorId }),
       });
 
