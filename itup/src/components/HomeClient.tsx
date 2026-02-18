@@ -122,16 +122,16 @@ export default function HomeClient() {
       <Header onLoginClick={openLoginModal} onSignupClick={openSignupModal} />
       <SeasonalBanner />
       <Hero />
-      <FreeTrialBanner />
-      <NewsletterCaptureBar />
       <Stats />
       <Features />
+      <FreeTrialBanner />
       <Mentors onMentorClick={openMentorModal} />
       <Pricing
         onConsultClick={() => openConsultModal()}
         onProductClick={(productId) => openConsultModal(productId)}
       />
       <Testimonials />
+      <NewsletterCaptureBar />
       <CTA onConsultClick={() => openConsultModal()} />
       <Footer />
       <SocialProofPopup />

@@ -221,6 +221,19 @@ export default function MentorEditPage() {
       newErrors.consultTypes = "최소 1개 이상의 상담 유형을 선택해주세요";
     }
 
+    // 활성화된 상품의 가격 범위 검증
+    for (const type of PRODUCT_TYPES) {
+      const setting = formData.products[type];
+      if (setting.enabled) {
+        const limits = PRICE_LIMITS[type];
+        const price = setting.price;
+        if (price === "" || (typeof price === "number" && (price < limits.min || price > limits.max))) {
+          newErrors.products = `가격은 ${limits.min.toLocaleString()}원 ~ ${limits.max.toLocaleString()}원 범위여야 합니다`;
+          break;
+        }
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -731,6 +744,7 @@ export default function MentorEditPage() {
               <p className="text-sm text-muted mb-4">
                 제공할 멘토링 서비스와 가격을 설정하세요.
               </p>
+              {errors.products && <p className="mb-2 text-sm text-red-500">{errors.products}</p>}
 
               <div className="space-y-4">
                 {PRODUCT_TYPES.map((type) => {

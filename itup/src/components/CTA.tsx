@@ -59,7 +59,7 @@ export default function CTA({ onConsultClick }: CTAProps) {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={onConsultClick}
-              className="shine-effect group relative px-10 py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-semibold text-lg overflow-hidden transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer"
+              className="shine-effect cta-glow group relative px-10 py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-semibold text-lg overflow-hidden transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
             >
               <span className="relative z-10 flex items-center justify-center gap-2.5">
                 커피챗 시작하기

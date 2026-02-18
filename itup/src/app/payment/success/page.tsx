@@ -160,6 +160,25 @@ function PaymentSuccessContent() {
   if (isVerified) {
     return (
       <div className="flex-1 flex items-center justify-center py-12">
+        {/* Confetti Effect */}
+        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2.5 h-2.5 rounded-sm"
+              style={{
+                left: `${Math.random() * 100}%`,
+                animationName: 'confetti-fall',
+                animationDuration: `${2 + Math.random() * 2}s`,
+                animationDelay: `${Math.random() * 1.5}s`,
+                animationTimingFunction: 'ease-in',
+                animationFillMode: 'forwards',
+                backgroundColor: ['#8B7355', '#B09070', '#A89279', '#2D9D5A', '#C4956A'][i % 5],
+                transform: `rotate(${Math.random() * 360}deg)`,
+              }}
+            />
+          ))}
+        </div>
         <div className="text-center max-w-md mx-auto px-4">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center">
             <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

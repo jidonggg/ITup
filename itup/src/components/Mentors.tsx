@@ -175,7 +175,7 @@ function MentorCard({ mentor, index, onClick }: MentorCardProps) {
         role="button"
         tabIndex={0}
         aria-label={`${mentor.name} 멘토 상세 정보 보기`}
-        className="group relative premium-card rounded-2xl overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+        className="group relative premium-card rounded-2xl overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background hover:border-primary/30 hover:shadow-[0_12px_40px_-8px_rgba(139,115,85,0.18)] hover:-translate-y-2 transition-all duration-500 ease-out"
       >
         {/* Avatar Section */}
         <div className="relative h-44 bg-gradient-to-br from-primary/8 via-accent/6 to-primary-light/8 flex items-center justify-center overflow-hidden">

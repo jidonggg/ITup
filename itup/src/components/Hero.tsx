@@ -72,6 +72,11 @@ export default function Hero() {
         }}
       />
 
+      {/* Mesh gradient blobs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-[100px] animate-[meshFloat1_20s_ease-in-out_infinite]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-gradient-to-tl from-accent/8 to-transparent rounded-full blur-[120px] animate-[meshFloat2_25s_ease-in-out_infinite]" />
+      <div className="absolute top-[30%] right-[20%] w-[40%] h-[40%] bg-gradient-to-bl from-primary-light/8 to-transparent rounded-full blur-[80px] animate-[meshFloat3_18s_ease-in-out_infinite]" />
+
       {/* Subtle dot pattern */}
       <div
         className="absolute inset-0 opacity-[0.06]"
@@ -92,7 +97,7 @@ export default function Hero() {
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-8 animate-fade-in-up [animation-delay:100ms] tracking-tight leading-[1.1]">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-8 animate-fade-in-up [animation-delay:100ms] tracking-tight leading-[1.1]">
             <span
               key={headlineIndex}
               className="block text-foreground animate-fade-in-up"
@@ -119,7 +124,7 @@ export default function Hero() {
             <button
               onClick={handleMentorSearchClick}
               aria-label="멘토 찾기 페이지로 이동"
-              className="shine-effect group relative px-10 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold text-lg transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+              className="shine-effect cta-glow group relative px-10 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold text-lg transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
             >
               <span className="relative z-10 flex items-center gap-2.5">
                 멘토 찾기

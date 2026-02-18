@@ -546,6 +546,24 @@ export default function MenteeGuidesPage() {
                                 </span>
                               );
                             }
+                            // Sub-guide link lines: [바로가기] /path
+                            if (line.startsWith("[바로가기]")) {
+                              const path = line.replace("[바로가기]", "").trim();
+                              return (
+                                <span key={lineIndex} className="block my-2">
+                                  <Link
+                                    href={path}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                    </svg>
+                                    자세히 보기
+                                  </Link>
+                                  {"\n"}
+                                </span>
+                              );
+                            }
                             // Arrow transform lines
                             if (line.startsWith("→")) {
                               return (

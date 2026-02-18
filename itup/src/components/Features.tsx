@@ -9,8 +9,13 @@ const features = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
       </svg>
     ),
+    iconLarge: (
+      <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
     title: "1:1 프라이빗 상담",
-    description: "단톡방 질문이 아닙니다. 나만을 위한 시간, 현직자와 1:1로 깊이 있는 대화를 나눠요.",
+    description: "단톡방 질문이 아닙니다. 나만을 위한 시간, 현직자와 1:1로 깊이 있는 대화를 나눠요. 커리어 고민부터 이직 전략까지, 오직 나에게만 집중하는 프라이빗 세션입니다.",
   },
   {
     icon: (
@@ -59,6 +64,16 @@ const features = [
   },
 ];
 
+// Bento grid layout: index -> column span class
+const bentoLayout: Record<number, string> = {
+  0: "md:col-span-4 md:row-span-2",  // 큰 카드
+  1: "md:col-span-2",                 // 정사각형
+  2: "md:col-span-2",                 // 정사각형
+  3: "md:col-span-3",                 // 중간
+  4: "md:col-span-3",                 // 중간
+  5: "md:col-span-6",                 // 풀 와이드
+};
+
 export default function Features() {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
 
@@ -83,8 +98,8 @@ export default function Features() {
           </p>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Features Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-5">
           {features.map((feature, index) => (
             <FeatureCard key={feature.title} feature={feature} index={index} />
           ))}
@@ -97,6 +112,7 @@ export default function Features() {
 interface FeatureCardProps {
   feature: {
     icon: React.ReactNode;
+    iconLarge?: React.ReactNode;
     title: string;
     description: string;
   };
@@ -108,23 +124,34 @@ function FeatureCard({ feature, index }: FeatureCardProps) {
     threshold: 0.1,
   });
 
+  const isHero = index === 0;
+  const gridClass = bentoLayout[index] || "md:col-span-3";
+
   return (
     <div
       ref={ref}
-      className={`scroll-animate ${isVisible ? "visible" : ""}`}
+      className={`${gridClass} scroll-animate ${isVisible ? "visible" : ""}`}
       style={{ transitionDelay: `${index * 80}ms` }}
     >
-      <div className="group h-full p-6 premium-card rounded-2xl">
+      <div className={`group h-full premium-card rounded-2xl ${isHero ? "p-8 md:p-10" : "p-6"}`}>
         {/* Icon */}
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/10 to-accent/8 flex items-center justify-center text-primary mb-5 group-hover:scale-105 group-hover:from-primary/15 group-hover:to-accent/12 transition-all duration-300">
-          {feature.icon}
+        <div
+          className={`rounded-xl bg-gradient-to-br from-primary/10 to-accent/8 flex items-center justify-center text-primary group-hover:scale-105 group-hover:from-primary/15 group-hover:to-accent/12 transition-all duration-300 ${
+            isHero ? "w-14 h-14 mb-6" : "w-11 h-11 mb-5"
+          }`}
+        >
+          {isHero && feature.iconLarge ? feature.iconLarge : feature.icon}
         </div>
 
         {/* Content */}
-        <h3 className="text-base font-bold mb-2 group-hover:text-primary transition-colors duration-300">
+        <h3
+          className={`font-bold group-hover:text-primary transition-colors duration-300 ${
+            isHero ? "text-2xl md:text-3xl mb-3" : "text-base mb-2"
+          }`}
+        >
           {feature.title}
         </h3>
-        <p className="text-muted text-sm leading-relaxed">
+        <p className={`text-muted leading-relaxed ${isHero ? "text-base" : "text-sm"}`}>
           {feature.description}
         </p>
       </div>

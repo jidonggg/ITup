@@ -21,10 +21,11 @@ function LoginContent() {
     const errorFromUrl = searchParams.get("error");
     if (errorFromUrl) {
       setError(decodeURIComponent(errorFromUrl));
-      // URL에서 에러 파라미터 제거
+      // URL에서 에러 파라미터만 제거 (redirect 등 다른 파라미터는 보존)
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("error");
-      window.history.replaceState({}, "", newUrl.pathname);
+      const remaining = newUrl.searchParams.toString();
+      window.history.replaceState({}, "", newUrl.pathname + (remaining ? `?${remaining}` : ""));
     }
   }, [searchParams]);
 

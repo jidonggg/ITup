@@ -863,7 +863,7 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
   return (
     <div
       onClick={onClick}
-      className="group bg-card-bg/60 backdrop-blur-sm border border-card-border/50 rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.06] hover:-translate-y-1 transition-all duration-300 cursor-pointer active:scale-[0.98]"
+      className="group bg-card-bg/60 backdrop-blur-sm border border-card-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-[0_12px_40px_-8px_rgba(139,115,85,0.18)] hover:-translate-y-2 transition-all duration-500 ease-out cursor-pointer active:scale-[0.98]"
     >
       {/* Avatar Section */}
       <div className="relative h-24 md:h-32 bg-gradient-to-br from-primary/10 via-accent/10 to-primary-light/10 flex items-center justify-center overflow-hidden">

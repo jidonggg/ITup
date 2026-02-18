@@ -55,8 +55,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { category, action, label, page, metadata, timestamp } = body;
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+    const { category, action, label, page, metadata, timestamp } = body as {
+      category?: string;
+      action?: string;
+      label?: string;
+      page?: string;
+      metadata?: Record<string, unknown>;
+      timestamp?: string;
+    };
 
     // Basic validation
     if (!category || !action) {

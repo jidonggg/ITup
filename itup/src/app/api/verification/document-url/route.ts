@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isAdmin } from "@/lib/admin";
 
 /**
  * 관리자 전용: 경력 인증 서류 열람 (Signed URL 발급)
@@ -27,13 +28,7 @@ async function verifyAdmin(request: NextRequest) {
   if (error || !user) return null;
 
   // 관리자 권한 확인
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || profile.role !== "admin") return null;
+  if (!isAdmin(user.email)) return null;
 
   return { user, supabase };
 }

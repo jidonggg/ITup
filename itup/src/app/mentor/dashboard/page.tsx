@@ -836,11 +836,11 @@ export default function MentorDashboardPage() {
                     </div>
                   )}
 
-                  {/* Meeting link for paid/confirmed bookings */}
-                  {(booking.status === "paid" || booking.status === "confirmed") && (
+                  {/* Meeting link for pending/paid/confirmed bookings */}
+                  {(booking.status === "pending" || booking.status === "paid" || booking.status === "confirmed") && (
                     <div className="mb-4">
                       <p className="text-xs text-muted mb-1">
-                        미팅 링크 {booking.status === "paid" && <span className="text-red-500">* 확정 전 필수 입력</span>}
+                        미팅 링크 {(booking.status === "pending" || booking.status === "paid") && <span className="text-red-500">* 확정 전 필수 입력</span>}
                       </p>
                       <div className="flex gap-2">
                         <input
@@ -873,11 +873,21 @@ export default function MentorDashboardPage() {
                     {mentor?.is_approved && (booking.status === "pending") && (
                       <>
                         <button
-                          onClick={() => updateBookingStatus(booking.id, "confirmed")}
-                          disabled={updatingBookingId === booking.id}
+                          onClick={async () => {
+                            // 미팅링크가 없으면 저장 먼저 요청
+                            if (!meetingLinkInput[booking.id]?.trim()) {
+                              showToast("미팅 링크를 먼저 입력해주세요.", "error");
+                              return;
+                            }
+                            // 미팅링크 저장 후 확정 (저장 실패 시 확정하지 않음)
+                            const saved = await saveMeetingLink(booking.id);
+                            if (!saved) return;
+                            await updateBookingStatus(booking.id, "confirmed");
+                          }}
+                          disabled={updatingBookingId === booking.id || savingMeetingLink === booking.id}
                           className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
                         >
-                          {updatingBookingId === booking.id ? "처리중..." : "확정"}
+                          {updatingBookingId === booking.id || savingMeetingLink === booking.id ? "처리중..." : "확정"}
                         </button>
                         <button
                           onClick={() => updateBookingStatus(booking.id, "cancelled")}

@@ -12,19 +12,12 @@ const REFERRAL_CREDIT_AMOUNT = 5000;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { referralCode, referredUserId } = body;
+    const { referralCode } = body;
 
     // Input validation
     if (!referralCode || typeof referralCode !== "string") {
       return NextResponse.json(
         { error: "추천 코드가 필요합니다." },
-        { status: 400 }
-      );
-    }
-
-    if (!referredUserId || typeof referredUserId !== "string") {
-      return NextResponse.json(
-        { error: "추천받은 사용자 정보가 필요합니다." },
         { status: 400 }
       );
     }
@@ -52,6 +45,9 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // body에서 받지 않고 인증된 사용자 ID 강제 사용
+    const referredUserId = user.id;
 
     try {
       // Find the referral record by code

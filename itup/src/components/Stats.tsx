@@ -67,7 +67,7 @@ export default function Stats() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-10">
           {highlights.map((item) => (
             <div key={item.label} className="text-center">
-              <div className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <div className="text-4xl md:text-6xl font-black tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 {item.value}
               </div>
               <div className="text-muted text-sm mt-1.5">{item.label}</div>
