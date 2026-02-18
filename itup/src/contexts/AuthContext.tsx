@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useMemo, use
 import { User, Session, SupabaseClient } from "@supabase/supabase-js";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Profile } from "@/lib/supabase/types";
+import { trackEvent } from "@/lib/analytics/track";
 
 interface AuthContextType {
   user: User | null;
@@ -12,6 +13,7 @@ interface AuthContextType {
   isLoading: boolean;
   isInitialized: boolean;
   isConfigured: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string, name?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => void;
@@ -26,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const isConfigured = isSupabaseConfigured();
 
   const supabase = useMemo<SupabaseClient | null>(() => {
@@ -124,8 +127,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         // 프로필을 백그라운드에서 fetch (await 없이 → UI 차단 안 함)
         fetchProfile(session.user.id, session.user.user_metadata?.name).catch(() => {});
+        // 관리자 여부 체크 (백그라운드)
+        fetch("/api/admin/check", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+          .then(res => res.json())
+          .then(data => setIsAdmin(!!data.isAdmin))
+          .catch(() => setIsAdmin(false));
       } else {
         setProfile(null);
+        setIsAdmin(false);
         if (event === "INITIAL_SESSION") {
           setIsLoading(false);
           setIsInitialized(true);
@@ -152,8 +163,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           name: name || "",
         },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+    if (!error) {
+      trackEvent({ category: "auth", action: "signup" });
+    }
     return { error: error as Error | null };
   };
 
@@ -166,6 +181,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
     });
+    if (!error) {
+      trackEvent({ category: "auth", action: "login" });
+    }
     return { error: error as Error | null };
   };
 
@@ -184,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isInitialized,
         isConfigured,
+        isAdmin,
         signUp,
         signIn,
         signOut,

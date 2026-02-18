@@ -10,7 +10,7 @@ import { Mentor, Consultation, Booking, SessionConfirmation, ProductType, Settle
 import { PRODUCT_INFO, PAGINATION } from "@/lib/constants";
 import { ProductIcon } from "@/components/icons";
 
-type TabType = "overview" | "mentors" | "consultations" | "analytics" | "verification" | "bookings" | "disputes" | "settlements";
+type TabType = "overview" | "mentors" | "consultations" | "analytics" | "user_analytics" | "verification" | "bookings" | "disputes" | "settlements" | "surveys" | "feedback";
 
 interface MentorWithEmail extends Mentor {
   user_email?: string;
@@ -134,6 +134,46 @@ function AdminPageContent() {
   const [adminSettlements, setAdminSettlements] = useState<(Settlement & { mentor_name?: string })[]>([]);
   const [settlementFilter, setSettlementFilter] = useState<SettlementStatus | "all">("all");
   const [processingSettlementId, setProcessingSettlementId] = useState<string | null>(null);
+
+  // v2: Surveys
+  const [surveys, setSurveys] = useState<any[]>([]);
+
+  // Feedback
+  const [feedbackList, setFeedbackList] = useState<any[]>([]);
+  const [feedbackFilter, setFeedbackFilter] = useState<"all" | "bug" | "feature" | "opinion" | "new" | "in_progress">("all");
+  const [expandedFeedbackId, setExpandedFeedbackId] = useState<string | null>(null);
+  const [feedbackAdminNote, setFeedbackAdminNote] = useState("");
+  const [updatingFeedbackId, setUpdatingFeedbackId] = useState<string | null>(null);
+
+  // User Analytics (activity_logs)
+  interface UserAnalyticsData {
+    totalEvents: number;
+    uniqueUsers: number;
+    mostActivePage: string | null;
+    eventsByCategory: Record<string, number>;
+    eventsByPage: Record<string, number>;
+    eventsByHour: number[];
+    recentEvents: {
+      id: string;
+      user_id: string | null;
+      category: string;
+      action: string;
+      label: string | null;
+      page: string | null;
+      metadata: Record<string, unknown> | null;
+      created_at: string;
+    }[];
+    funnelData: {
+      pageViews: number;
+      step1: number;
+      step2: number;
+      step3: number;
+      submitted: number;
+    } | null;
+  }
+  const [userAnalytics, setUserAnalytics] = useState<UserAnalyticsData | null>(null);
+  const [userAnalyticsDays, setUserAnalyticsDays] = useState<number>(7);
+  const [userAnalyticsLoading, setUserAnalyticsLoading] = useState(false);
 
   // 미들웨어를 통과한 사용자(middlewareError 없음)는 관리자로 간주
   const isAdminUser = !middlewareError && !!user;
@@ -348,7 +388,7 @@ function AdminPageContent() {
       const { data: pendingMentorsData } = await supabase
         .from("mentors")
         .select("*")
-        .eq("verification_status", "pending")
+        .eq("is_approved", false)
         .order("created_at", { ascending: false });
 
       if (pendingMentorsData) {
@@ -436,7 +476,7 @@ function AdminPageContent() {
         setBookings(bookingsWithNames);
 
         const totalRevenue = bookingsData
-          .filter(b => b.status === "completed" || b.status === "confirmed" || b.status === "paid")
+          .filter(b => b.status === "completed")
           .reduce((sum, b) => sum + (b.amount || 0), 0);
         const pendingBookings = bookingsData.filter(b => b.status === "pending").length;
 
@@ -557,6 +597,32 @@ function AdminPageContent() {
         })));
       }
 
+      // =============================================
+      // Fetch mentor session surveys
+      // =============================================
+      try {
+        const { data: surveyData } = await supabase
+          .from("mentor_session_surveys")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (surveyData) setSurveys(surveyData);
+      } catch {
+        // Table may not exist
+      }
+
+      // =============================================
+      // Fetch user feedback
+      // =============================================
+      try {
+        const { data: feedbackData } = await supabase
+          .from("user_feedback")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (feedbackData) setFeedbackList(feedbackData);
+      } catch {
+        // Table may not exist
+      }
+
     } catch (error) {
       console.error("[Admin] fetchAllData error:", error);
       showToast("데이터를 불러오는 중 오류가 발생했습니다.", "error");
@@ -564,6 +630,38 @@ function AdminPageContent() {
       setIsLoading(false);
     }
   };
+
+  // =============================================
+  // User Analytics — fetch from /api/analytics/stats
+  // =============================================
+  const fetchUserAnalytics = async (days: number) => {
+    setUserAnalyticsLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) return;
+
+      const res = await fetch(`/api/analytics/stats?days=${days}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserAnalytics(data);
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setUserAnalyticsLoading(false);
+    }
+  };
+
+  // Fetch user analytics when the tab is opened or days filter changes
+  useEffect(() => {
+    if (activeTab === "user_analytics" && isAdminUser) {
+      fetchUserAnalytics(userAnalyticsDays);
+    }
+  }, [activeTab, userAnalyticsDays, isAdminUser]);
 
   // 서버 API를 통한 관리자 작업 (보안 강화)
   const getAuthToken = async () => {
@@ -778,11 +876,11 @@ function AdminPageContent() {
       // Also update the mentors list
       if (action === "approve") {
         setMentors(prev => prev.map(m =>
-          m.id === mentorId ? { ...m, verification_status: "verified" as const, is_approved: true } : m
+          m.id === mentorId ? { ...m, is_approved: true, is_verified: true } : m
         ));
       } else {
         setMentors(prev => prev.map(m =>
-          m.id === mentorId ? { ...m, verification_status: "rejected" as const } : m
+          m.id === mentorId ? { ...m, is_approved: false } : m
         ));
       }
     } catch (error) {
@@ -850,6 +948,113 @@ function AdminPageContent() {
     } finally {
       setResolvingDisputeId(null);
     }
+  };
+
+  // =============================================
+  // Feedback handlers
+  // =============================================
+  const handleUpdateFeedback = async (feedbackId: string, status?: string, adminNote?: string) => {
+    setUpdatingFeedbackId(feedbackId);
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        showToast("인증이 필요합니다.", "error");
+        return;
+      }
+
+      const response = await fetch("/api/feedback", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: feedbackId,
+          ...(status ? { status } : {}),
+          ...(adminNote !== undefined ? { admin_note: adminNote } : {}),
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        showToast(result.error || "업데이트에 실패했습니다.", "error");
+        return;
+      }
+
+      showToast("피드백이 업데이트되었습니다.", "success");
+
+      // Update local state
+      setFeedbackList(prev => prev.map(f =>
+        f.id === feedbackId
+          ? {
+              ...f,
+              ...(status ? { status } : {}),
+              ...(adminNote !== undefined ? { admin_note: adminNote } : {}),
+            }
+          : f
+      ));
+    } catch {
+      showToast("오류가 발생했습니다.", "error");
+    } finally {
+      setUpdatingFeedbackId(null);
+    }
+  };
+
+  const filteredFeedback = feedbackList.filter(f => {
+    if (feedbackFilter === "all") return true;
+    if (feedbackFilter === "bug" || feedbackFilter === "feature" || feedbackFilter === "opinion") return f.type === feedbackFilter;
+    if (feedbackFilter === "new") return f.status === "new";
+    if (feedbackFilter === "in_progress") return f.status === "in_progress";
+    return true;
+  });
+
+  const feedbackStats = {
+    total: feedbackList.length,
+    bug: feedbackList.filter(f => f.type === "bug").length,
+    feature: feedbackList.filter(f => f.type === "feature").length,
+    opinion: feedbackList.filter(f => f.type === "opinion").length,
+    new: feedbackList.filter(f => f.status === "new").length,
+    in_progress: feedbackList.filter(f => f.status === "in_progress").length,
+    resolved: feedbackList.filter(f => f.status === "resolved").length,
+    closed: feedbackList.filter(f => f.status === "closed").length,
+  };
+
+  const getFeedbackTypeBadge = (type: string) => {
+    const styles: Record<string, string> = {
+      bug: "bg-red-500/20 text-red-400",
+      feature: "bg-blue-500/20 text-blue-400",
+      opinion: "bg-gray-500/20 text-muted",
+    };
+    const labels: Record<string, string> = {
+      bug: "오류",
+      feature: "기능 제안",
+      opinion: "의견",
+    };
+    return (
+      <span className={`px-2 py-0.5 text-xs rounded-full ${styles[type] || ""}`}>
+        {labels[type] || type}
+      </span>
+    );
+  };
+
+  const getFeedbackStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      new: "bg-yellow-500/20 text-yellow-500",
+      in_progress: "bg-blue-500/20 text-blue-500",
+      resolved: "bg-green-500/20 text-green-500",
+      closed: "bg-gray-500/20 text-muted",
+    };
+    const labels: Record<string, string> = {
+      new: "새로운",
+      in_progress: "처리중",
+      resolved: "해결",
+      closed: "닫힘",
+    };
+    return (
+      <span className={`px-2 py-0.5 text-xs rounded-full ${styles[status] || ""}`}>
+        {labels[status] || status}
+      </span>
+    );
   };
 
   // =============================================
@@ -1119,10 +1324,13 @@ function AdminPageContent() {
             { id: "mentors" as TabType, label: `멘토 관리 ${stats.pendingMentors > 0 ? `(${stats.pendingMentors})` : ""}` },
             { id: "consultations" as TabType, label: "상담 관리" },
             { id: "analytics" as TabType, label: "분석" },
+            { id: "user_analytics" as TabType, label: "유저 분석" },
             { id: "verification" as TabType, label: `멘토 검증 ${stats.pendingVerifications > 0 ? `(${stats.pendingVerifications})` : ""}` },
             { id: "bookings" as TabType, label: "예약 관리" },
             { id: "disputes" as TabType, label: `분쟁 관리 ${stats.disputeCount > 0 ? `(${stats.disputeCount})` : ""}` },
             { id: "settlements" as TabType, label: "정산 관리" },
+            { id: "surveys" as TabType, label: "품질 설문" },
+            { id: "feedback" as TabType, label: `피드백 ${feedbackList.length > 0 ? `(${feedbackList.filter(f => f.status === "new").length || ""})` : ""}`.trim() },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1561,6 +1769,7 @@ function AdminPageContent() {
                     <th className="px-4 py-3 text-left text-sm font-medium">회사</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">인증 이메일</th>
                     <th className="px-4 py-3 text-center text-sm font-medium">인증 방법</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium">경력 서류</th>
                     <th className="px-4 py-3 text-center text-sm font-medium">검증 상태</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">신청일</th>
                     <th className="px-4 py-3 text-center text-sm font-medium">액션</th>
@@ -1580,12 +1789,45 @@ function AdminPageContent() {
                         <p className="text-xs text-muted">{mentor.role}</p>
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        {mentor.verified_email || <span className="text-muted">-</span>}
+                        {mentor.verified_company || <span className="text-muted">-</span>}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-500">
                           {getVerificationMethodLabel(mentor.verification_method)}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {mentor.document_url ? (
+                          <button
+                            onClick={async () => {
+                              try {
+                                const token = await getAuthToken();
+                                if (!token) { showToast("인증 오류", "error"); return; }
+                                const res = await fetch("/api/verification/document-url", {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${token}`,
+                                  },
+                                  body: JSON.stringify({ storagePath: mentor.document_url }),
+                                });
+                                const data = await res.json();
+                                if (res.ok && data.signedUrl) {
+                                  window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+                                } else {
+                                  showToast(data.error || "서류 열기 실패", "error");
+                                }
+                              } catch {
+                                showToast("서류 열기 중 오류 발생", "error");
+                              }
+                            }}
+                            className="px-2 py-1 text-xs rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-colors cursor-pointer"
+                          >
+                            서류 보기
+                          </button>
+                        ) : (
+                          <span className="text-xs text-muted">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-500">
@@ -1617,7 +1859,7 @@ function AdminPageContent() {
                   ))}
                   {pendingVerifications.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-muted">
+                      <td colSpan={8} className="px-4 py-8 text-center text-muted">
                         검증 대기중인 멘토가 없습니다.
                       </td>
                     </tr>
@@ -2117,6 +2359,549 @@ function AdminPageContent() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* Surveys Tab */}
+        {activeTab === "surveys" && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">품질 설문 관리</h2>
+            {surveys.length === 0 ? (
+              <div className="bg-card-bg border border-card-border rounded-xl p-8 text-center">
+                <p className="text-muted">아직 제출된 설문이 없습니다.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {surveys.map((survey: any) => (
+                  <div key={survey.id} className="bg-card-bg border border-card-border rounded-xl p-5">
+                    <div className="flex justify-between items-center mb-4">
+                      <p className="text-xs text-muted">
+                        {new Date(survey.created_at).toLocaleDateString("ko-KR")}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                      {[
+                        { label: "준비도", value: survey.mentee_preparedness },
+                        { label: "목표 명확성", value: survey.goal_clarity },
+                        { label: "소통 태도", value: survey.communication_attitude },
+                        { label: "전반적 만족도", value: survey.overall_satisfaction },
+                      ].map((item) => (
+                        <div key={item.label} className="bg-secondary rounded-lg p-3 text-center">
+                          <p className="text-xs text-muted mb-1">{item.label}</p>
+                          <p className={`text-lg font-bold ${item.value >= 4 ? "text-green-500" : item.value >= 3 ? "text-primary" : "text-red-500"}`}>
+                            {item.value}/5
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted mb-1">진행 상태</p>
+                        <p className="font-medium">{survey.session_progress}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted mb-1">추천 다음 단계</p>
+                        <p className="font-medium">{survey.recommended_next_step}</p>
+                      </div>
+                    </div>
+                    {survey.admin_note && (
+                      <div className="mt-3 pt-3 border-t border-card-border">
+                        <p className="text-xs text-muted mb-1">추가 메모</p>
+                        <p className="text-sm">{survey.admin_note}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Feedback Tab */}
+        {activeTab === "feedback" && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">피드백 관리</h2>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">전체</p>
+                <p className="text-2xl font-bold">{feedbackStats.total}</p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">오류 제보</p>
+                <p className="text-2xl font-bold text-red-400">{feedbackStats.bug}</p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">기능 제안</p>
+                <p className="text-2xl font-bold text-blue-400">{feedbackStats.feature}</p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">의견/기타</p>
+                <p className="text-2xl font-bold text-muted">{feedbackStats.opinion}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">새로운</p>
+                <p className="text-2xl font-bold text-yellow-500">{feedbackStats.new}</p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">처리중</p>
+                <p className="text-2xl font-bold text-blue-500">{feedbackStats.in_progress}</p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">해결</p>
+                <p className="text-2xl font-bold text-green-500">{feedbackStats.resolved}</p>
+              </div>
+              <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                <p className="text-xs text-muted mb-1">닫힘</p>
+                <p className="text-2xl font-bold text-muted">{feedbackStats.closed}</p>
+              </div>
+            </div>
+
+            {/* Filter Buttons */}
+            <div className="flex gap-2 flex-wrap">
+              {([
+                { value: "all", label: "전체" },
+                { value: "bug", label: "오류" },
+                { value: "feature", label: "기능제안" },
+                { value: "opinion", label: "의견" },
+                { value: "new", label: "새로운" },
+                { value: "in_progress", label: "처리중" },
+              ] as const).map((filter) => (
+                <button
+                  key={filter.value}
+                  onClick={() => setFeedbackFilter(filter.value)}
+                  className={`px-3 py-1.5 text-sm rounded-lg border transition-colors cursor-pointer ${
+                    feedbackFilter === filter.value
+                      ? "bg-primary text-white border-primary"
+                      : "border-card-border text-muted hover:text-foreground hover:border-primary"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Feedback List */}
+            {filteredFeedback.length === 0 ? (
+              <div className="bg-card-bg border border-card-border rounded-xl p-8 text-center">
+                <p className="text-muted">해당 조건의 피드백이 없습니다.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredFeedback.map((feedback) => (
+                  <div key={feedback.id} className="bg-card-bg border border-card-border rounded-xl overflow-hidden">
+                    {/* Summary row */}
+                    <button
+                      onClick={() => {
+                        if (expandedFeedbackId === feedback.id) {
+                          setExpandedFeedbackId(null);
+                          setFeedbackAdminNote("");
+                        } else {
+                          setExpandedFeedbackId(feedback.id);
+                          setFeedbackAdminNote(feedback.admin_note || "");
+                        }
+                      }}
+                      className="w-full px-5 py-4 text-left cursor-pointer hover:bg-secondary/50 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            {getFeedbackTypeBadge(feedback.type)}
+                            {getFeedbackStatusBadge(feedback.status)}
+                            <span className="text-xs text-muted">
+                              {new Date(feedback.created_at).toLocaleDateString("ko-KR", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-foreground truncate">{feedback.message}</p>
+                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted">
+                            {feedback.page_url && (
+                              <span className="truncate max-w-[200px]">{feedback.page_url}</span>
+                            )}
+                            {feedback.user_id && <span>회원</span>}
+                            {feedback.contact_info && <span>{feedback.contact_info}</span>}
+                          </div>
+                        </div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={`w-4 h-4 text-muted transition-transform flex-shrink-0 ${expandedFeedbackId === feedback.id ? "rotate-180" : ""}`}
+                        >
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </div>
+                    </button>
+
+                    {/* Expanded detail */}
+                    {expandedFeedbackId === feedback.id && (
+                      <div className="px-5 pb-5 border-t border-card-border pt-4 space-y-4">
+                        {/* Full message */}
+                        <div>
+                          <p className="text-xs text-muted mb-1">전체 메시지</p>
+                          <p className="text-sm text-foreground whitespace-pre-wrap bg-secondary rounded-lg p-3">{feedback.message}</p>
+                        </div>
+
+                        {/* Details */}
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-xs text-muted mb-0.5">페이지</p>
+                            <p className="text-foreground">{feedback.page_url || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted mb-0.5">연락처</p>
+                            <p className="text-foreground">{feedback.contact_info || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted mb-0.5">사용자 ID</p>
+                            <p className="text-foreground text-xs font-mono">{feedback.user_id || "비회원"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted mb-0.5">상태</p>
+                            <p>{getFeedbackStatusBadge(feedback.status)}</p>
+                          </div>
+                        </div>
+
+                        {/* Admin note */}
+                        <div>
+                          <label className="text-xs text-muted mb-1 block">관리자 메모</label>
+                          <textarea
+                            value={feedbackAdminNote}
+                            onChange={(e) => setFeedbackAdminNote(e.target.value)}
+                            rows={2}
+                            className="w-full px-3 py-2 bg-secondary border border-card-border rounded-lg text-sm text-foreground resize-none"
+                            placeholder="관리자 메모를 입력하세요..."
+                          />
+                          <button
+                            onClick={() => handleUpdateFeedback(feedback.id, undefined, feedbackAdminNote)}
+                            disabled={updatingFeedbackId === feedback.id}
+                            className="mt-2 px-3 py-1.5 text-xs bg-secondary border border-card-border rounded-lg hover:border-primary transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            메모 저장
+                          </button>
+                        </div>
+
+                        {/* Status change buttons */}
+                        <div>
+                          <p className="text-xs text-muted mb-2">상태 변경</p>
+                          <div className="flex gap-2 flex-wrap">
+                            <button
+                              onClick={() => handleUpdateFeedback(feedback.id, "in_progress")}
+                              disabled={updatingFeedbackId === feedback.id || feedback.status === "in_progress"}
+                              className="px-3 py-1.5 text-xs bg-blue-500/20 text-blue-500 rounded-lg hover:bg-blue-500/30 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              진행중
+                            </button>
+                            <button
+                              onClick={() => handleUpdateFeedback(feedback.id, "resolved")}
+                              disabled={updatingFeedbackId === feedback.id || feedback.status === "resolved"}
+                              className="px-3 py-1.5 text-xs bg-green-500/20 text-green-500 rounded-lg hover:bg-green-500/30 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              해결
+                            </button>
+                            <button
+                              onClick={() => handleUpdateFeedback(feedback.id, "closed")}
+                              disabled={updatingFeedbackId === feedback.id || feedback.status === "closed"}
+                              className="px-3 py-1.5 text-xs bg-gray-500/20 text-muted rounded-lg hover:bg-gray-500/30 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              닫기
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* =============================================
+            User Analytics Tab (activity_logs)
+            ============================================= */}
+        {activeTab === "user_analytics" && (
+          <div className="space-y-6">
+            {/* Date range filter */}
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold">유저 행동 분석</h2>
+              <div className="flex gap-2 ml-auto">
+                {[
+                  { value: 1, label: "오늘" },
+                  { value: 7, label: "7일" },
+                  { value: 30, label: "30일" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setUserAnalyticsDays(opt.value)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                      userAnalyticsDays === opt.value
+                        ? "bg-primary text-white"
+                        : "bg-secondary text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {userAnalyticsLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : !userAnalytics ? (
+              <div className="bg-card-bg border border-card-border rounded-xl p-8 text-center">
+                <p className="text-muted">데이터가 없습니다. activity_logs 테이블이 생성되어야 합니다.</p>
+              </div>
+            ) : (
+              <>
+                {/* Overview cards */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                    <p className="text-xs text-muted mb-1">총 이벤트</p>
+                    <p className="text-2xl font-bold text-primary">{userAnalytics.totalEvents.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                    <p className="text-xs text-muted mb-1">고유 유저</p>
+                    <p className="text-2xl font-bold text-accent">{userAnalytics.uniqueUsers.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-card-bg border border-card-border rounded-xl p-4">
+                    <p className="text-xs text-muted mb-1">가장 활발한 페이지</p>
+                    <p className="text-lg font-bold text-green-500 truncate">{userAnalytics.mostActivePage || "-"}</p>
+                  </div>
+                </div>
+
+                {/* Events by category */}
+                <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                  <h3 className="text-lg font-semibold mb-4">카테고리별 이벤트</h3>
+                  {Object.keys(userAnalytics.eventsByCategory).length > 0 ? (
+                    <div className="space-y-3">
+                      {Object.entries(userAnalytics.eventsByCategory)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([category, count]) => {
+                          const maxCount = Math.max(...Object.values(userAnalytics.eventsByCategory));
+                          const colors: Record<string, string> = {
+                            page_view: "from-blue-500 to-blue-400",
+                            button_click: "from-green-500 to-green-400",
+                            form_submit: "from-purple-500 to-purple-400",
+                            form_step: "from-amber-500 to-amber-400",
+                            auth: "from-indigo-500 to-indigo-400",
+                            booking: "from-pink-500 to-pink-400",
+                            error: "from-red-500 to-red-400",
+                          };
+                          const colorClass = colors[category] || "from-primary to-accent";
+                          return (
+                            <div key={category} className="flex items-center gap-3">
+                              <span className="w-28 text-sm font-medium truncate">{category}</span>
+                              <div className="flex-1 h-6 bg-secondary rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full bg-gradient-to-r ${colorClass} rounded-full`}
+                                  style={{ width: `${Math.max(4, (count / maxCount) * 100)}%` }}
+                                />
+                              </div>
+                              <span className="w-16 text-sm text-right text-muted">{count.toLocaleString()}</span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  ) : (
+                    <p className="text-muted text-center py-4">데이터가 없습니다.</p>
+                  )}
+                </div>
+
+                {/* Two column: Top Pages + Hourly Distribution */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Top Pages */}
+                  <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                    <h3 className="text-lg font-semibold mb-4">페이지별 이벤트 (Top 10)</h3>
+                    {Object.keys(userAnalytics.eventsByPage).length > 0 ? (
+                      <div className="space-y-3">
+                        {Object.entries(userAnalytics.eventsByPage)
+                          .sort(([, a], [, b]) => b - a)
+                          .slice(0, 10)
+                          .map(([page, count], idx) => {
+                            const maxCount = Object.values(userAnalytics.eventsByPage).sort((a, b) => b - a)[0] || 1;
+                            return (
+                              <div key={page} className="flex items-center gap-3">
+                                <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
+                                  {idx + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{page}</p>
+                                  <div className="h-2 bg-secondary rounded-full overflow-hidden mt-1">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-primary to-accent"
+                                      style={{ width: `${(count / maxCount) * 100}%` }}
+                                    />
+                                  </div>
+                                </div>
+                                <span className="text-sm text-muted">{count.toLocaleString()}</span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    ) : (
+                      <p className="text-muted text-center py-4">데이터가 없습니다.</p>
+                    )}
+                  </div>
+
+                  {/* Hourly Distribution */}
+                  <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                    <h3 className="text-lg font-semibold mb-4">시간대별 활동</h3>
+                    {userAnalytics.eventsByHour.some((v) => v > 0) ? (
+                      <div className="flex items-end gap-1 h-40">
+                        {userAnalytics.eventsByHour.map((count, hour) => {
+                          const maxHour = Math.max(...userAnalytics.eventsByHour, 1);
+                          const heightPct = Math.max(2, (count / maxHour) * 100);
+                          return (
+                            <div key={hour} className="flex-1 flex flex-col items-center gap-1">
+                              <div
+                                className="w-full bg-gradient-to-t from-primary to-accent rounded-t"
+                                style={{ height: `${heightPct}%` }}
+                                title={`${hour}시: ${count}건`}
+                              />
+                              {hour % 4 === 0 && (
+                                <span className="text-xs text-muted">{hour}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-muted text-center py-4">데이터가 없습니다.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mentor Apply Funnel */}
+                {userAnalytics.funnelData && (
+                  <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                    <h3 className="text-lg font-semibold mb-4">멘토 지원 퍼널</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: "페이지 조회", value: userAnalytics.funnelData.pageViews },
+                        { label: "Step 1 (기본정보)", value: userAnalytics.funnelData.step1 },
+                        { label: "Step 2 (프로필)", value: userAnalytics.funnelData.step2 },
+                        { label: "Step 3 (시간설정)", value: userAnalytics.funnelData.step3 },
+                        { label: "제출 완료", value: userAnalytics.funnelData.submitted },
+                      ].map((item, idx, arr) => {
+                        const maxVal = arr[0]?.value || 1;
+                        const widthPct = maxVal > 0 ? Math.max(4, (item.value / maxVal) * 100) : 4;
+                        const prevVal = idx > 0 ? arr[idx - 1].value : null;
+                        const dropRate = prevVal && prevVal > 0
+                          ? Math.round(((prevVal - item.value) / prevVal) * 100)
+                          : null;
+                        return (
+                          <div key={item.label} className="flex items-center gap-3">
+                            <span className="w-32 text-sm font-medium">{item.label}</span>
+                            <div className="flex-1 h-8 bg-secondary rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-primary to-accent flex items-center justify-end pr-2 rounded-full"
+                                style={{ width: `${widthPct}%` }}
+                              >
+                                {item.value > 0 && (
+                                  <span className="text-xs font-bold text-white">{item.value}</span>
+                                )}
+                              </div>
+                            </div>
+                            <span className="w-16 text-sm text-right">
+                              {item.value}
+                            </span>
+                            {dropRate !== null && dropRate > 0 && (
+                              <span className="w-16 text-xs text-red-500 text-right">
+                                -{dropRate}%
+                              </span>
+                            )}
+                            {dropRate !== null && dropRate === 0 && (
+                              <span className="w-16 text-xs text-green-500 text-right">
+                                0%
+                              </span>
+                            )}
+                            {dropRate === null && (
+                              <span className="w-16" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent activity log */}
+                <div className="bg-card-bg border border-card-border rounded-xl p-6">
+                  <h3 className="text-lg font-semibold mb-4">최근 활동 로그</h3>
+                  {userAnalytics.recentEvents.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-card-border">
+                            <th className="text-left py-2 pr-4 text-muted font-medium">시간</th>
+                            <th className="text-left py-2 pr-4 text-muted font-medium">유저</th>
+                            <th className="text-left py-2 pr-4 text-muted font-medium">카테고리</th>
+                            <th className="text-left py-2 pr-4 text-muted font-medium">액션</th>
+                            <th className="text-left py-2 text-muted font-medium">페이지</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {userAnalytics.recentEvents.map((event) => (
+                            <tr key={event.id} className="border-b border-card-border/50 hover:bg-secondary/30">
+                              <td className="py-2 pr-4 whitespace-nowrap text-muted">
+                                {new Date(event.created_at).toLocaleString("ko-KR", {
+                                  month: "numeric",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </td>
+                              <td className="py-2 pr-4 whitespace-nowrap">
+                                {event.user_id ? (
+                                  <span className="text-xs font-mono bg-secondary px-1.5 py-0.5 rounded">
+                                    {event.user_id.slice(0, 8)}...
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted">비회원</span>
+                                )}
+                              </td>
+                              <td className="py-2 pr-4">
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                  event.category === "page_view"
+                                    ? "bg-blue-500/10 text-blue-500"
+                                    : event.category === "button_click"
+                                    ? "bg-green-500/10 text-green-500"
+                                    : event.category === "form_submit"
+                                    ? "bg-purple-500/10 text-purple-500"
+                                    : event.category === "form_step"
+                                    ? "bg-amber-500/10 text-amber-500"
+                                    : event.category === "auth"
+                                    ? "bg-indigo-500/10 text-indigo-500"
+                                    : event.category === "booking"
+                                    ? "bg-pink-500/10 text-pink-500"
+                                    : "bg-secondary text-muted"
+                                }`}>
+                                  {event.category}
+                                </span>
+                              </td>
+                              <td className="py-2 pr-4 font-medium">{event.action}</td>
+                              <td className="py-2 text-muted truncate max-w-[200px]">{event.page || "-"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-muted text-center py-4">최근 활동이 없습니다.</p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 
