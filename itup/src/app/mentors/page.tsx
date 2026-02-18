@@ -10,7 +10,7 @@ import { consultTypeLabels, skillCategories } from "@/data/mentors";
 import { MentorData } from "@/components/MentorDetailModal";
 import MentorDetailModal from "@/components/MentorDetailModal";
 import ConsultModal from "@/components/ConsultModal";
-import { getTierInfo, getTieredPrice } from "@/lib/pricing/tiers";
+import { getTierInfo } from "@/lib/pricing/tiers";
 import { JOB_TYPES, ENGINE_TYPES } from "@/lib/constants";
 import { BottomSheet } from "@/components/mobile";
 
@@ -22,7 +22,7 @@ const sortOptions: { value: SortOption; label: string }[] = [
   { value: "sessions", label: "세션 많은순" },
 ];
 
-function convertToMentorData(mentor: Mentor): MentorData & { id: string; job_type?: JobType | null; engine?: EngineType | null } {
+function convertToMentorData(mentor: Mentor & { minPrice?: number }): MentorData & { id: string } {
   return {
     id: mentor.id,
     name: mentor.name,
@@ -37,12 +37,17 @@ function convertToMentorData(mentor: Mentor): MentorData & { id: string; job_typ
     bio: mentor.bio || "",
     availableTimes: mentor.available_times || [],
     consultTypes: mentor.consult_types as ConsultType[],
-    job_type: mentor.job_type,
-    engine: mentor.engine,
+    price: mentor.minPrice,
   };
 }
 
-const companies = ["전체", "넥슨", "넷마블", "크래프톤", "스마일게이트", "펄어비스", "기타"];
+const companies = [
+  "전체",
+  "넥슨", "넷마블", "크래프톤", "스마일게이트", "펄어비스",
+  "NC소프트", "카카오게임즈", "위메이드", "컴투스",
+  "데브시스터즈", "시프트업", "네오위즈", "NHN",
+  "기타",
+];
 const consultTypes: { value: ConsultType | "all"; label: string }[] = [
   { value: "all", label: "전체" },
   { value: "coffee", label: "커피챗" },
@@ -66,7 +71,7 @@ export default function MentorsPage() {
 
 function MentorsContent() {
   const searchParams = useSearchParams();
-  const [mentors, setMentors] = useState<(MentorData & { id: string; job_type?: JobType | null; engine?: EngineType | null })[]>([]);
+  const [mentors, setMentors] = useState<(MentorData & { id: string })[]>([]);
   const [filteredMentors, setFilteredMentors] = useState<(MentorData & { id: string })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -152,19 +157,36 @@ function MentorsContent() {
       setIsLoading(true);
       try {
         const supabase = createClient();
-        const { data, error } = await supabase
-          .from("mentors")
-          .select("*")
-          .eq("is_approved", true)
-          .order("rating", { ascending: false });
+        const [mentorsResult, productsResult] = await Promise.all([
+          supabase
+            .from("mentors")
+            .select("*")
+            .eq("is_approved", true)
+            .order("rating", { ascending: false }),
+          supabase
+            .from("products")
+            .select("mentor_id, price")
+            .eq("is_active", true),
+        ]);
 
-        if (error) {
-          // Keep initial fallback data
+        if (mentorsResult.error) {
           return;
         }
 
-        if (data && data.length > 0) {
-          const converted = data.map(convertToMentorData);
+        if (mentorsResult.data && mentorsResult.data.length > 0) {
+          // Build min price map from products
+          const minPriceMap: Record<string, number> = {};
+          if (productsResult.data) {
+            for (const p of productsResult.data) {
+              if (!minPriceMap[p.mentor_id] || p.price < minPriceMap[p.mentor_id]) {
+                minPriceMap[p.mentor_id] = p.price;
+              }
+            }
+          }
+
+          const converted = mentorsResult.data.map((m: Mentor) =>
+            convertToMentorData({ ...m, minPrice: minPriceMap[m.id] })
+          );
           setMentors(converted);
           setFilteredMentors(converted);
         }
@@ -216,15 +238,8 @@ function MentorsContent() {
       );
     }
 
-    // Job type filter
-    if (selectedJobType !== "all") {
-      result = result.filter(m => m.job_type === selectedJobType);
-    }
-
-    // Engine filter
-    if (selectedEngineType !== "all") {
-      result = result.filter(m => m.engine === selectedEngineType);
-    }
+    // Job type filter (not available in DB yet, skip)
+    // Engine filter (not available in DB yet, skip)
 
     // Sort
     switch (sortBy) {
@@ -443,7 +458,7 @@ function MentorsContent() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-2xl border-b border-card-border/50 shadow-sm shadow-black/[0.02]">
+      <header className="sticky top-0 z-40 bg-card-bg/70 backdrop-blur-2xl border-b border-card-border/50 shadow-sm shadow-black/[0.02]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 md:h-16">
             <Link href="/" className="flex items-center gap-2.5 group">
@@ -490,7 +505,7 @@ function MentorsContent() {
               value={searchInput}
               onChange={e => handleSearchChange(e.target.value)}
               placeholder="멘토 이름, 회사, 스킬로 검색..."
-              className="w-full pl-11 pr-4 py-3 bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-xl text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all min-h-[48px] shadow-sm"
+              className="w-full pl-11 pr-4 py-3 bg-card-bg/60 backdrop-blur-sm border border-card-border/50 rounded-xl text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all min-h-[48px] shadow-sm"
             />
             {searchInput && (
               <button
@@ -509,7 +524,7 @@ function MentorsContent() {
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value as SortOption)}
-              className="w-full appearance-none px-4 py-3 pr-10 bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-xl text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all min-h-[48px] cursor-pointer shadow-sm"
+              className="w-full appearance-none px-4 py-3 pr-10 bg-card-bg/60 backdrop-blur-sm border border-card-border/50 rounded-xl text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all min-h-[48px] cursor-pointer shadow-sm"
             >
               {sortOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -530,7 +545,7 @@ function MentorsContent() {
         <div className="lg:hidden mb-4">
           <button
             onClick={() => setIsFilterSheetOpen(true)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-xl min-h-[48px] active:bg-secondary/50 transition-all shadow-sm"
+            className="w-full flex items-center justify-between px-4 py-3 bg-card-bg/60 backdrop-blur-sm border border-card-border/50 rounded-xl min-h-[48px] active:bg-secondary/50 transition-all shadow-sm"
           >
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -616,7 +631,7 @@ function MentorsContent() {
         <div className="flex flex-col lg:flex-row gap-4 md:gap-8">
           {/* Filters Sidebar (Desktop) */}
           <aside className="hidden lg:block lg:w-64 flex-shrink-0">
-            <div className="bg-white/60 backdrop-blur-sm border border-card-border/40 rounded-2xl p-6 sticky top-24 shadow-sm shadow-primary/[0.02]">
+            <div className="bg-card-bg/60 backdrop-blur-sm border border-card-border/40 rounded-2xl p-6 sticky top-24 shadow-sm shadow-primary/[0.02]">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-semibold">필터</h2>
                 {hasActiveFilters && (
@@ -783,7 +798,7 @@ function MentorsContent() {
 
 function MentorCardSkeleton() {
   return (
-    <div className="bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-2xl overflow-hidden animate-pulse">
+    <div className="bg-card-bg/60 backdrop-blur-sm border border-card-border/50 rounded-2xl overflow-hidden animate-pulse">
       <div className="h-24 md:h-32 bg-gradient-to-br from-secondary/80 to-secondary/40" />
       <div className="p-4 md:p-5">
         <div className="h-5 md:h-6 bg-secondary/80 rounded-lg w-2/3 mb-2" />
@@ -810,7 +825,7 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
   return (
     <div
       onClick={onClick}
-      className="group bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.06] hover:-translate-y-1 transition-all duration-300 cursor-pointer active:scale-[0.98]"
+      className="group bg-card-bg/60 backdrop-blur-sm border border-card-border/50 rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.06] hover:-translate-y-1 transition-all duration-300 cursor-pointer active:scale-[0.98]"
     >
       {/* Avatar Section */}
       <div className="relative h-24 md:h-32 bg-gradient-to-br from-primary/10 via-accent/10 to-primary-light/10 flex items-center justify-center overflow-hidden">
@@ -818,7 +833,7 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
         <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xl md:text-2xl font-bold transform group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-primary/20">
           {mentor.name?.charAt(0) || "?"}
         </div>
-        <div className="absolute top-2 right-2 md:top-3 md:right-3 px-2.5 py-1 bg-white/80 backdrop-blur-md rounded-full text-xs font-semibold text-primary-dark border border-primary/10">
+        <div className="absolute top-2 right-2 md:top-3 md:right-3 px-2.5 py-1 bg-card-bg/80 backdrop-blur-md rounded-full text-xs font-semibold text-primary-dark border border-primary/10">
           {mentor.company}
         </div>
       </div>
@@ -838,14 +853,14 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
           <span className="px-2.5 py-0.5 md:py-1 bg-accent/10 text-accent text-xs font-medium rounded-full">
             <ProductIcon name={getTierInfo(mentor.experience).badge} className="w-3.5 h-3.5 inline-block" /> {getTierInfo(mentor.experience).name}
           </span>
-          {mentor.skills.slice(0, 1).map(skill => (
-            <span key={skill} className="px-2.5 py-0.5 md:py-1 bg-secondary/80 text-muted text-xs rounded-full hidden sm:inline-block">
+          {mentor.skills.slice(0, 3).map(skill => (
+            <span key={skill} className="px-2.5 py-0.5 md:py-1 bg-gradient-to-r from-primary/6 to-accent/6 text-foreground/70 text-xs font-medium rounded-full border border-primary/8">
               {skill}
             </span>
           ))}
-          {mentor.skills.length > 1 && (
+          {mentor.skills.length > 3 && (
             <span className="px-2.5 py-0.5 md:py-1 bg-secondary/80 text-muted text-xs rounded-full">
-              +{mentor.skills.length - 1}
+              +{mentor.skills.length - 3}
             </span>
           )}
         </div>
@@ -876,7 +891,7 @@ function MentorCard({ mentor, onClick }: MentorCardProps) {
             <span className="text-xs text-muted font-medium">{mentor.sessions}회</span>
           </div>
           <span className="text-sm font-bold text-primary">
-            {getTieredPrice("coffee", mentor.experience).toLocaleString()}원~
+            {mentor.price ? `${mentor.price.toLocaleString()}원~` : "가격 미정"}
           </span>
         </div>
       </div>
