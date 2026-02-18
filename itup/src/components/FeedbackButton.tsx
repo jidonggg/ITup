@@ -30,16 +30,14 @@ export default function FeedbackButton() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Hide on admin pages
-  if (pathname?.startsWith("/admin")) {
-    return null;
-  }
+  const isAdminPage = pathname?.startsWith("/admin");
 
   // Animate in after mount
   useEffect(() => {
+    if (isAdminPage) return;
     const timer = setTimeout(() => setIsVisible(true), 500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isAdminPage]);
 
   // Set page URL when modal opens
   useEffect(() => {
@@ -69,6 +67,11 @@ export default function FeedbackButton() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
+
+  // Hide on admin pages (after all hooks)
+  if (isAdminPage) {
+    return null;
+  }
 
   const resetForm = () => {
     setType("bug");
