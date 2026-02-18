@@ -811,3 +811,78 @@ ${data.mentorName} 멘토님이 멘토링 피드백을 보내셨습니다!
     `.trim(),
   };
 }
+
+// 7. 세션 완료 감사 + 만족보증 안내 (멘티용) - 세션 완료 직후
+export function sessionCompletedTemplate(data: {
+  menteeName: string;
+  mentorName: string;
+  mentorCompany: string;
+  productName: string;
+  completedAt: string;
+  bookingId: string;
+  siteUrl: string;
+}): EmailTemplate {
+  return {
+    subject: `[커피챗] 멘토링이 완료되었습니다!`,
+    html: `
+      <div style="font-family: 'Apple SD Gothic Neo', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #10B981, #059669); padding: 30px; border-radius: 16px 16px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">멘토링이 완료되었습니다!</h1>
+        </div>
+        <div style="background: #FFFFFF; padding: 30px; border-radius: 0 0 16px 16px; color: #374151; border: 1px solid #E8DED4; border-top: none;">
+          <p style="margin-bottom: 20px;">안녕하세요, <strong>${escapeHtml(data.menteeName)}</strong>님!</p>
+          <p style="margin-bottom: 20px;">
+            <strong>${escapeHtml(data.mentorName)}</strong> 멘토님과의 멘토링이 완료되었습니다.<br/>
+            소중한 시간을 내어 참여해 주셔서 감사합니다!
+          </p>
+
+          <div style="background: #F0E8E0; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h3 style="color: #10B981; margin-top: 0;">세션 정보</h3>
+            <p style="margin: 8px 0;"><strong>멘토:</strong> ${escapeHtml(data.mentorName)}</p>
+            <p style="margin: 8px 0;"><strong>소속:</strong> ${escapeHtml(data.mentorCompany)}</p>
+            <p style="margin: 8px 0;"><strong>상품:</strong> ${escapeHtml(data.productName)}</p>
+            <p style="margin: 8px 0;"><strong>완료일:</strong> ${escapeHtml(data.completedAt)}</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${data.siteUrl}/mypage/bookings/${escapeHtml(data.bookingId)}/review"
+               style="display: inline-block; background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: white; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
+              리뷰 작성하기
+            </a>
+          </div>
+
+          <div style="background: #FEF3C7; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #FCD34D;">
+            <h3 style="color: #D97706; margin-top: 0;">만족 보증 안내</h3>
+            <p style="margin: 0; color: #92400E; line-height: 1.6;">
+              혹시 만족스럽지 않으셨나요? 48시간 이내에 리뷰를 남기시면
+              만족 보증 제도를 통해 100% 크레딧 환급을 받으실 수 있어요.
+            </p>
+          </div>
+
+          <p style="margin-top: 30px; color: #9CA3AF; font-size: 12px;">
+            이 이메일은 커피챗 멘토링 서비스에서 발송되었습니다.
+          </p>
+        </div>
+      </div>
+    `,
+    text: `
+커피챗 - 멘토링이 완료되었습니다!
+
+안녕하세요, ${data.menteeName}님!
+
+${data.mentorName} 멘토님과의 멘토링이 완료되었습니다.
+소중한 시간을 내어 참여해 주셔서 감사합니다!
+
+세션 정보:
+- 멘토: ${data.mentorName}
+- 소속: ${data.mentorCompany}
+- 상품: ${data.productName}
+- 완료일: ${data.completedAt}
+
+리뷰 작성하기: ${data.siteUrl}/mypage/bookings/${data.bookingId}/review
+
+[만족 보증 안내]
+혹시 만족스럽지 않으셨나요? 48시간 이내에 리뷰를 남기시면 만족 보증 제도를 통해 100% 크레딧 환급을 받으실 수 있어요.
+    `.trim(),
+  };
+}

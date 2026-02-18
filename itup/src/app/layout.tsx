@@ -6,6 +6,7 @@ import { AnalyticsProvider } from "@/contexts/AnalyticsContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ToastContainer from "@/components/Toast";
+import FeedbackButton from "@/components/FeedbackButton";
 import { SITE_CONFIG } from "@/lib/site-config";
 
 const geistSans = Geist({
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
     default: "커피챗 | 게임 업계 멘토링 플랫폼",
     template: "%s | 커피챗",
   },
-  description: "현직 게임 개발자와 1:1 멘토링으로 게임 업계 취업과 커리어 성장을 도와드립니다. 넥슨, 넷마블, 크래프톤 등 현직자 멘토와 상담하세요.",
+  description: "현직 게임 개발자와 1:1 멘토링으로 게임 업계 취업과 커리어 성장을 도와드립니다. 회사 이메일 인증된 대기업 현직자 멘토와 상담하세요.",
   keywords: ["게임 개발", "멘토링", "게임 업계 취업", "게임 프로그래머", "게임 기획자", "게임 아티스트", "커피챗", "게임 회사", "커리어 상담", "게임 취업 준비", "게임 개발자 커리어", "게임 업계 이직", "포트폴리오 리뷰", "모의면접"],
   authors: [{ name: "커피챗" }],
   creator: "커피챗",
@@ -84,6 +85,7 @@ export default function RootLayout({
             <AnalyticsProvider>
               <ToastProvider>
                 {children}
+                <FeedbackButton />
                 <ToastContainer />
               </ToastProvider>
             </AnalyticsProvider>

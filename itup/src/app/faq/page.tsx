@@ -3,6 +3,7 @@ import FAQClient from "./FAQClient";
 import JsonLd from "@/components/JsonLd";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import EmailContactButton from "@/components/EmailContactButton";
 import { SITE_CONFIG } from "@/lib/site-config";
 
 interface FAQItem {
@@ -21,12 +22,12 @@ const faqData: FAQItem[] = [
   {
     category: "서비스 소개",
     question: "어떤 분야의 멘토가 있나요?",
-    answer: "게임 기획, 프로그래밍, 아트, QA, 마케팅 등 게임 업계 전반의 현직자 멘토가 있어요. 넥슨, 넷마블, 크래프톤 등 주요 게임사 출신 멘토도 만나볼 수 있어요.",
+    answer: "게임 기획, 프로그래밍, 아트, QA, 마케팅 등 게임 업계 전반의 현직자 멘토가 있어요. 모든 멘토는 회사 이메일 인증을 거친 대기업·유망 게임사 재직 중인 현직자예요.",
   },
   {
     category: "서비스 소개",
     question: "멘토링은 어떤 방식으로 진행되나요?",
-    answer: "온라인 화상 미팅 또는 오프라인 대면 미팅 중 선택할 수 있어요. 멘토와 일정을 조율해서 진행하고, 1회 약 30-60분 정도예요.",
+    answer: "온라인 화상 미팅(줌, 구글미트 등)으로 진행돼요. 멘토와 일정을 조율해서 진행하고, 1회 약 30-60분 정도예요.",
   },
   // 이용 방법
   {
@@ -48,7 +49,7 @@ const faqData: FAQItem[] = [
   {
     category: "요금 및 결제",
     question: "이용 요금은 어떻게 되나요?",
-    answer: "커피챗(50,000원~), 서류 리뷰(70,000원~), 모의면접(100,000원~) 세 가지 상품이 있어요. 멘토 경력에 따라 주니어/시니어/리드 등급별로 가격이 달라요.",
+    answer: "커피챗(30,000원~), 서류 리뷰(50,000원~), 모의면접(100,000원~) 세 가지 상품이 있어요. 멘토 경력에 따라 주니어/시니어/리드 등급별로 가격이 달라요.",
   },
   {
     category: "요금 및 결제",
@@ -64,6 +65,16 @@ const faqData: FAQItem[] = [
     category: "요금 및 결제",
     question: "환불은 가능한가요?",
     answer: "세션 시작 48시간 전까지 전액 환불, 24시간 전까지 50% 환불이 가능해요. 24시간 이내에는 환불이 불가하니 일정을 확인해주세요. 자세한 건 이용약관을 확인해주세요.",
+  },
+  {
+    category: "요금 및 결제",
+    question: "만족 보증 제도가 있나요?",
+    answer: "네! 상담 만족도가 3점 이하인 경우, 세션 완료 후 48시간 이내에 신청하시면 결제 금액을 100% 크레딧으로 돌려드려요. 계정당 최대 2회까지 이용 가능합니다.",
+  },
+  {
+    category: "요금 및 결제",
+    question: "만족 보증은 어떻게 신청하나요?",
+    answer: "리뷰 작성 시 별점 3점 이하를 남기시면 자동으로 만족 보증 신청 안내가 표시됩니다. 또는 마이페이지에서 해당 예약의 '만족 보증 신청' 버튼을 통해 신청할 수 있어요.",
   },
   // 멘토 관련
   {
@@ -148,15 +159,7 @@ export default function FAQPage() {
               추가 문의사항이 있다면 편하게 이메일로 연락주세요.
               빠르게 답변해 드릴게요.
             </p>
-            <a
-              href={`mailto:${SITE_CONFIG.contactEmail.support}`}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary-dark transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              이메일 문의하기
-            </a>
+            <EmailContactButton email={SITE_CONFIG.contactEmail.support} />
           </div>
 
           {/* Back Link */}

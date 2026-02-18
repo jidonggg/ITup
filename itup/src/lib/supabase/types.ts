@@ -8,6 +8,9 @@ export type ConsultType = "coffee" | "resume" | "interview";
 
 export type ProductType = "coffee_chat" | "document_review" | "mock_interview" | "free_trial";
 
+/** Types accepted by the products table check constraint in Supabase */
+export type InsertableProductType = "coffee_chat" | "mock_interview";
+
 export type JobType = "client" | "server" | "planner" | "artist" | "other";
 
 export type EngineType = "unity" | "unreal" | "other";
@@ -53,37 +56,34 @@ export interface Mentor {
   user_id: string | null;
   name: string;
   company: string;
-  position: string | null;
-  years: number | null;
-  experience: string;
-  job_type: JobType | null;
-  engine: EngineType | null;
   role: string;
+  experience: string;
   skills: string[];
   bio: string | null;
-  profile_image_url: string | null;
 
   // 검증
-  verification_status: VerificationStatus;
   verification_method: VerificationMethod | null;
-  verified_email: string | null;
   verified_company: string | null;
   verified_at: string | null;
   is_verified: boolean;
 
   // 경력
   previous_companies: string[] | null;
-  previous_companies_detail: PreviousCompany[];
+  document_url: string | null;
 
   // 상태
   is_approved: boolean;
   is_active: boolean;
+  verification_status: VerificationStatus | null;
+
+  // 프로필
+  profile_image_url: string | null;
+  mentoring_styles: string[] | null;
 
   // 레거시 호환
   available_times: string[] | null;
   consult_types: ConsultType[];
   price: number | null;
-  contact_method: string | null;
 
   // 통계
   rating: number;
@@ -114,6 +114,10 @@ export interface Product {
   updated_at: string;
 }
 
+/**
+ * NOTE: The mentor_schedules table may not exist in the database yet.
+ * All queries to this table should be wrapped in try/catch with graceful fallback.
+ */
 export interface MentorSchedule {
   id: string;
   mentor_id: string;
@@ -144,6 +148,7 @@ export interface Booking {
   // 멘티 신청 정보
   mentee_intro: string | null;
   mentee_goal: string | null;
+  mentee_questions: MenteeQuestions | null;
   meeting_link: string | null;
   attached_files: AttachedFile[];
 
@@ -174,6 +179,11 @@ export interface AttachedFile {
   type: string;
 }
 
+export interface MenteeQuestions {
+  predefined: string[];
+  custom: string[];
+}
+
 export interface SessionConfirmation {
   id: string;
   booking_id: string;
@@ -201,6 +211,33 @@ export interface MentorFeedback {
   mentee_id: string | null;
   content: string;
   created_at: string;
+}
+
+/**
+ * NOTE: The mentor_session_surveys table may not exist in the database yet.
+ * All queries to this table should be wrapped in try/catch with graceful fallback.
+ */
+export interface MentorSessionSurvey {
+  id: string;
+  booking_id: string;
+  mentor_id: string;
+  mentee_id: string | null;
+
+  // Rating questions (1-5)
+  mentee_preparedness: number;
+  goal_clarity: number;
+  communication_attitude: number;
+  overall_satisfaction: number;
+
+  // Multiple choice
+  session_progress: string;
+  recommended_next_step: string;
+
+  // Free text
+  admin_note: string | null;
+
+  created_at: string;
+  updated_at: string;
 }
 
 export interface NoshowRecord {
@@ -260,6 +297,13 @@ export interface Payment {
   created_at: string;
 }
 
+export interface StructuredRating {
+  expertise: number;      // 전문성 (1-5)
+  kindness: number;       // 친절도 (1-5)
+  punctuality: number;    // 시간 준수 (1-5)
+  value_for_money: number; // 가격 대비 만족 (1-5)
+}
+
 export interface Review {
   id: string;
   booking_id: string | null;
@@ -270,6 +314,9 @@ export interface Review {
   rating: number;
   content: string;
   created_at: string;
+  // 구조화 평가 필드
+  structured_ratings: StructuredRating | null;
+  would_recommend: boolean | null;
 }
 
 export interface VerificationCode {
@@ -349,6 +396,26 @@ export interface SessionReminder {
   created_at: string;
 }
 
+// -- Referral types --
+
+export interface MenteeReferral {
+  id: string;
+  user_id: string;
+  code: string;
+  invited_count: number;
+  earned_credits: number;
+  created_at: string;
+}
+
+export interface MentorReferral {
+  id: string;
+  mentor_id: string;
+  code: string;
+  invited_count: number;
+  approved_count: number;
+  created_at: string;
+}
+
 // -- View types --
 
 export interface MentorStats {
@@ -404,7 +471,10 @@ export interface Database {
       };
       reviews: {
         Row: Review;
-        Insert: Omit<Review, "id" | "created_at">;
+        Insert: Omit<Review, "id" | "created_at" | "structured_ratings" | "would_recommend"> & {
+          structured_ratings?: StructuredRating | null;
+          would_recommend?: boolean | null;
+        };
         Update: Partial<Omit<Review, "id" | "created_at">>;
       };
       mentor_feedbacks: {

@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  /* ITup 커피/카푸치노 테마 — Light */
-  --background: #FAF7F5;        /* warm off-white */
-  --foreground: #1A1209;        /* espresso */
-  --primary: #A0714F;           /* coffee brown */
-  --primary-light: #B8886A;     /* latte */
-  --primary-dark: #7D5636;      /* dark roast */
-  --secondary: #F0E8E0;         /* cream foam */
-  --accent: #C87941;            /* rich amber */
-  --muted: #736558;             /* warm gray-brown (WCAG AA 5.3:1) */
+  /* ITup 커피 테마 — Light (모카 브라운) */
+  --background: #FAFAF8;        /* clean warm white */
+  --foreground: #1A1510;        /* deep espresso */
+  --primary: #8B7355;           /* mocha brown */
+  --primary-light: #A89279;     /* light mocha */
+  --primary-dark: #6B5740;      /* dark mocha */
+  --secondary: #F3EDE6;         /* soft cream */
+  --accent: #B09070;            /* warm bronze */
+  --muted: #6F655C;             /* warm neutral gray (WCAG AA) */
   --card-bg: #FFFFFF;           /* clean white */
-  --card-border: #E8DED4;       /* warm beige */
+  --card-border: #E5DDD3;       /* warm beige */
+  --success: #2D9D5A;           /* green */
 
   /* Layout variables */
   --card-radius: 1rem;
@@ -21,16 +22,17 @@
 
 /* Dark mode — 에스프레소 다크 */
 .dark {
-  --background: #13100B;        /* deep espresso */
+  --background: #111010;        /* deep espresso */
   --foreground: #F0E8E0;        /* cream */
-  --primary: #D4A574;           /* caramel (밝게) */
-  --primary-light: #E8C4A0;     /* light caramel */
-  --primary-dark: #A0714F;      /* coffee brown */
-  --secondary: #1E1810;         /* dark bean */
-  --accent: #E09F5E;            /* golden honey */
+  --primary: #C4A88C;           /* soft warm beige */
+  --primary-light: #D4BCA2;     /* light beige */
+  --primary-dark: #8C7A64;      /* medium mocha */
+  --secondary: #1C1712;         /* dark bean */
+  --accent: #C0A080;            /* muted warm gold */
   --muted: #9B8A7A;             /* warm gray (WCAG AA on dark) */
-  --card-bg: #221B13;           /* dark card (대비 강화) */
-  --card-border: #352A1E;       /* dark border (대비 강화) */
+  --card-bg: #1A1614;           /* dark card */
+  --card-border: #2E261E;       /* dark border */
+  --success: #3DB86A;           /* green */
 }
 
 @theme inline {
@@ -44,6 +46,7 @@
   --color-muted: var(--muted);
   --color-card-bg: var(--card-bg);
   --color-card-border: var(--card-border);
+  --color-success: var(--success);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -208,10 +211,10 @@ button,
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(200, 121, 65, 0.15), 0 0 60px rgba(200, 121, 65, 0.05);
+    box-shadow: 0 0 20px rgba(139, 115, 85, 0.15), 0 0 60px rgba(139, 115, 85, 0.05);
   }
   50% {
-    box-shadow: 0 0 30px rgba(200, 121, 65, 0.3), 0 0 80px rgba(200, 121, 65, 0.1);
+    box-shadow: 0 0 30px rgba(139, 115, 85, 0.3), 0 0 80px rgba(139, 115, 85, 0.1);
   }
 }
 
@@ -257,15 +260,50 @@ button,
 
 /* Glassmorphism card utility */
 .glass-card {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(232, 222, 212, 0.5);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(229, 221, 211, 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(139, 115, 85, 0.04);
 }
 
 .dark .glass-card {
-  background: rgba(26, 21, 16, 0.7);
-  border-color: rgba(46, 37, 24, 0.6);
+  background: rgba(26, 22, 20, 0.7);
+  border-color: rgba(46, 38, 30, 0.6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Premium elevated card */
+.premium-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(229, 221, 211, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(139, 115, 85, 0.03),
+    0 2px 4px rgba(0, 0, 0, 0.02),
+    0 8px 24px rgba(139, 115, 85, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card:hover {
+  border-color: rgba(139, 115, 85, 0.2);
+  box-shadow:
+    0 0 0 1px rgba(139, 115, 85, 0.06),
+    0 4px 8px rgba(0, 0, 0, 0.03),
+    0 16px 40px rgba(139, 115, 85, 0.1);
+  transform: translateY(-2px);
+}
+
+.dark .premium-card {
+  background: rgba(26, 22, 20, 0.8);
+  border-color: rgba(46, 38, 30, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark .premium-card:hover {
+  border-color: rgba(196, 168, 140, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* Gradient border utility */

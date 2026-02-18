@@ -20,7 +20,7 @@ export const products: ProductInfo[] = [
     price: RECOMMENDED_PRICES.coffee_chat,
     description: "가볍게 현직자와 이야기 나눠봐요",
     features: [
-      "1:1 화상/대면 상담 30분",
+      "1:1 온라인 화상 상담 30분",
       "커리어 방향 상담",
       "업계 현황 이야기",
       "자유 Q&A",
@@ -34,13 +34,13 @@ export const products: ProductInfo[] = [
     price: RECOMMENDED_PRICES.document_review,
     description: "이력서와 포트폴리오를 꼼꼼히 봐드려요",
     features: [
-      "이력서/포트폴리오 상세 리뷰",
+      "서류 분석 15분 + 첨삭 상담 30분",
       "개선 포인트 피드백",
       "업계 맞춤 어필 포인트",
       "첨삭 후 1회 추가 확인",
     ],
     icon: "document",
-    duration: "50분",
+    duration: "45분",
   },
   {
     id: "interview",

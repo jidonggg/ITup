@@ -10,11 +10,11 @@ export default function CTA({ onConsultClick }: CTAProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
-    <section className="py-24 relative overflow-hidden">
-      {/* Background Effects - Richer layered gradients */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-accent/4 to-primary-light/8" />
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/15 rounded-full blur-[120px]" />
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-accent/15 rounded-full blur-[120px]" />
+    <section className="py-28 relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-accent/[0.02] to-primary-light/[0.04]" />
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px]" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[140px]" />
 
       <div
         ref={ref}
@@ -22,11 +22,11 @@ export default function CTA({ onConsultClick }: CTAProps) {
           isVisible ? "visible" : ""
         }`}
       >
-        <div className="bg-white/60 backdrop-blur-2xl border border-card-border/40 rounded-3xl p-8 md:p-12 lg:p-16 shadow-xl shadow-primary/[0.04]">
+        <div className="premium-card rounded-3xl p-8 md:p-14 lg:p-16">
           {/* Icon */}
-          <div className="w-20 h-20 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-subtle-float shadow-lg shadow-primary/25">
+          <div className="w-16 h-16 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-subtle-float shadow-lg shadow-primary/20">
             <svg
-              className="w-10 h-10 text-white"
+              className="w-8 h-8 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -42,29 +42,29 @@ export default function CTA({ onConsultClick }: CTAProps) {
 
           {/* Content */}
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 tracking-tight">
-            게임 업계 커리어,
+            커리어 고민,
             <br />
             <span className="bg-gradient-to-r from-primary via-accent to-primary-light bg-clip-text text-transparent animate-gradient">
-              한번 해볼까요?
+              현직자와 나눠보세요
             </span>
           </h2>
 
           <p className="text-muted text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            현직자 멘토와 커피 한 잔의 가격으로
+            커피 한 잔 가격으로 현직자의 이야기를 들어보세요.
             <br />
-            가볍게 이야기 나눠봐요.
+            30분이면 방향이 잡힙니다.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={onConsultClick}
-              className="shine-effect group relative px-10 py-4.5 bg-gradient-to-r from-primary via-primary-dark to-primary text-white rounded-full font-semibold text-lg overflow-hidden transform hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 animate-pulse-glow cursor-pointer"
+              className="shine-effect group relative px-10 py-4 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full font-semibold text-lg overflow-hidden transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer"
             >
-              <span className="relative z-10 flex items-center justify-center gap-2">
+              <span className="relative z-10 flex items-center justify-center gap-2.5">
                 커피챗 시작하기
                 <svg
-                  className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
+                  className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -80,18 +80,21 @@ export default function CTA({ onConsultClick }: CTAProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
             </button>
 
-            <a
-              href="#mentors"
-              className="px-8 py-4 bg-white/50 backdrop-blur-sm border border-card-border/60 text-foreground rounded-full font-medium hover:border-primary/50 hover:text-primary hover:shadow-lg hover:shadow-primary/[0.06] transition-all duration-300"
+            <button
+              onClick={() => {
+                const el = document.getElementById("mentors");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="px-8 py-4 bg-card-bg/60 backdrop-blur-sm border border-card-border/60 text-foreground rounded-full font-medium hover:border-primary/40 hover:text-primary hover:shadow-lg transition-all duration-300 cursor-pointer"
             >
-              어떤 멘토가 있는지 볼래요
-            </a>
+              멘토 둘러보기
+            </button>
           </div>
 
           {/* Trust Badge */}
-          <div className="mt-10 inline-flex items-center gap-2 text-muted text-sm px-4 py-2 bg-white/40 rounded-full border border-card-border/30">
+          <div className="mt-10 inline-flex items-center gap-2 text-muted text-sm px-4 py-2 bg-card-bg/30 rounded-full border border-card-border/30">
             <svg
-              className="w-4 h-4 text-green-600"
+              className="w-4 h-4 text-success"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

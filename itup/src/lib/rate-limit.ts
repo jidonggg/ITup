@@ -174,6 +174,12 @@ export const settlementLimiter = new RateLimiter({
   windowMs: 60 * 1000,
 });
 
+/** /api/verification/upload-document — 5 req / 5min per user */
+export const documentUploadLimiter = new RateLimiter({
+  limit: 5,
+  windowMs: 5 * 60 * 1000,
+});
+
 export function getClientIp(request: Request): string {
   const headers = new Headers(request.headers);
   const forwarded = headers.get("x-forwarded-for");

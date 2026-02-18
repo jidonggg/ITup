@@ -1,22 +1,25 @@
-import type { ProductType } from "@/lib/supabase/types";
+import type { ProductType, InsertableProductType } from "@/lib/supabase/types";
 
 // =============================================
 // v2 비즈니스 로직 상수
 // =============================================
 
+/** Product types accepted by the Supabase products table check constraint */
+export const DB_PRODUCT_TYPES: readonly InsertableProductType[] = ["coffee_chat", "mock_interview"] as const;
+
 // 상품 가격 제한 (멘토가 직접 설정)
 export const PRICE_LIMITS: Record<ProductType, { min: number; max: number }> = {
-  coffee_chat: { min: 10000, max: 100000 },
-  document_review: { min: 20000, max: 200000 },
-  mock_interview: { min: 30000, max: 300000 },
+  coffee_chat: { min: 10000, max: 50000 },
+  document_review: { min: 25000, max: 120000 },
+  mock_interview: { min: 50000, max: 250000 },
   free_trial: { min: 0, max: 0 },
 } as const;
 
-// 상품 권장 가격
+// 상품 권장 가격 (주니어 기준 베이스)
 export const RECOMMENDED_PRICES: Record<ProductType, number> = {
-  coffee_chat: 50000,
-  document_review: 70000,
-  mock_interview: 100000,
+  coffee_chat: 15000,
+  document_review: 40000,
+  mock_interview: 80000,
   free_trial: 0,
 } as const;
 
@@ -31,7 +34,7 @@ export const PRODUCT_INFO: Record<ProductType, { name: string; icon: string; dur
   document_review: {
     name: "서류 리뷰",
     icon: "document",
-    duration: 30,
+    duration: 45,
     description: "이력서, 포트폴리오 피드백",
   },
   mock_interview: {
@@ -96,12 +99,12 @@ export const NOSHOW_PENALTY = {
 // 노쇼 자동 판정 기준 (분)
 export const NOSHOW_THRESHOLD_MINUTES = 10;
 
-// 수수료 단계별 요율 (누적 정산 금액 기준)
+// 수수료 단계별 요율 (누적 완료 건수 기준)
 export const COMMISSION_TIERS = [
-  { min: 0, max: 1000000, rate: 0.15, label: "기본 (15%)" },
-  { min: 1000000, max: 5000000, rate: 0.12, label: "실버 (12%)" },
-  { min: 5000000, max: 20000000, rate: 0.10, label: "골드 (10%)" },
-  { min: 20000000, max: Infinity, rate: 0.08, label: "플래티넘 (8%)" },
+  { min: 0, max: 10, rate: 0.15, label: "기본 (15%)" },
+  { min: 10, max: 50, rate: 0.12, label: "실버 (12%)" },
+  { min: 50, max: 200, rate: 0.10, label: "골드 (10%)" },
+  { min: 200, max: Infinity, rate: 0.08, label: "플래티넘 (8%)" },
 ] as const;
 
 // 한국 은행 목록
@@ -182,9 +185,37 @@ export const VALIDATION = {
   MIN_FEEDBACK_LENGTH: 10,
   MAX_FEEDBACK_LENGTH: 1000,
   MIN_INTRO_LENGTH: 10,
+  MAX_CUSTOM_QUESTIONS: 5,
+  MAX_CUSTOM_QUESTION_LENGTH: 200,
   PHONE_REGEX: /^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/,
   PASSWORD_REGEX: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
 } as const;
+
+// 상품 유형별 멘티 사전 질문 목록
+export const PREDEFINED_MENTEE_QUESTIONS: Record<Exclude<ProductType, "free_trial">, string[]> = {
+  coffee_chat: [
+    "현재 회사에서의 하루 일과가 어떻게 되나요?",
+    "이 직무를 선택하게 된 계기가 궁금합니다",
+    "게임 업계 취업을 위해 가장 중요한 것은 무엇인가요?",
+    "포트폴리오에서 가장 중요하게 보는 점이 뭔가요?",
+    "현재 연봉/복지 수준이 어느 정도인가요?",
+    "이직을 고려할 때 가장 중요한 기준은 무엇인가요?",
+  ],
+  document_review: [
+    "제 이력서에서 가장 약한 부분이 어디인가요?",
+    "게임 업계에 맞는 자기소개서 구성은 어떻게 해야 하나요?",
+    "포트폴리오에서 개선할 점이 있나요?",
+    "지원 회사에 맞춤형 서류 작성 팁이 있나요?",
+    "경력 기술서에서 어필할 수 있는 부분이 있나요?",
+  ],
+  mock_interview: [
+    "실제 면접에서 자주 나오는 질문이 궁금합니다",
+    "기술 면접 준비는 어떻게 해야 할까요?",
+    "면접에서 인상 깊었던 답변 사례가 있나요?",
+    "지원하는 직무에서 중요하게 보는 역량은 무엇인가요?",
+    "면접 때 피해야 할 실수가 있나요?",
+  ],
+};
 
 // 기간 상수 (ms)
 export const DURATIONS = {
@@ -192,3 +223,25 @@ export const DURATIONS = {
   ONE_WEEK: 7 * 24 * 60 * 60 * 1000,
   ONE_MONTH: 30 * 24 * 60 * 60 * 1000,
 } as const;
+
+// 만족 보증 정책
+export const SATISFACTION_GUARANTEE = {
+  RATING_THRESHOLD: 3,        // 이 별점 이하 시 보증 적용
+  CREDIT_PERCENTAGE: 100,     // 크레딧 100% 환급
+  CLAIM_DEADLINE_HOURS: 48,   // 세션 완료 후 48시간 이내 신청
+  MAX_CLAIMS_PER_USER: 2,     // 사용자당 최대 2회
+  DESCRIPTION: "상담 만족도 3점 이하 시, 48시간 이내 신청하면 100% 크레딧으로 돌려드립니다.",
+} as const;
+
+// 멘토 상담 스타일 태그
+export const MENTORING_STYLES = [
+  { value: "practical", label: "실전형", description: "바로 적용 가능한 실전 위주" },
+  { value: "empathetic", label: "공감형", description: "경청과 공감 중심" },
+  { value: "analytical", label: "분석형", description: "체계적으로 분석하고 정리" },
+  { value: "direct", label: "직진형", description: "핵심만 짚어주는 스타일" },
+  { value: "coaching", label: "코칭형", description: "질문으로 스스로 답을 찾도록" },
+  { value: "storytelling", label: "경험공유형", description: "본인 경험 사례 중심" },
+] as const;
+
+export type MentoringStyleValue = typeof MENTORING_STYLES[number]["value"];
+export const MAX_MENTORING_STYLES = 3;

@@ -1,18 +1,18 @@
 import type { ReactNode } from "react";
 
 // ─────────────────────────────────────────────
-// Brand Logo Icon (coffee cup + chat bubble)
-// 커피챗 = coffee + chat — 커피컵 위 말풍선
+// Brand Logo Icon — minimal coffee cup
 // ─────────────────────────────────────────────
 export function LogoIcon({ className = "w-5 h-5 text-white" }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-      {/* Speech bubble — 크고 깔끔하게 */}
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 1h8a2 2 0 012 2v3a2 2 0 01-2 2h-4l-2 2V8H6a2 2 0 01-2-2V3a2 2 0 012-2z" />
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
       {/* Cup body */}
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 11h12v6a4 4 0 01-4 4H8a4 4 0 01-4-4v-6z" />
-      {/* Handle */}
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 12h1.5a2.5 2.5 0 010 5H16" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 9h11v7a5 5 0 01-5 5H10a5 5 0 01-5-5V9z" />
+      {/* Heart-shaped handle */}
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11c2-1 4 0 4 2s-2 3-4 4" strokeWidth={1.5} />
+      {/* Steam */}
+      <path strokeLinecap="round" d="M9 6c0-1 .8-1.5.8-2.5" opacity={0.5} />
+      <path strokeLinecap="round" d="M12 5.5c0-1 .8-1.5.8-2.5" opacity={0.5} />
     </svg>
   );
 }

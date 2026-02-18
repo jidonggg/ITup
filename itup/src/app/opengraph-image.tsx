@@ -132,7 +132,7 @@ export default function Image() {
             marginTop: 40,
           }}
         >
-          {["넥슨", "넷마블", "크래프톤", "현직자 멘토"].map((tag) => (
+          {["이메일 인증", "대기업 현직자", "게임업계", "1:1 멘토링"].map((tag) => (
             <div
               key={tag}
               style={{

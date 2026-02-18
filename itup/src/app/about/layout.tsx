@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "회사 소개 | 커피챗",
-    description: "커피챗은 게임 업계 종사자와 취업 준비생을 연결하는 멘토링 플랫폼입니다. 넥슨, 넷마블, 크래프톤 등 현직자 멘토와 1:1 상담하세요.",
+    description: "커피챗은 게임 업계 종사자와 취업 준비생을 연결하는 멘토링 플랫폼입니다. 회사 이메일 인증된 현직자 멘토와 1:1 상담하세요.",
     url: `${SITE_CONFIG.url}/about`,
   },
 };

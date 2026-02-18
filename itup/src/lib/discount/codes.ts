@@ -11,6 +11,8 @@ export interface DiscountCode {
   usageLimit: number | null;
   firstTimeOnly: boolean;
   requiresFreeTrial: boolean;
+  isSeasonal?: boolean;
+  displayName?: string;
 }
 
 export const DISCOUNT_CODES: DiscountCode[] = [
@@ -26,18 +28,7 @@ export const DISCOUNT_CODES: DiscountCode[] = [
     firstTimeOnly: true,
     requiresFreeTrial: true,
   },
-  {
-    code: "WELCOME20",
-    percentage: 20,
-    description: "신규 회원 20% 할인",
-    minAmount: 30000,
-    maxDiscount: 100000,
-    validFrom: null,
-    validUntil: null,
-    usageLimit: null,
-    firstTimeOnly: true,
-    requiresFreeTrial: false,
-  },
+  // WELCOME20은 레퍼럴 시스템에서만 발급 (퍼널 잠식 방지)
   {
     code: "HIRING2026",
     percentage: 15,
@@ -49,6 +40,8 @@ export const DISCOUNT_CODES: DiscountCode[] = [
     usageLimit: null,
     firstTimeOnly: false,
     requiresFreeTrial: false,
+    isSeasonal: true,
+    displayName: "채용 시즌 할인",
   },
   {
     code: "HIRING2026F",
@@ -61,6 +54,8 @@ export const DISCOUNT_CODES: DiscountCode[] = [
     usageLimit: null,
     firstTimeOnly: false,
     requiresFreeTrial: false,
+    isSeasonal: true,
+    displayName: "하반기 채용 시즌 할인",
   },
   {
     code: "YEAREND2026",
@@ -73,8 +68,18 @@ export const DISCOUNT_CODES: DiscountCode[] = [
     usageLimit: null,
     firstTimeOnly: false,
     requiresFreeTrial: false,
+    isSeasonal: true,
+    displayName: "연말 특별 할인",
   },
 ];
+
+/** 현재 활성화된 시즌 할인 코드 반환 */
+export function getActiveSeasonalCode(): DiscountCode | undefined {
+  const now = new Date();
+  return DISCOUNT_CODES.find(
+    (dc) => dc.isSeasonal && dc.validFrom && dc.validUntil && now >= dc.validFrom && now <= dc.validUntil
+  );
+}
 
 export function findDiscountCode(code: string): DiscountCode | undefined {
   return DISCOUNT_CODES.find(

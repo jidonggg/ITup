@@ -44,7 +44,7 @@ export default function AboutPage() {
               </p>
               <p>
                 커피챗은 그 간단한 문제를 해결하려고 시작했어요.
-                넥슨, 넷마블, 크래프톤 같은 곳에서 실제로 일하고 있는 기획자, 개발자, 아티스트한테
+                회사 이메일로 재직 인증을 거친 대기업 현직 기획자, 개발자, 아티스트한테
                 궁금한 걸 직접 물어볼 수 있는 자리를 만드는 거죠.
               </p>
               <p className="text-foreground font-medium">
