@@ -1,7 +1,7 @@
 import { COMMISSION_TIERS, PLATFORM_FEE_RATE } from "@/lib/constants";
 
-// 파운딩 멘토 무수수료 기간 (3개월)
-const FOUNDING_MENTOR_FREE_MONTHS = 3;
+// 파운딩 멘토 무수수료 기간 (1개월)
+const FOUNDING_MENTOR_FREE_MONTHS = 1;
 
 export interface SettlementCalculation {
   totalAmount: number;
@@ -26,11 +26,12 @@ export function isFoundingMentorActive(mentorCreatedAt: string): boolean {
 }
 
 /**
- * Get the commission rate based on cumulative earnings
+ * Get the commission rate based on completed session count
+ * @param completedSessions 누적 완료 건수
  * @param isFoundingMentor 파운딩 멘토 무수수료 적용 여부
  */
 export function getCommissionRate(
-  cumulativeEarnings: number,
+  completedSessions: number,
   isFoundingMentor: boolean = false
 ): {
   rate: number;
@@ -42,13 +43,12 @@ export function getCommissionRate(
   }
 
   // 음수 또는 유효하지 않은 값은 기본 등급 적용
-  if (!Number.isFinite(cumulativeEarnings) || cumulativeEarnings < 0) {
+  if (!Number.isFinite(completedSessions) || completedSessions < 0) {
     return { rate: PLATFORM_FEE_RATE, label: "기본 (15%)" };
   }
 
   for (const tier of COMMISSION_TIERS) {
-    // max가 Infinity인 경우를 포함하여 경계값 처리
-    if (cumulativeEarnings >= tier.min && cumulativeEarnings < tier.max) {
+    if (completedSessions >= tier.min && completedSessions < tier.max) {
       return { rate: tier.rate, label: tier.label };
     }
   }
@@ -60,14 +60,15 @@ export function getCommissionRate(
 
 /**
  * Calculate settlement amounts for a given set of booking totals
+ * @param completedSessions 누적 완료 건수
  * @param isFoundingMentor 파운딩 멘토 무수수료 적용 여부
  */
 export function calculateSettlement(
   totalBookingAmount: number,
-  cumulativeEarnings: number = 0,
+  completedSessions: number = 0,
   isFoundingMentor: boolean = false
 ): SettlementCalculation {
-  const { rate, label } = getCommissionRate(cumulativeEarnings, isFoundingMentor);
+  const { rate, label } = getCommissionRate(completedSessions, isFoundingMentor);
 
   const platformFee = Math.round(totalBookingAmount * rate);
   const settlementAmount = totalBookingAmount - platformFee;
