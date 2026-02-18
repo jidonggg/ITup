@@ -31,8 +31,16 @@ function LoginContent() {
 
   // Redirect destination from query param (e.g. /login?redirect=/mypage)
   // Only allow relative paths to prevent open redirect attacks
+  function isValidRedirect(url: string): boolean {
+    if (!url.startsWith('/')) return false;
+    if (url.startsWith('//')) return false;
+    try {
+      const parsed = new URL(url, 'http://localhost');
+      return parsed.host === 'localhost';
+    } catch { return false; }
+  }
   const rawRedirect = searchParams.get("redirect") || "/";
-  const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/";
+  const redirectTo = isValidRedirect(rawRedirect) ? rawRedirect : "/";
 
   useEffect(() => {
     if (!authLoading && user) {

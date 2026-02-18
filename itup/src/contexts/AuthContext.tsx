@@ -77,10 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       setProfile(profileData);
-      // 이름을 localStorage에 캐시 (F5 시 fallback용)
+      // 이름을 localStorage에 캐시 (F5 시 fallback용, 1시간 만료)
       try {
         if (profileData.name) {
           localStorage.setItem("cached_profile_name", profileData.name);
+          localStorage.setItem("cached_profile_timestamp", String(Date.now()));
         }
       } catch { /* 무시 */ }
     }
@@ -117,8 +118,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === "INITIAL_SESSION") {
           try {
             const cachedName = localStorage.getItem("cached_profile_name");
-            if (cachedName) {
+            const cachedTimestamp = localStorage.getItem("cached_profile_timestamp");
+            const CACHE_TTL_MS = 60 * 60 * 1000; // 1시간
+            const isCacheValid = cachedTimestamp && (Date.now() - Number(cachedTimestamp)) < CACHE_TTL_MS;
+            if (cachedName && isCacheValid) {
               setProfile({ id: session.user.id, name: cachedName } as Profile);
+            } else {
+              // 만료된 캐시 정리
+              localStorage.removeItem("cached_profile_name");
+              localStorage.removeItem("cached_profile_timestamp");
             }
           } catch { /* 무시 */ }
           setIsLoading(false);

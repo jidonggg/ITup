@@ -6,13 +6,12 @@ import Link from "next/link";
 import { trackEvent } from "@/lib/analytics/track";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { LogoIcon, ProductIcon } from "@/components/icons";
-import { Mentor, ConsultType, JobType, EngineType } from "@/lib/supabase/types";
+import { Mentor, ConsultType } from "@/lib/supabase/types";
 import { consultTypeLabels, skillCategories } from "@/data/mentors";
 import { MentorData } from "@/components/MentorDetailModal";
 import MentorDetailModal from "@/components/MentorDetailModal";
 import ConsultModal from "@/components/ConsultModal";
 import { getTierInfo } from "@/lib/pricing/tiers";
-import { JOB_TYPES, ENGINE_TYPES } from "@/lib/constants";
 import { BottomSheet } from "@/components/mobile";
 
 type SortOption = "recommended" | "rating" | "reviews" | "sessions";
@@ -80,8 +79,6 @@ function MentorsContent() {
   const [selectedCompany, setSelectedCompany] = useState("전체");
   const [selectedConsultType, setSelectedConsultType] = useState<ConsultType | "all">("all");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [selectedJobType, setSelectedJobType] = useState<JobType | "all">("all");
-  const [selectedEngineType, setSelectedEngineType] = useState<EngineType | "all">("all");
 
   // Search & Sort
   const [searchInput, setSearchInput] = useState("");
@@ -126,16 +123,8 @@ function MentorsContent() {
 
   // Read initial filters from URL searchParams
   useEffect(() => {
-    const jobType = searchParams.get("job_type");
-    const engine = searchParams.get("engine");
     const product = searchParams.get("product");
 
-    if (jobType && JOB_TYPES.some(j => j.value === jobType)) {
-      setSelectedJobType(jobType as JobType);
-    }
-    if (engine && ENGINE_TYPES.some(e => e.value === engine)) {
-      setSelectedEngineType(engine as EngineType);
-    }
     // ProductType → ConsultType 매핑
     const productToConsult: Record<string, ConsultType> = {
       coffee_chat: "coffee",
@@ -248,9 +237,6 @@ function MentorsContent() {
       );
     }
 
-    // Job type filter (not available in DB yet, skip)
-    // Engine filter (not available in DB yet, skip)
-
     // Sort
     switch (sortBy) {
       case "rating":
@@ -270,7 +256,8 @@ function MentorsContent() {
 
     setFilteredMentors(result);
     setCurrentPage(1); // 필터 변경 시 첫 페이지로
-  }, [mentors, searchQuery, sortBy, selectedCompany, selectedConsultType, selectedSkills, selectedJobType, selectedEngineType]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [mentors, searchQuery, sortBy, selectedCompany, selectedConsultType, selectedSkills]);
 
   // Analytics: track filter changes (skip initial render)
   const filterMountRef = useRef(true);
@@ -285,13 +272,11 @@ function MentorsContent() {
       metadata: {
         company: selectedCompany,
         consultType: selectedConsultType,
-        jobType: selectedJobType,
-        engineType: selectedEngineType,
         skillCount: selectedSkills.length,
         sortBy,
       },
     });
-  }, [selectedCompany, selectedConsultType, selectedJobType, selectedEngineType, selectedSkills, sortBy]);
+  }, [selectedCompany, selectedConsultType, selectedSkills, sortBy]);
 
   // Pagination
   const totalPages = Math.ceil(filteredMentors.length / MENTORS_PER_PAGE);
@@ -312,8 +297,6 @@ function MentorsContent() {
     setSelectedCompany("전체");
     setSelectedConsultType("all");
     setSelectedSkills([]);
-    setSelectedJobType("all");
-    setSelectedEngineType("all");
     setSearchInput("");
     setSearchQuery("");
     setSortBy("recommended");
@@ -350,13 +333,11 @@ function MentorsContent() {
     setSelectedMentor(null); // ConsultModal 닫을 때 selectedMentor 초기화
   };
 
-  const hasActiveFilters = selectedCompany !== "전체" || selectedConsultType !== "all" || selectedSkills.length > 0 || selectedJobType !== "all" || selectedEngineType !== "all" || searchQuery.trim() !== "" || sortBy !== "recommended";
+  const hasActiveFilters = selectedCompany !== "전체" || selectedConsultType !== "all" || selectedSkills.length > 0 || searchQuery.trim() !== "" || sortBy !== "recommended";
   const activeFilterCount = [
     selectedCompany !== "전체",
     selectedConsultType !== "all",
     selectedSkills.length > 0,
-    selectedJobType !== "all",
-    selectedEngineType !== "all",
     searchQuery.trim() !== "",
     sortBy !== "recommended",
   ].filter(Boolean).length;
@@ -379,66 +360,6 @@ function MentorsContent() {
               }`}
             >
               {company}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Job Type Filter */}
-      <div className={isMobile ? "mb-5" : "mb-6"}>
-        <h3 className="text-sm font-medium text-muted mb-3">직군</h3>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedJobType("all")}
-            className={`px-3 py-2 rounded-full text-sm transition-all cursor-pointer min-h-[40px] ${
-              selectedJobType === "all"
-                ? "bg-primary text-white"
-                : "bg-secondary text-muted hover:bg-secondary/80 active:bg-secondary"
-            }`}
-          >
-            전체
-          </button>
-          {JOB_TYPES.map(job => (
-            <button
-              key={job.value}
-              onClick={() => setSelectedJobType(job.value as JobType)}
-              className={`px-3 py-2 rounded-full text-sm transition-all cursor-pointer min-h-[40px] ${
-                selectedJobType === job.value
-                  ? "bg-primary text-white"
-                  : "bg-secondary text-muted hover:bg-secondary/80 active:bg-secondary"
-              }`}
-            >
-              {job.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Engine Filter */}
-      <div className={isMobile ? "mb-5" : "mb-6"}>
-        <h3 className="text-sm font-medium text-muted mb-3">엔진</h3>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedEngineType("all")}
-            className={`px-3 py-2 rounded-full text-sm transition-all cursor-pointer min-h-[40px] ${
-              selectedEngineType === "all"
-                ? "bg-accent text-white"
-                : "bg-secondary text-muted hover:bg-secondary/80 active:bg-secondary"
-            }`}
-          >
-            전체
-          </button>
-          {ENGINE_TYPES.map(engine => (
-            <button
-              key={engine.value}
-              onClick={() => setSelectedEngineType(engine.value as EngineType)}
-              className={`px-3 py-2 rounded-full text-sm transition-all cursor-pointer min-h-[40px] ${
-                selectedEngineType === engine.value
-                  ? "bg-accent text-white"
-                  : "bg-secondary text-muted hover:bg-secondary/80 active:bg-secondary"
-              }`}
-            >
-              {engine.label}
             </button>
           ))}
         </div>
@@ -630,32 +551,6 @@ function MentorsContent() {
                   </button>
                 </span>
               )}
-              {selectedJobType !== "all" && (
-                <span className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-full flex items-center gap-1">
-                  {JOB_TYPES.find(j => j.value === selectedJobType)?.label}
-                  <button
-                    onClick={() => setSelectedJobType("all")}
-                    className="ml-1 hover:text-primary-dark"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </span>
-              )}
-              {selectedEngineType !== "all" && (
-                <span className="px-3 py-1.5 bg-accent/10 text-accent text-xs font-medium rounded-full flex items-center gap-1">
-                  {ENGINE_TYPES.find(e => e.value === selectedEngineType)?.label}
-                  <button
-                    onClick={() => setSelectedEngineType("all")}
-                    className="ml-1 hover:text-accent"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </span>
-              )}
               <button
                 onClick={clearFilters}
                 className="px-3 py-1.5 text-muted text-xs font-medium underline"
@@ -753,6 +648,7 @@ function MentorsContent() {
                               )}
                               <button
                                 onClick={() => setCurrentPage(page)}
+                                aria-current={currentPage === page ? "page" : undefined}
                                 className={`w-10 h-10 md:w-10 md:h-10 rounded-xl text-sm font-medium transition-all cursor-pointer min-w-[40px] min-h-[40px] ${
                                   currentPage === page
                                     ? "bg-gradient-to-r from-primary to-primary-dark text-white shadow-md shadow-primary/20"

@@ -323,7 +323,7 @@ export default function SettlementPage() {
                   <p className="text-xs text-muted mb-1">현재 등록 계좌</p>
                   <p className="font-semibold">{bankAccount.bank_name}</p>
                   <p className="text-sm text-muted">
-                    {bankAccount.account_number.replace(/(\d{4})/g, "$1-").replace(/-$/, "")}
+                    {bankAccount.account_number.replace(/(\d{3,4})(?=\d)/g, "$1-")}
                   </p>
                   <p className="text-sm text-muted">{bankAccount.account_holder}</p>
                 </div>

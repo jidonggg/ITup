@@ -220,7 +220,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (Number(amount) !== expectedAmount) {
+    if (Math.round(Number(amount)) !== Math.round(expectedAmount)) {
+      // 금액 불일치 시 booking 상태도 payment_failed로 업데이트
+      if (bookingId && supabase) {
+        await supabase.from("bookings").update({ status: "payment_failed" }).eq("id", bookingId);
+      }
       return NextResponse.json(
         { error: "결제 금액이 일치하지 않아요." },
         { status: 400 }
@@ -270,6 +274,10 @@ export async function POST(request: NextRequest) {
 
     if (!tossResponse.ok) {
       console.error("[payment/confirm] TossPayments error:", tossResult.code, tossResult.message);
+      // 결제 실패 시 booking 상태를 payment_failed로 업데이트
+      if (bookingId && supabase) {
+        await supabase.from("bookings").update({ status: "payment_failed" }).eq("id", bookingId);
+      }
       return NextResponse.json(
         { error: "결제 승인에 실패했어요. 다시 시도해주세요." },
         { status: 400 }
@@ -296,6 +304,10 @@ export async function POST(request: NextRequest) {
         });
       } catch {
         console.error("[CRITICAL] 금액 불일치 결제 취소 실패:", { paymentKey, orderId });
+      }
+      // 금액 불일치 시 booking 상태를 payment_failed로 업데이트
+      if (bookingId && supabase) {
+        await supabase.from("bookings").update({ status: "payment_failed" }).eq("id", bookingId);
       }
       return NextResponse.json(
         { error: "결제 금액 검증에 실패했어요. 결제가 취소되었습니다." },

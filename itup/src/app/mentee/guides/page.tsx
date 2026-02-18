@@ -231,57 +231,57 @@ const SUB_GUIDES = [
   {
     href: "/mentee/guides/introduction",
     title: "자기소개 작성법",
-    description: "상황별 템플릿과 좋은/나쁜 예시",
+    description: "대학생, 주니어, 이직자 등 상황별 30초 자기소개 템플릿과 좋은/나쁜 예시 비교",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
       </svg>
     ),
-    color: "from-blue-500 to-blue-600",
+    color: "from-primary to-primary-dark",
   },
   {
     href: "/mentee/guides/questions",
     title: "좋은 질문 만들기",
-    description: "카테고리별 질문 변환 예시",
+    description: "커리어, 기술, 회사 문화, 포트폴리오, 면접 등 직군별 추천 질문 리스트",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    color: "from-emerald-500 to-emerald-600",
+    color: "from-primary to-primary-dark",
   },
   {
     href: "/mentee/guides/roles",
     title: "직무별 준비 가이드",
-    description: "기획/프로그래밍/아트/QA/마케팅",
+    description: "프로그래밍, 기획, 아트, QA, 마케팅 등 게임 업계 직군별 취업 준비 로드맵",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
       </svg>
     ),
-    color: "from-orange-500 to-orange-600",
+    color: "from-primary to-primary-dark",
   },
   {
     href: "/mentee/guides/action-plan",
     title: "액션 플랜 템플릿",
-    description: "우선순위 매트릭스와 주간 계획",
+    description: "멘토링 후 메모 정리, 우선순위 매트릭스, 주간 실행 계획 수립 방법",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
       </svg>
     ),
-    color: "from-purple-500 to-purple-600",
+    color: "from-primary to-primary-dark",
   },
   {
     href: "/mentee/guides/faq",
     title: "멘토링 FAQ",
-    description: "자주 묻는 질문과 답변",
+    description: "결제/환불, 세션 진행, 멘토 검증 등 서비스 이용에 대한 자주 묻는 질문과 답변",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    color: "from-red-500 to-red-600",
+    color: "from-primary to-primary-dark",
   },
 ];
 

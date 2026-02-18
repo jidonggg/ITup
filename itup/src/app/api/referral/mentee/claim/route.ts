@@ -73,13 +73,18 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if this referred user already claimed (prevent double-claiming)
+      let duplicateChecked = false;
       try {
-        const { data: existingClaim } = await supabase
+        const { data: existingClaim, error: claimError } = await supabase
           .from("referral_claims")
           .select("id")
           .eq("referral_id", referral.id)
           .eq("referred_user_id", referredUserId)
           .single();
+
+        if (!claimError) {
+          duplicateChecked = true;
+        }
 
         if (existingClaim) {
           return NextResponse.json(
@@ -88,7 +93,29 @@ export async function POST(request: NextRequest) {
           );
         }
       } catch {
-        // referral_claims table may not exist — continue without duplicate check
+        // referral_claims table may not exist — fallback to bookings check below
+      }
+
+      // Fallback: referral_claims 테이블이 없으면 bookings 테이블로 이미 사용 여부 체크
+      if (!duplicateChecked) {
+        try {
+          const { data: existingBooking } = await supabase
+            .from("bookings")
+            .select("id")
+            .eq("mentee_id", referredUserId)
+            .eq("referral_code", code)
+            .not("status", "eq", "cancelled")
+            .limit(1);
+
+          if (existingBooking && existingBooking.length > 0) {
+            return NextResponse.json(
+              { error: "이미 처리된 추천입니다." },
+              { status: 409 }
+            );
+          }
+        } catch {
+          // bookings 테이블에 referral_code 컬럼이 없을 수 있음 — 계속 진행
+        }
       }
 
       // Record the claim

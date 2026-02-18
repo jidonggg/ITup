@@ -12,7 +12,8 @@ interface MentorsProps {
   onMentorClick: (mentor: MentorData) => void;
 }
 
-function convertToMentorData(mentor: Mentor): MentorData {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function convertToMentorData(mentor: any): MentorData {
   return {
     id: mentor.id,
     name: mentor.name,
@@ -47,7 +48,7 @@ export default function Mentors({ onMentorClick }: MentorsProps) {
         const supabase = createClient();
         const { data, error } = await supabase
           .from("mentors")
-          .select("*")
+          .select("id, name, role, company, previous_companies, experience, skills, rating, sessions, reviews, bio, available_times, consult_types, price")
           .eq("is_approved", true)
           .order("rating", { ascending: false });
 
@@ -175,7 +176,7 @@ function MentorCard({ mentor, index, onClick }: MentorCardProps) {
         role="button"
         tabIndex={0}
         aria-label={`${mentor.name} 멘토 상세 정보 보기`}
-        className="group relative premium-card rounded-2xl overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background hover:border-primary/30 hover:shadow-[0_12px_40px_-8px_rgba(139,115,85,0.18)] hover:-translate-y-2 transition-all duration-500 ease-out"
+        className="group relative premium-card rounded-2xl overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background hover:border-primary/30 hover:shadow-[0_12px_40px_-8px_rgba(139,115,85,0.18)] hover:-translate-y-1 transition-all duration-300"
       >
         {/* Avatar Section */}
         <div className="relative h-44 bg-gradient-to-br from-primary/8 via-accent/6 to-primary-light/8 flex items-center justify-center overflow-hidden">

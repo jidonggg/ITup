@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
 
@@ -12,9 +12,7 @@ const headlines = [
 
 export default function Hero() {
   const router = useRouter();
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [headlineIndex, setHeadlineIndex] = useState(0);
-  const rafRef = useRef<number | null>(null);
   const { trackClick } = useAnalytics();
 
   const handleMentorSearchClick = () => {
@@ -35,44 +33,13 @@ export default function Hero() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (rafRef.current) return;
-
-      rafRef.current = requestAnimationFrame(() => {
-        setMousePosition({
-          x: (e.clientX / window.innerWidth - 0.5) * 20,
-          y: (e.clientY / window.innerHeight - 0.5) * 20,
-        });
-        rafRef.current = null;
-      });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background - Refined subtle gradients */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.03] via-transparent to-secondary/30" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,_var(--primary)_0%,_transparent_60%)] opacity-[0.06]" />
-      <div
-        className="absolute top-1/4 left-1/3 w-[600px] h-[600px] bg-gradient-to-br from-primary/10 to-accent/8 rounded-full blur-[130px] transition-transform duration-[3s] ease-out"
-        style={{
-          transform: `translate(${mousePosition.x}px, ${mousePosition.y}px)`,
-        }}
-      />
-      <div
-        className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-gradient-to-tl from-accent/10 to-primary-light/8 rounded-full blur-[130px] transition-transform duration-[3s] ease-out"
-        style={{
-          transform: `translate(${-mousePosition.x}px, ${-mousePosition.y}px)`,
-        }}
-      />
 
-      {/* Mesh gradient blobs */}
+      {/* Mesh gradient blobs (3 for performance) */}
       <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-[100px] animate-[meshFloat1_20s_ease-in-out_infinite]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-gradient-to-tl from-accent/8 to-transparent rounded-full blur-[120px] animate-[meshFloat2_25s_ease-in-out_infinite]" />
       <div className="absolute top-[30%] right-[20%] w-[40%] h-[40%] bg-gradient-to-bl from-primary-light/8 to-transparent rounded-full blur-[80px] animate-[meshFloat3_18s_ease-in-out_infinite]" />
@@ -124,7 +91,7 @@ export default function Hero() {
             <button
               onClick={handleMentorSearchClick}
               aria-label="멘토 찾기 페이지로 이동"
-              className="shine-effect cta-glow group relative px-10 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold text-lg transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+              className="shine-effect cta-glow btn-press group relative px-10 py-4 min-h-[48px] min-w-[48px] bg-gradient-to-r from-primary to-primary-dark text-white font-semibold text-lg transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
             >
               <span className="relative z-10 flex items-center gap-2.5">
                 멘토 찾기
@@ -137,7 +104,7 @@ export default function Hero() {
             <button
               onClick={handleLearnMoreClick}
               aria-label="서비스 소개 섹션으로 이동"
-              className="group px-10 py-4 bg-card-bg/70 border border-card-border/80 text-foreground hover:bg-card-bg hover:border-primary/30 hover:shadow-lg backdrop-blur-sm font-semibold text-lg transform hover:-translate-y-1 transition-all duration-300 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+              className="group btn-press px-10 py-4 min-h-[48px] min-w-[48px] bg-card-bg/70 border border-card-border/80 text-foreground hover:bg-card-bg hover:border-primary/30 hover:shadow-lg backdrop-blur-sm font-semibold text-lg transform hover:-translate-y-1 transition-all duration-300 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
             >
               <span className="flex items-center gap-2.5">
                 서비스 알아보기

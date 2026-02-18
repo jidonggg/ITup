@@ -55,8 +55,13 @@ export default function FreeTrialBanner() {
 
     const loadData = async () => {
       setIsLoading(true);
-      await Promise.all([checkEligibility(), fetchTopMentor()]);
-      setIsLoading(false);
+      try {
+        await Promise.allSettled([checkEligibility(), fetchTopMentor()]);
+      } catch {
+        // 개별 함수에서 처리되지 않은 예외 방어
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadData();

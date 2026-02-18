@@ -162,7 +162,7 @@ export default function Footer() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="이메일 주소"
                 aria-label="뉴스레터 구독용 이메일 주소"
-                className="flex-1 md:w-64 px-5 py-2.5 bg-card-bg/60 backdrop-blur-sm border border-card-border/40 rounded-full text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                className="flex-1 md:w-64 px-5 py-2.5 min-h-[44px] bg-card-bg/60 backdrop-blur-sm border border-card-border/40 rounded-full text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                 disabled={isSubmitting}
               />
               <button

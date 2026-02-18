@@ -187,10 +187,10 @@ function AdminPageContent() {
 
     fetchAllData();
 
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every 60 seconds
     const interval = setInterval(() => {
       fetchAllData();
-    }, 30000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [isInitialized, isAdminUser]);
@@ -282,7 +282,8 @@ function AdminPageContent() {
       // Fetch payments (for refund mapping)
       const { data: paymentsData } = await supabase
         .from("payments")
-        .select("id, consultation_id, amount, status");
+        .select("id, consultation_id, amount, status")
+        .limit(100);
 
       if (paymentsData) {
         const pMap: Record<string, { id: string; amount: number; status: string }> = {};

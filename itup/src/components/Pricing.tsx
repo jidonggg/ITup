@@ -203,9 +203,12 @@ function ProductCard({ product, index, onProductClick, onConsultClick, tierExper
             {PRODUCT_CTA[product.id]}
           </button>
         ) : (
-          <div className="w-full py-3 text-center text-muted text-sm font-medium border border-card-border/40 rounded-full">
+          <button
+            disabled
+            className="w-full py-3 text-center text-muted text-sm font-medium border border-card-border/40 rounded-full cursor-not-allowed"
+          >
             시니어 멘토부터 이용 가능
-          </div>
+          </button>
         )}
       </div>
     </div>

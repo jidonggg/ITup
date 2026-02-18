@@ -178,8 +178,10 @@ export default function MentorEarningsPage() {
     const months: MonthlyEarnings[] = [];
 
     for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const monthIndex = ((now.getMonth() - i) + 12) % 12;
+      const yearOffset = now.getMonth() - i < 0 ? -1 : 0;
+      const date = new Date(now.getFullYear() + yearOffset, monthIndex, 1);
+      const nextMonth = new Date(date.getFullYear(), monthIndex + 1, 1);
 
       const monthAmount = completedBookings
         .filter((b) => {
@@ -189,8 +191,8 @@ export default function MentorEarningsPage() {
         .reduce((sum, b) => sum + (b.mentor_amount || 0), 0);
 
       months.push({
-        month: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
-        label: `${date.getMonth() + 1}월`,
+        month: `${date.getFullYear()}-${String(monthIndex + 1).padStart(2, "0")}`,
+        label: `${monthIndex + 1}월`,
         amount: monthAmount,
       });
     }
@@ -425,9 +427,9 @@ export default function MentorEarningsPage() {
               <p className="text-sm text-muted mt-1">멘토링을 완료하면 수익 추이가 표시됩니다.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-x-auto">
               {/* Chart Bars */}
-              <div className="flex items-end justify-between gap-2 h-48">
+              <div className="flex items-end justify-between gap-2 h-48 min-w-[320px]">
                 {monthlyEarnings.map((month) => {
                   const heightPercent = maxMonthlyAmount > 0
                     ? (month.amount / maxMonthlyAmount) * 100

@@ -78,7 +78,7 @@ export default function Features() {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
-    <section id="features" className="py-28 relative">
+    <section id="features" className="py-20 md:py-28 relative">
       <div className="absolute inset-0 bg-gradient-to-b from-secondary/20 via-transparent to-transparent" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -99,7 +99,7 @@ export default function Features() {
         </div>
 
         {/* Features Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 md:gap-5">
           {features.map((feature, index) => (
             <FeatureCard key={feature.title} feature={feature} index={index} />
           ))}

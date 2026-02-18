@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 export const metadata: Metadata = {
-  title: "자기소개 가이드 | 멘티 가이드 | 커피챗",
-  description: "멘토링 세션에서 효과적인 자기소개를 하는 방법. 상황별 템플릿과 좋은/나쁜 예시.",
+  title: "멘토링 시작 가이드 | 커피챗",
+  description: "게임 업계 현직자 멘토링, 어떻게 시작하면 좋을까요? 멘토 선택부터 상담 준비까지 알려드려요.",
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;

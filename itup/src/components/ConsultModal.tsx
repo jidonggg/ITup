@@ -114,6 +114,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   const [mentorPrices, setMentorPrices] = useState<Record<string, number>>({});
 
   // 할인 코드 상태
+  const [discountResetNotice, setDiscountResetNotice] = useState(false);
   const [discountCode, setDiscountCode] = useState("");
   const [discountLoading, setDiscountLoading] = useState(false);
   const [discountResult, setDiscountResult] = useState<{
@@ -451,6 +452,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     setDiscountCode("");
     setDiscountResult(null);
     setDiscountError(null);
+    setDiscountResetNotice(false);
     onClose();
   };
 
@@ -485,7 +487,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]"
+        className="absolute inset-0 bg-foreground/80 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]"
         onClick={handleClose}
         aria-hidden="true"
       />
@@ -652,6 +654,8 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                         if (discountResult) {
                           setDiscountResult(null);
                           setDiscountCode("");
+                          setDiscountResetNotice(true);
+                          setTimeout(() => setDiscountResetNotice(false), 3000);
                         }
                       }}
                       className={`w-full flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer text-left ${
@@ -691,6 +695,11 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                     </button>
                   ))}
                 </div>
+                {discountResetNotice && (
+                  <p className="mt-2 text-xs text-warning">
+                    상품이 변경되어 할인 코드가 초기화되었습니다. 결제 시 다시 입력해주세요.
+                  </p>
+                )}
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">

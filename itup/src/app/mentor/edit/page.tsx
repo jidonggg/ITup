@@ -834,6 +834,13 @@ export default function MentorEditPage() {
                             <button
                               type="button"
                               onClick={() => {
+                                if (
+                                  setting.price !== "" &&
+                                  setting.price !== recommended &&
+                                  !window.confirm(`현재 가격(${formatPrice(setting.price as number)}원)을 권장가(${formatPrice(recommended)}원)로 변경하시겠어요?`)
+                                ) {
+                                  return;
+                                }
                                 setFormData((prev) => ({
                                   ...prev,
                                   products: {

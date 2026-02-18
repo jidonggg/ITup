@@ -66,6 +66,15 @@ export default function MentorDashboardPage() {
   // View mode state for bookings (list or calendar)
   const [bookingViewMode, setBookingViewMode] = useState<"list" | "calendar">("list");
 
+  // Pagination for bookings
+  const BOOKINGS_PER_PAGE = 20;
+  const [bookingPage, setBookingPage] = useState(1);
+  const totalBookingPages = Math.ceil(bookings.length / BOOKINGS_PER_PAGE);
+  const paginatedBookings = bookings.slice(
+    (bookingPage - 1) * BOOKINGS_PER_PAGE,
+    bookingPage * BOOKINGS_PER_PAGE
+  );
+
   useEffect(() => {
     if (!isInitialized) return;
     if (!user) {
@@ -316,8 +325,12 @@ export default function MentorDashboardPage() {
       return;
     }
 
-    // 시간 유효성 검증: 시작 시간이 종료 시간보다 이전이어야 함
-    if (newScheduleStart >= newScheduleEnd) {
+    // 시간 유효성 검증: 분(minute) 변환 비교로 정확한 시간 비교
+    const toMinutes = (t: string) => {
+      const [h, m] = t.split(":").map(Number);
+      return h * 60 + m;
+    };
+    if (toMinutes(newScheduleStart) >= toMinutes(newScheduleEnd)) {
       showToast("시작 시간이 종료 시간보다 이전이어야 해요.", "error");
       return;
     }
@@ -735,7 +748,7 @@ export default function MentorDashboardPage() {
         ) : (
           /* List View */
           <div className="space-y-4 mb-12">
-            {bookings.map((booking) => {
+            {paginatedBookings.map((booking) => {
               const menteeProfile = booking.mentee_id ? bookingProfiles[booking.mentee_id] : null;
               const product = booking.product_id ? bookingProducts[booking.product_id] : null;
               const productInfo = product ? PRODUCT_INFO[product.type] : null;
@@ -964,6 +977,29 @@ export default function MentorDashboardPage() {
                 </div>
               );
             })}
+
+            {/* Pagination */}
+            {totalBookingPages > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-4">
+                <button
+                  onClick={() => setBookingPage((p) => Math.max(1, p - 1))}
+                  disabled={bookingPage === 1}
+                  className="px-3 py-1.5 text-sm rounded-lg border border-card-border hover:bg-secondary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  이전
+                </button>
+                <span className="text-sm text-muted">
+                  {bookingPage} / {totalBookingPages}
+                </span>
+                <button
+                  onClick={() => setBookingPage((p) => Math.min(totalBookingPages, p + 1))}
+                  disabled={bookingPage === totalBookingPages}
+                  className="px-3 py-1.5 text-sm rounded-lg border border-card-border hover:bg-secondary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  다음
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1003,7 +1039,8 @@ export default function MentorDashboardPage() {
               <select
                 value={newScheduleDay}
                 onChange={(e) => setNewScheduleDay(Number(e.target.value))}
-                className="px-3 py-2 bg-secondary border border-card-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={addingSchedule}
+                className="px-3 py-2 bg-secondary border border-card-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
               >
                 {DAY_LABELS.map((label, i) => (
                   <option key={i} value={i}>{label}요일</option>
@@ -1016,7 +1053,8 @@ export default function MentorDashboardPage() {
                 type="time"
                 value={newScheduleStart}
                 onChange={(e) => setNewScheduleStart(e.target.value)}
-                className="px-3 py-2 bg-secondary border border-card-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={addingSchedule}
+                className="px-3 py-2 bg-secondary border border-card-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
               />
             </div>
             <div>
@@ -1025,7 +1063,8 @@ export default function MentorDashboardPage() {
                 type="time"
                 value={newScheduleEnd}
                 onChange={(e) => setNewScheduleEnd(e.target.value)}
-                className="px-3 py-2 bg-secondary border border-card-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={addingSchedule}
+                className="px-3 py-2 bg-secondary border border-card-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
               />
             </div>
             <button
