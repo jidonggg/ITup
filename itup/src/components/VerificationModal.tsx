@@ -122,7 +122,7 @@ export default function VerificationModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="본인 인증">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        className="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md"
         onClick={handleClose}
         aria-hidden="true"
       />

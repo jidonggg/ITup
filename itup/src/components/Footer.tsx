@@ -53,7 +53,7 @@ export default function Footer() {
           .from("newsletter_subscriptions")
           .select("id, is_active")
           .eq("email", email)
-          .single();
+          .maybeSingle();
 
         if (existing) {
           if (existing.is_active) {

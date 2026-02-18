@@ -5,8 +5,18 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const rawNext = searchParams.get("next") ?? "/";
-  // Open redirect 방지: 상대 경로만 허용 (프로토콜 상대 URL "//" 차단)
-  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+  // Open redirect 방지: 상대 경로만 허용
+  function isSafeRedirect(url: string): boolean {
+    if (!url.startsWith("/")) return false;
+    if (url.startsWith("//")) return false;
+    // /\ 패턴 차단 (일부 브라우저에서 프로토콜 상대 URL로 해석 가능)
+    if (/^\/[\\]/.test(url)) return false;
+    try {
+      const parsed = new URL(url, "http://localhost");
+      return parsed.host === "localhost";
+    } catch { return false; }
+  }
+  const next = isSafeRedirect(rawNext) ? rawNext : "/";
   const errorParam = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
 

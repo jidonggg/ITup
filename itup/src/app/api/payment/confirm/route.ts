@@ -360,6 +360,19 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (paymentError) {
+        // 중복 insert 감지 (unique constraint 또는 이미 처리된 결제)
+        if (paymentError.code === "23505") {
+          // 이미 결제 레코드가 있으면 성공으로 처리 (멱등성)
+          console.warn("[payment/confirm] 중복 결제 레코드 감지 (멱등 처리):", { orderId, paymentKey });
+          return NextResponse.json({
+            success: true,
+            orderId: tossResult.orderId,
+            amount: tossResult.totalAmount,
+            method: tossResult.method,
+            approvedAt: tossResult.approvedAt,
+          });
+        }
+
         // DB 저장 실패 시 재시도 (최대 2회)
         let dbRetrySuccess = false;
         for (let attempt = 1; attempt <= 2; attempt++) {
