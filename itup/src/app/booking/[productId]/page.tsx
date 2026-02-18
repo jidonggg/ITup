@@ -29,6 +29,17 @@ import type { Product, Mentor, MentorSchedule, ProductType } from "@/lib/supabas
 import { PLATFORM_FEE_RATE, PRODUCT_INFO, REFUND_POLICY, PREDEFINED_MENTEE_QUESTIONS, VALIDATION } from "@/lib/constants";
 import { ProductIcon, LogoIcon } from "@/components/icons";
 import { MobileStepIndicator, StickyBottomCTA } from "@/components/mobile";
+import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
+
+// TossPayments 클라이언트 키
+const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+
+// DB ProductType → orderId prefix
+const DB_TYPE_PREFIX_MAP: Record<string, string> = {
+  coffee_chat: "COFFEE",
+  document_review: "RESUME",
+  mock_interview: "INTERVIEW",
+};
 
 // =============================================
 // Types
@@ -1114,7 +1125,7 @@ export default function BookingPage({
 }) {
   const { productId } = use(params);
   const router = useRouter();
-  const { user, isLoading: authLoading, isInitialized } = useAuth();
+  const { user, profile, isLoading: authLoading, isInitialized } = useAuth();
   const { showToast } = useToast();
 
   // Data states
@@ -1267,7 +1278,7 @@ export default function BookingPage({
     fetchData();
   }, [isInitialized, productId, user]);
 
-  // Submit booking
+  // Submit booking + Toss payment
   const handleSubmit = async () => {
     if (!user || !product || !mentor || !selectedDate || !selectedTime) return;
     if (isSubmitting) return; // 중복 제출 방지
@@ -1289,7 +1300,9 @@ export default function BookingPage({
       const scheduledAt = `${dateStr}T${selectedTime}:00`;
       const platformFee = Math.round(product.price * PLATFORM_FEE_RATE);
       const mentorAmount = product.price - platformFee;
+      const isFreeProduct = product.type === "free_trial" || product.price === 0;
 
+      // 1. 예약 레코드 생성 (결제 대기 상태)
       const { data, error: insertError } = await supabase
         .from("bookings")
         .insert({
@@ -1312,7 +1325,7 @@ export default function BookingPage({
           attached_files: [],
           payment_key: null,
           order_id: null,
-          payment_method: null,
+          payment_method: isFreeProduct ? "free_trial" : null,
           paid_at: null,
           cancelled_at: null,
           cancelled_by: null,
@@ -1328,29 +1341,57 @@ export default function BookingPage({
         return;
       }
 
-      // 멘토에게 새 예약 이메일 알림 발송 (비동기, 에러 무시)
-      const bookingSession = await supabase.auth.getSession();
-      const bookingToken = bookingSession.data.session?.access_token;
-      fetch("/api/email/booking-notification", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(bookingToken ? { "Authorization": `Bearer ${bookingToken}` } : {}),
-        },
-        body: JSON.stringify({
-          type: "new_booking",
-          bookingId: data.id,
-        }),
-      }).catch(() => {});
+      // 2. 무료 체험 → 결제 없이 바로 완료
+      if (isFreeProduct) {
+        const bookingSession = await supabase.auth.getSession();
+        const bookingToken = bookingSession.data.session?.access_token;
+        fetch("/api/email/booking-notification", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(bookingToken ? { "Authorization": `Bearer ${bookingToken}` } : {}),
+          },
+          body: JSON.stringify({ type: "new_booking", bookingId: data.id }),
+        }).catch(() => {});
 
-      // Clear saved progress on success
-      clearProgress(productId);
+        clearProgress(productId);
+        setBookingId(data.id);
+        setIsSuccess(true);
+        showToast("예약이 완료되었어요!", "success");
+        return;
+      }
 
-      setBookingId(data.id);
-      setIsSuccess(true);
-      showToast("예약이 완료되었어요!", "success");
-    } catch {
-      showToast("예약 중 오류가 발생했어요.", "error");
+      // 3. 유료 상품 → Toss 결제 시작
+      if (!TOSS_CLIENT_KEY) {
+        showToast("결제 시스템이 설정되지 않았어요. 관리자에게 문의해주세요.", "error");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+      const customerKey = user.id;
+      const prefix = DB_TYPE_PREFIX_MAP[product.type] || "BOOKING";
+      const tossOrderId = `${prefix}_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+
+      const widgets = tossPayments.widgets({ customerKey });
+      await widgets.setAmount({ currency: "KRW", value: product.price });
+
+      await widgets.requestPayment({
+        orderId: tossOrderId,
+        orderName: `${product.title} - ${mentor.name}`,
+        successUrl: `${window.location.origin}/payment/success?bookingId=${data.id}`,
+        failUrl: `${window.location.origin}/payment/fail`,
+        customerEmail: user.email || "",
+        customerName: profile?.name || "",
+      });
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "";
+      if (errorMessage.includes("PAY_PROCESS_CANCELED")) {
+        // 사용자가 결제를 취소한 경우 - 에러 표시하지 않음
+      } else {
+        showToast("결제 처리 중 오류가 발생했어요.", "error");
+      }
     } finally {
       setIsSubmitting(false);
     }

@@ -120,9 +120,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // consultationId 추출 (URL 쿼리에서 전달됨)
+    // consultationId / bookingId 추출 (URL 쿼리에서 전달됨)
     const url = new URL(request.url);
     const consultationId = url.searchParams.get("consultationId");
+    const bookingId = url.searchParams.get("bookingId");
 
     // 1. 결제 금액 서버 검증 (DB expected_amount 기준)
     let expectedAmount: number | null = null;
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // DB에서 expected_amount 조회 + 소유권 검증
+    // DB에서 expected_amount 조회 + 소유권 검증 (consultation 또는 booking)
     if (supabase && consultationId && consultationId !== "local") {
       const { data: consultation } = await supabase
         .from("consultations")
@@ -153,6 +154,24 @@ export async function POST(request: NextRequest) {
       }
 
       expectedAmount = consultation?.expected_amount ?? null;
+    }
+
+    // booking 기반 결제 금액 조회
+    if (!expectedAmount && supabase && bookingId) {
+      const { data: booking } = await supabase
+        .from("bookings")
+        .select("amount, mentee_id")
+        .eq("id", bookingId)
+        .single();
+
+      if (booking && booking.mentee_id !== user.id) {
+        return NextResponse.json(
+          { error: "본인의 예약만 결제할 수 있어요." },
+          { status: 403 }
+        );
+      }
+
+      expectedAmount = booking?.amount ?? null;
     }
 
     if (!expectedAmount) {
@@ -481,6 +500,38 @@ export async function POST(request: NextRequest) {
                 },
               }),
             }).catch((e) => console.error("[결제확인-상담요청 이메일 실패]", e));
+          }
+        }
+      }
+
+      // booking 결제 완료 처리
+      if (bookingId) {
+        const { error: bookingUpdateError } = await supabase
+          .from("bookings")
+          .update({
+            status: "paid",
+            payment_key: paymentKey,
+            order_id: orderId,
+            payment_method: tossResult.method || "card",
+            paid_at: tossResult.approvedAt || new Date().toISOString(),
+          })
+          .eq("id", bookingId)
+          .eq("mentee_id", user.id);
+
+        if (bookingUpdateError) {
+          console.error("[payment/confirm] 예약 상태 업데이트 실패:", bookingUpdateError.message);
+        } else {
+          // 멘토에게 새 예약 이메일 알림 (비동기)
+          const siteUrlForBooking = process.env.NEXT_PUBLIC_SITE_URL;
+          if (siteUrlForBooking) {
+            fetch(`${siteUrlForBooking}/api/email/booking-notification`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${request.headers.get("authorization")?.substring(7) || ""}`,
+              },
+              body: JSON.stringify({ type: "new_booking", bookingId }),
+            }).catch((e) => console.error("[결제확인-예약알림 이메일 실패]", e));
           }
         }
       }

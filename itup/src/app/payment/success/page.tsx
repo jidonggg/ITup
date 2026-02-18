@@ -21,6 +21,7 @@ function PaymentSuccessContent() {
   const orderId = searchParams.get("orderId");
   const amount = searchParams.get("amount");
   const consultationId = searchParams.get("consultationId");
+  const bookingId = searchParams.get("bookingId");
   const discountCode = searchParams.get("discountCode");
 
   useEffect(() => {
@@ -48,9 +49,10 @@ function PaymentSuccessContent() {
           accessToken = session?.access_token || "";
         }
 
-        // 서버 API 호출하여 결제 검증 및 승인 (consultationId, discountCode 전달)
+        // 서버 API 호출하여 결제 검증 및 승인 (consultationId/bookingId, discountCode 전달)
         const confirmParams = new URLSearchParams();
         if (consultationId) confirmParams.set("consultationId", consultationId);
+        if (bookingId) confirmParams.set("bookingId", bookingId);
         if (discountCode) confirmParams.set("discountCode", discountCode);
         const confirmQs = confirmParams.toString();
         const confirmUrl = `/api/payment/confirm${confirmQs ? `?${confirmQs}` : ""}`;
@@ -121,7 +123,7 @@ function PaymentSuccessContent() {
     return () => {
       abortController.abort();
     };
-  }, [paymentKey, orderId, amount, consultationId, discountCode]);
+  }, [paymentKey, orderId, amount, consultationId, bookingId, discountCode]);
 
   if (isVerifying) {
     return (
