@@ -37,6 +37,14 @@ interface FormData {
   interest: string;
   preferredTime: string;
   message: string;
+  // 상품별 구조화 필드
+  currentStatus: string;
+  targetCompany: string;
+  targetRole: string;
+  discussTopics: string[];
+  portfolioLink: string;
+  interviewType: string;
+  specificQuestion: string;
 }
 
 const initialFormData: FormData = {
@@ -46,7 +54,49 @@ const initialFormData: FormData = {
   interest: "",
   preferredTime: "",
   message: "",
+  currentStatus: "",
+  targetCompany: "",
+  targetRole: "",
+  discussTopics: [],
+  portfolioLink: "",
+  interviewType: "",
+  specificQuestion: "",
 };
+
+// 상품별 상담 주제 옵션
+const DISCUSS_TOPICS: Record<ProductType, { value: string; label: string }[]> = {
+  coffee: [
+    { value: "career_direction", label: "커리어 방향" },
+    { value: "company_culture", label: "회사 분위기/문화" },
+    { value: "industry_info", label: "업계 현황/트렌드" },
+    { value: "skill_growth", label: "실력 향상 방법" },
+    { value: "salary_negotiation", label: "연봉/처우" },
+    { value: "work_life", label: "워라밸/근무 환경" },
+  ],
+  resume: [
+    { value: "resume_structure", label: "이력서 구성" },
+    { value: "portfolio_feedback", label: "포트폴리오 피드백" },
+    { value: "appeal_points", label: "어필 포인트 강화" },
+    { value: "project_description", label: "프로젝트 서술 방법" },
+    { value: "career_summary", label: "경력 기술서" },
+  ],
+  interview: [
+    { value: "technical", label: "기술 면접" },
+    { value: "behavioral", label: "인성/컬처핏" },
+    { value: "portfolio_review", label: "포트폴리오 발표" },
+    { value: "coding_test", label: "코딩 테스트" },
+    { value: "overall", label: "전체 프로세스" },
+  ],
+};
+
+const CURRENT_STATUS_OPTIONS = [
+  { value: "student", label: "학생 (취준 중)" },
+  { value: "junior", label: "주니어 (1~3년차)" },
+  { value: "mid", label: "미드레벨 (4~7년차)" },
+  { value: "senior", label: "시니어 (8년차+)" },
+  { value: "career_change", label: "이직 준비 중" },
+  { value: "other", label: "기타" },
+];
 
 export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, mentorAvailableTimes, mentorExperience, productType: initialProductType }: ConsultModalProps) {
   const { user, profile } = useAuth();
@@ -56,9 +106,12 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
-  const [step, setStep] = useState<"form" | "payment" | "success">("form");
+  const [step, setStep] = useState<"form" | "payment">("form");
   const [consultationId, setConsultationId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductType>(initialProductType || "coffee");
+
+  // 멘토 실제 상품 가격 (DB에서 조회)
+  const [mentorPrices, setMentorPrices] = useState<Record<string, number>>({});
 
   // 할인 코드 상태
   const [discountCode, setDiscountCode] = useState("");
@@ -73,7 +126,22 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   const [discountError, setDiscountError] = useState<string | null>(null);
 
   const currentProduct = products.find((p) => p.id === selectedProduct) ?? products[0];
-  const price = getTieredPrice(selectedProduct, mentorExperience);
+
+  // PaymentProductType → DB ProductType 매핑
+  const PRODUCT_TYPE_MAP: Record<ProductType, string> = {
+    coffee: "coffee_chat",
+    resume: "document_review",
+    interview: "mock_interview",
+  };
+
+  // 멘토 DB 가격이 있으면 사용, 없으면 티어 가격 폴백
+  const getProductPrice = (productId: ProductType): number => {
+    const dbType = PRODUCT_TYPE_MAP[productId];
+    if (mentorPrices[dbType] !== undefined) return mentorPrices[dbType];
+    return getTieredPrice(productId, mentorExperience);
+  };
+
+  const price = getProductPrice(selectedProduct);
   const finalPrice = discountResult ? discountResult.finalAmount : price;
 
   useModalClose(isOpen, onClose);
@@ -90,8 +158,8 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     // 이벤트 추적
     trackEvent("modal", "상담모달_오픈", { mentorId: mentorId || "general" });
 
-    // 멘토 시간 로드 (비동기 작업)
-    const loadMentorTimes = async () => {
+    // 멘토 데이터 로드 (시간 + 상품 가격)
+    const loadMentorData = async () => {
       if (mentorAvailableTimes && mentorAvailableTimes.length > 0) {
         requestAnimationFrame(() => setAvailableTimes(mentorAvailableTimes));
       } else if (mentorId && isSupabaseConfigured()) {
@@ -104,6 +172,24 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
 
         if (data?.available_times) {
           setAvailableTimes(data.available_times);
+        }
+      }
+
+      // 멘토 상품 가격 로드
+      if (mentorId && isSupabaseConfigured()) {
+        const supabase = createClient();
+        const { data: productData } = await supabase
+          .from("products")
+          .select("type, price")
+          .eq("mentor_id", mentorId)
+          .eq("is_active", true);
+
+        if (productData && productData.length > 0) {
+          const prices: Record<string, number> = {};
+          for (const p of productData) {
+            prices[p.type] = p.price;
+          }
+          setMentorPrices(prices);
         }
       }
     };
@@ -120,7 +206,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       });
     }
 
-    loadMentorTimes();
+    loadMentorData();
   }, [isOpen, mentorId, mentorAvailableTimes, trackEvent, user, profile, initialProductType]);
 
   const interests = [
@@ -157,6 +243,33 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     return Object.keys(newErrors).length === 0;
   };
 
+  const buildStructuredMessage = (data: FormData, product: ProductType): string => {
+    const parts: string[] = [];
+
+    if (data.currentStatus) {
+      const statusLabel = CURRENT_STATUS_OPTIONS.find((o) => o.value === data.currentStatus)?.label || data.currentStatus;
+      parts.push(`[현재 상태] ${statusLabel}`);
+    }
+    if (data.targetCompany) parts.push(`[목표 회사] ${data.targetCompany}`);
+    if (data.targetRole) parts.push(`[목표 직무] ${data.targetRole}`);
+    if (data.discussTopics.length > 0) {
+      const topicLabels = data.discussTopics
+        .map((v) => DISCUSS_TOPICS[product]?.find((t) => t.value === v)?.label || v)
+        .join(", ");
+      parts.push(`[상담 주제] ${topicLabels}`);
+    }
+    if (product === "resume" && data.portfolioLink) {
+      parts.push(`[포트폴리오 링크] ${data.portfolioLink}`);
+    }
+    if (product === "interview" && data.interviewType) {
+      parts.push(`[면접 유형] ${data.interviewType}`);
+    }
+    if (data.specificQuestion) parts.push(`[구체적 질문] ${data.specificQuestion}`);
+    if (data.message) parts.push(`[추가 메시지] ${data.message}`);
+
+    return parts.join("\n");
+  };
+
   const saveToLocalStorage = () => {
     const consultations = JSON.parse(localStorage.getItem("consultations") || "[]");
     const newConsultation = {
@@ -187,6 +300,9 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     try {
       const supabase = createClient();
 
+      // 구조화된 메시지 생성
+      const structuredMessage = buildStructuredMessage(formData, selectedProduct);
+
       // 상담 신청 저장 (결제 대기 상태)
       const { data, error } = await supabase.from("consultations").insert({
         mentor_id: mentorId || null,
@@ -197,7 +313,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
         interest: formData.interest || null,
         product_type: selectedProduct,
         preferred_time: formData.preferredTime || null,
-        message: formData.message || null,
+        message: structuredMessage || null,
         expected_amount: price,
       }).select("id").single();
 
@@ -256,7 +372,10 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "";
-      if (!errorMessage.includes("PAY_PROCESS_CANCELED")) {
+      if (errorMessage.includes("PAY_PROCESS_CANCELED")) {
+        // 사용자가 결제를 취소한 경우 - 에러 표시하지 않음
+      } else {
+        console.error("Payment error:", errorMessage || error);
         showToast("결제 처리 중 오류가 발생했어요. 다시 시도해주세요.", "error");
       }
       setIsLoading(false);
@@ -264,6 +383,8 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
   };
 
   const handleApplyDiscount = async () => {
+    if (discountLoading) return;
+
     if (!discountCode.trim()) {
       setDiscountError("할인 코드를 입력해주세요.");
       return;
@@ -326,10 +447,20 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
     setStep("form");
     setConsultationId(null);
     setSelectedProduct(initialProductType || "coffee");
+    setMentorPrices({});
     setDiscountCode("");
     setDiscountResult(null);
     setDiscountError(null);
     onClose();
+  };
+
+  const toggleDiscussTopic = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      discussTopics: prev.discussTopics.includes(value)
+        ? prev.discussTopics.filter((t) => t !== value)
+        : [...prev.discussTopics, value],
+    }));
   };
 
   const handleChange = (
@@ -364,8 +495,9 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 p-2 text-muted hover:text-foreground transition-colors cursor-pointer"
+          className="absolute top-3 right-3 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted hover:text-foreground hover:bg-secondary/60 rounded-full transition-colors cursor-pointer"
           aria-label="닫기"
+          type="button"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -461,9 +593,16 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
               </div>
 
               {/* 신청 정보 요약 */}
-              <div className="bg-secondary/30 rounded-xl p-4 mb-6 text-left text-sm">
-                <p className="text-muted mb-1">신청자: {formData.name}</p>
-                <p className="text-muted mb-1">연락처: {formData.phone}</p>
+              <div className="bg-secondary/30 rounded-xl p-4 mb-6 text-left text-sm space-y-1">
+                <p className="text-muted">신청자: {formData.name}</p>
+                <p className="text-muted">연락처: {formData.phone}</p>
+                {formData.currentStatus && (
+                  <p className="text-muted">상태: {CURRENT_STATUS_OPTIONS.find((o) => o.value === formData.currentStatus)?.label}</p>
+                )}
+                {formData.targetCompany && <p className="text-muted">목표: {formData.targetCompany}{formData.targetRole ? ` / ${formData.targetRole}` : ""}</p>}
+                {formData.discussTopics.length > 0 && (
+                  <p className="text-muted">주제: {formData.discussTopics.map((v) => DISCUSS_TOPICS[selectedProduct]?.find((t) => t.value === v)?.label || v).join(", ")}</p>
+                )}
                 {formData.preferredTime && (
                   <p className="text-muted">희망 시간: {formData.preferredTime}</p>
                 )}
@@ -499,24 +638,56 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                 상품을 선택하고 정보를 입력해주세요.
               </p>
 
-              {/* 상품 타입 선택 */}
+              {/* 상품 타입 선택 - 상세 카드 */}
               <div className="mb-6">
                 <label className="block text-sm font-medium mb-2">상품 선택</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-2">
                   {products.map((product) => (
                     <button
                       key={product.id}
                       type="button"
-                      onClick={() => setSelectedProduct(product.id)}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all cursor-pointer ${
+                      onClick={() => {
+                        setSelectedProduct(product.id);
+                        setFormData((prev) => ({ ...prev, discussTopics: [] }));
+                        if (discountResult) {
+                          setDiscountResult(null);
+                          setDiscountCode("");
+                        }
+                      }}
+                      className={`w-full flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer text-left ${
                         selectedProduct === product.id
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-card-border bg-secondary text-muted hover:border-primary/50"
+                          ? "border-primary bg-primary/8 ring-1 ring-primary/20"
+                          : "border-card-border bg-secondary/50 hover:border-primary/40"
                       }`}
                     >
-                      <ProductIcon name={product.icon} className="w-6 h-6" />
-                      <span className="text-xs font-medium">{product.name}</span>
-                      <span className="text-xs">{getTieredPrice(product.id, mentorExperience).toLocaleString()}원</span>
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                        selectedProduct === product.id ? "bg-primary/15" : "bg-secondary"
+                      }`}>
+                        <ProductIcon name={product.icon} className={`w-5 h-5 ${selectedProduct === product.id ? "text-primary" : "text-muted"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-sm font-semibold ${selectedProduct === product.id ? "text-primary" : "text-foreground"}`}>
+                            {product.name}
+                          </span>
+                          <span className={`text-sm font-bold whitespace-nowrap ${selectedProduct === product.id ? "text-primary" : "text-foreground"}`}>
+                            {getProductPrice(product.id).toLocaleString()}원
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted mt-0.5">{product.duration} · {product.description}</p>
+                        {selectedProduct === product.id && (
+                          <div className="mt-2 space-y-1">
+                            {product.features.slice(0, 3).map((f, i) => (
+                              <div key={i} className="flex items-center gap-1.5 text-[11px] text-primary/70">
+                                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                {f}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -539,7 +710,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                     }`}
                   />
                   {errors.name && (
-                    <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+                    <p className="mt-1 text-sm text-red-500" role="alert">{errors.name}</p>
                   )}
                 </div>
 
@@ -559,7 +730,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                     }`}
                   />
                   {errors.phone && (
-                    <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
+                    <p className="mt-1 text-sm text-red-500" role="alert">{errors.phone}</p>
                   )}
                 </div>
 
@@ -579,7 +750,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                     }`}
                   />
                   {errors.email && (
-                    <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                    <p className="mt-1 text-sm text-red-500" role="alert">{errors.email}</p>
                   )}
                 </div>
 
@@ -629,18 +800,136 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
                   </div>
                 )}
 
-                {/* 문의 내용 */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">문의 내용</label>
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    placeholder="편하게 적어주세요 (선택사항)"
-                    rows={3}
-                    maxLength={1000}
-                    className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors resize-none"
-                  />
+                {/* 상품별 구조화 질문 */}
+                <div className="space-y-4 pt-2 border-t border-card-border/50">
+                  <p className="text-xs text-muted">
+                    멘토가 상담을 더 잘 준비할 수 있도록 알려주세요
+                  </p>
+
+                  {/* 현재 상태 - 공통 */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">현재 상태</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {CURRENT_STATUS_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, currentStatus: opt.value }))}
+                          className={`px-3 py-1.5 text-xs rounded-lg border transition-colors cursor-pointer ${
+                            formData.currentStatus === opt.value
+                              ? "border-primary bg-primary/10 text-primary font-medium"
+                              : "border-card-border bg-secondary text-muted hover:border-primary/40"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 목표 회사/직무 - 이력서, 모의면접 */}
+                  {(selectedProduct === "resume" || selectedProduct === "interview") && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">목표 회사</label>
+                        <input
+                          type="text"
+                          name="targetCompany"
+                          value={formData.targetCompany}
+                          onChange={handleChange}
+                          placeholder="예: 넥슨, 크래프톤"
+                          className="w-full px-3 py-2.5 bg-secondary border border-card-border rounded-xl text-foreground text-sm placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">목표 직무</label>
+                        <input
+                          type="text"
+                          name="targetRole"
+                          value={formData.targetRole}
+                          onChange={handleChange}
+                          placeholder="예: 클라이언트 개발"
+                          className="w-full px-3 py-2.5 bg-secondary border border-card-border rounded-xl text-foreground text-sm placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 포트폴리오 링크 - 이력서 첨삭 */}
+                  {selectedProduct === "resume" && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5">포트폴리오/이력서 링크</label>
+                      <input
+                        type="url"
+                        name="portfolioLink"
+                        value={formData.portfolioLink}
+                        onChange={handleChange}
+                        placeholder="Google Drive, Notion 등 공유 링크"
+                        className="w-full px-3 py-2.5 bg-secondary border border-card-border rounded-xl text-foreground text-sm placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
+                      />
+                      <p className="mt-1 text-[11px] text-muted">상담 전에 미리 공유하면 더 깊은 피드백을 받을 수 있어요</p>
+                    </div>
+                  )}
+
+                  {/* 상담 주제 선택 - 상품별 */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">
+                      {selectedProduct === "coffee" ? "이야기하고 싶은 주제" : selectedProduct === "resume" ? "피드백 받고 싶은 부분" : "준비하고 싶은 면접 유형"}
+                      <span className="text-xs text-muted font-normal ml-1">(복수 선택)</span>
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(DISCUSS_TOPICS[selectedProduct] || []).map((topic) => (
+                        <button
+                          key={topic.value}
+                          type="button"
+                          onClick={() => toggleDiscussTopic(topic.value)}
+                          className={`px-3 py-1.5 text-xs rounded-lg border transition-colors cursor-pointer ${
+                            formData.discussTopics.includes(topic.value)
+                              ? "border-primary bg-primary/10 text-primary font-medium"
+                              : "border-card-border bg-secondary text-muted hover:border-primary/40"
+                          }`}
+                        >
+                          {topic.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 구체적 질문 */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">
+                      {selectedProduct === "coffee" ? "멘토에게 꼭 묻고 싶은 질문" : selectedProduct === "resume" ? "특별히 고민되는 부분" : "가장 걱정되는 부분"}
+                    </label>
+                    <textarea
+                      name="specificQuestion"
+                      value={formData.specificQuestion}
+                      onChange={handleChange}
+                      placeholder={
+                        selectedProduct === "coffee"
+                          ? "예: 게임 기획자로 취업하려면 어떤 준비를 해야 하나요?"
+                          : selectedProduct === "resume"
+                          ? "예: 프로젝트 경험이 부족한데 어떻게 어필하면 좋을까요?"
+                          : "예: 기술 면접에서 자료구조 질문이 가장 걱정돼요"
+                      }
+                      rows={2}
+                      maxLength={500}
+                      className="w-full px-3 py-2.5 bg-secondary border border-card-border rounded-xl text-foreground text-sm placeholder:text-muted focus:outline-none focus:border-primary transition-colors resize-none"
+                    />
+                  </div>
+
+                  {/* 추가 메시지 */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">추가 전달 사항 <span className="text-xs text-muted font-normal">(선택)</span></label>
+                    <textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleChange}
+                      placeholder="그 외 멘토에게 미리 알려주고 싶은 내용"
+                      rows={2}
+                      maxLength={500}
+                      className="w-full px-3 py-2.5 bg-secondary border border-card-border rounded-xl text-foreground text-sm placeholder:text-muted focus:outline-none focus:border-primary transition-colors resize-none"
+                    />
+                  </div>
                 </div>
 
                 {/* 제출 버튼 */}

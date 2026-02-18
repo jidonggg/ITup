@@ -10,6 +10,7 @@ import { PRODUCT_INFO } from "@/lib/constants";
 import { ProductIcon, LogoIcon } from "@/components/icons";
 import VerificationModal from "@/components/VerificationModal";
 import BookingCalendar from "@/components/mentor/BookingCalendar";
+import ReferralShareCard from "@/components/mentor/ReferralShareCard";
 
 // v2 Booking status
 type BookingStatusType = "pending" | "paid" | "confirmed" | "completed" | "cancelled" | "refunded";
@@ -51,6 +52,7 @@ export default function MentorDashboardPage() {
   const [meetingLinkInput, setMeetingLinkInput] = useState<Record<string, string>>({});
   const [savingMeetingLink, setSavingMeetingLink] = useState<string | null>(null);
   const [bookingFeedbacks, setBookingFeedbacks] = useState<Record<string, boolean>>({});
+  const [bookingSurveys, setBookingSurveys] = useState<Record<string, boolean>>({});
 
   // Schedule form state
   const [newScheduleDay, setNewScheduleDay] = useState(1);
@@ -59,6 +61,7 @@ export default function MentorDashboardPage() {
   const [addingSchedule, setAddingSchedule] = useState(false);
   const [togglingScheduleId, setTogglingScheduleId] = useState<string | null>(null);
   const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null);
+  const [schedulesTableAvailable, setSchedulesTableAvailable] = useState(true);
 
   // View mode state for bookings (list or calendar)
   const [bookingViewMode, setBookingViewMode] = useState<"list" | "calendar">("list");
@@ -150,18 +153,41 @@ export default function MentorDashboardPage() {
           feedbackData.forEach((f: { booking_id: string }) => { feedbackMap[f.booking_id] = true; });
           setBookingFeedbacks(feedbackMap);
         }
+
+        // Fetch mentor session surveys to check which bookings have surveys
+        try {
+          const { data: surveyData } = await supabase
+            .from("mentor_session_surveys")
+            .select("booking_id")
+            .in("booking_id", bookingIds);
+          if (surveyData) {
+            const surveyMap: Record<string, boolean> = {};
+            surveyData.forEach((s: { booking_id: string }) => { surveyMap[s.booking_id] = true; });
+            setBookingSurveys(surveyMap);
+          }
+        } catch {
+          // mentor_session_surveys table may not exist yet
+        }
       }
 
-      // v2: Fetch schedules
-      const { data: scheduleData } = await supabase
-        .from("mentor_schedules")
-        .select("*")
-        .eq("mentor_id", mentorData.id)
-        .order("day_of_week", { ascending: true })
-        .order("start_time", { ascending: true });
+      // v2: Fetch schedules (mentor_schedules table may not exist yet)
+      try {
+        const { data: scheduleData, error: scheduleError } = await supabase
+          .from("mentor_schedules")
+          .select("*")
+          .eq("mentor_id", mentorData.id)
+          .order("day_of_week", { ascending: true })
+          .order("start_time", { ascending: true });
 
-      if (scheduleData) {
-        setSchedules(scheduleData);
+        if (scheduleError) {
+          console.warn("[dashboard] mentor_schedules table not available:", scheduleError.message);
+          setSchedulesTableAvailable(false);
+        } else if (scheduleData) {
+          setSchedules(scheduleData);
+        }
+      } catch {
+        console.warn("[dashboard] mentor_schedules table not available");
+        setSchedulesTableAvailable(false);
       }
     } catch (err) {
       setError("데이터를 불러오는 중 오류가 발생했어요.");
@@ -176,6 +202,14 @@ export default function MentorDashboardPage() {
   // v2: Update booking status
   const updateBookingStatus = async (bookingId: string, newStatus: BookingStatusType) => {
     if (!isSupabaseConfigured()) return;
+
+    // 취소/환불 등 되돌리기 어려운 상태 변경 시 확인
+    if (newStatus === "cancelled" || newStatus === "refunded") {
+      const label = newStatus === "cancelled" ? "거절" : "환불";
+      if (!window.confirm(`이 예약을 ${label} 처리하시겠어요? 이 작업은 되돌릴 수 없습니다.`)) {
+        return;
+      }
+    }
 
     setUpdatingBookingId(bookingId);
     const supabase = createClient();
@@ -277,7 +311,10 @@ export default function MentorDashboardPage() {
 
   // v2: Add schedule slot
   const addScheduleSlot = async () => {
-    if (!mentor || !isSupabaseConfigured()) return;
+    if (!mentor || !isSupabaseConfigured() || !schedulesTableAvailable) {
+      if (!schedulesTableAvailable) showToast("스케줄 기능이 아직 준비되지 않았어요.", "error");
+      return;
+    }
 
     // 시간 유효성 검증: 시작 시간이 종료 시간보다 이전이어야 함
     if (newScheduleStart >= newScheduleEnd) {
@@ -332,7 +369,7 @@ export default function MentorDashboardPage() {
 
   // v2: Toggle schedule active
   const toggleScheduleActive = async (scheduleId: string, isActive: boolean) => {
-    if (!isSupabaseConfigured()) return;
+    if (!isSupabaseConfigured() || !schedulesTableAvailable) return;
 
     setTogglingScheduleId(scheduleId);
     const supabase = createClient();
@@ -362,7 +399,7 @@ export default function MentorDashboardPage() {
 
   // v2: Delete schedule slot
   const deleteScheduleSlot = async (scheduleId: string) => {
-    if (!isSupabaseConfigured()) return;
+    if (!isSupabaseConfigured() || !schedulesTableAvailable) return;
 
     setDeletingScheduleId(scheduleId);
     const supabase = createClient();
@@ -559,7 +596,11 @@ export default function MentorDashboardPage() {
           <div className={`mb-6 p-4 rounded-xl flex items-center justify-between ${
             mentor.is_verified
               ? "bg-green-500/10 border border-green-500/30"
-              : "bg-blue-500/10 border border-blue-500/30"
+              : mentor.verification_status === "pending"
+                ? "bg-yellow-500/10 border border-yellow-500/30"
+                : mentor.verification_status === "rejected"
+                  ? "bg-red-500/10 border border-red-500/30"
+                  : "bg-blue-500/10 border border-blue-500/30"
           }`}>
             <div className="flex items-center gap-3">
               {mentor.is_verified ? (
@@ -572,6 +613,30 @@ export default function MentorDashboardPage() {
                   <div>
                     <p className="font-medium text-green-500">인증 완료</p>
                     <p className="text-sm text-green-400/70">회사 이메일로 인증되었어요</p>
+                  </div>
+                </>
+              ) : mentor.verification_status === "pending" ? (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-yellow-500">인증 심사 중</p>
+                    <p className="text-sm text-yellow-400/70">제출한 인증이 검토 중이에요</p>
+                  </div>
+                </>
+              ) : mentor.verification_status === "rejected" ? (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-red-500">인증 반려</p>
+                    <p className="text-sm text-red-400/70">인증이 반려되었어요. 다시 시도해주세요.</p>
                   </div>
                 </>
               ) : (
@@ -741,6 +806,33 @@ export default function MentorDashboardPage() {
                           <p className="p-3 bg-secondary rounded-lg text-sm">{booking.mentee_goal}</p>
                         </div>
                       )}
+                      {/* Mentee Questions */}
+                      {booking.mentee_questions && (
+                        (booking.mentee_questions as any).predefined?.length > 0 ||
+                        (booking.mentee_questions as any).custom?.length > 0
+                      ) && (
+                        <div className="mt-3">
+                          <p className="text-xs text-muted mb-1.5">멘티 질문 목록</p>
+                          <div className="p-3 bg-secondary/50 rounded-lg space-y-1.5">
+                            {(booking.mentee_questions as any).predefined?.map((q: string, i: number) => (
+                              <p key={`p-${i}`} className="text-sm flex items-start gap-2">
+                                <svg className="w-4 h-4 text-primary mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                {q}
+                              </p>
+                            ))}
+                            {(booking.mentee_questions as any).custom?.map((q: string, i: number) => (
+                              <p key={`c-${i}`} className="text-sm flex items-start gap-2 text-accent">
+                                <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {q}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -846,12 +938,31 @@ export default function MentorDashboardPage() {
                         </Link>
                       )
                     )}
+                    {booking.status === "completed" && (
+                      <Link
+                        href={`/mentor/survey/${booking.id}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                          bookingSurveys[booking.id]
+                            ? "bg-green-500/10 text-green-600 hover:bg-green-500/20"
+                            : "bg-accent/10 text-accent hover:bg-accent/20"
+                        }`}
+                      >
+                        {bookingSurveys[booking.id] ? "설문 완료" : "품질 설문"}
+                      </Link>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
         )}
+
+        {/* ========================================= */}
+        {/* Mentor Referral Section                    */}
+        {/* ========================================= */}
+        <div className="mt-12 mb-8">
+          <ReferralShareCard />
+        </div>
 
         {/* ========================================= */}
         {/* Schedule Management Section               */}
@@ -861,6 +972,18 @@ export default function MentorDashboardPage() {
           <p className="text-muted text-sm">상담 가능한 시간대를 설정하세요. 멘티가 예약 시 이 시간대를 참고해요.</p>
         </div>
 
+        {!schedulesTableAvailable ? (
+          <div className="text-center py-16 bg-card-bg border border-card-border rounded-xl">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">스케줄 기능 준비 중</h3>
+            <p className="text-muted text-sm">스케줄 관리 기능이 아직 설정되지 않았어요.<br />관리자에게 문의해 주세요.</p>
+          </div>
+        ) : (
+        <>
         {/* Add new schedule slot */}
         <div className="bg-card-bg border border-card-border rounded-xl p-6 mb-6">
           <h3 className="font-semibold mb-4">새 시간대 추가</h3>
@@ -974,6 +1097,8 @@ export default function MentorDashboardPage() {
               );
             })}
           </div>
+        )}
+        </>
         )}
       </main>
 

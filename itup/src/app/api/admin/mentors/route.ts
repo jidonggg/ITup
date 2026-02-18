@@ -257,8 +257,9 @@ export async function PATCH(request: NextRequest) {
     const { error } = await supabase
       .from("mentors")
       .update({
-        verification_status: "verified",
+        is_verified: true,
         is_approved: true,
+        verification_method: "admin",
         verified_at: new Date().toISOString(),
       })
       .eq("id", mentorId);
@@ -315,8 +316,8 @@ export async function PATCH(request: NextRequest) {
     const { error } = await supabase
       .from("mentors")
       .update({
-        verification_status: "rejected",
-        rejection_reason: reason || null,
+        is_verified: false,
+        is_approved: false,
       })
       .eq("id", mentorId);
 

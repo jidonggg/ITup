@@ -10,6 +10,7 @@ import { Mentor, Booking, Product, MentorFeedback } from "@/lib/supabase/types";
 import { PRODUCT_INFO } from "@/lib/constants";
 import { ProductIcon, LogoIcon } from "@/components/icons";
 import FreeTrialConversionCTA from "@/components/FreeTrialConversionCTA";
+import MenteeReferralCard from "@/components/referral/MenteeReferralCard";
 
 interface BookingWithDetails extends Booking {
   mentor?: Mentor | null;
@@ -400,6 +401,11 @@ export default function MyPage() {
             />
           </div>
         )}
+
+        {/* Referral Program */}
+        <div className="mb-8">
+          <MenteeReferralCard />
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-8 border-b border-card-border">

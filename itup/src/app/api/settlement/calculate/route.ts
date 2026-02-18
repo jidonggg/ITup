@@ -88,18 +88,14 @@ export async function POST(request: NextRequest) {
 
     const totalAmount = unsettledBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
 
-    // Get cumulative earnings for commission tier
-    const { data: cumulativeData } = await supabase
-      .from("settlements")
-      .select("settlement_amount")
+    // Get completed session count for commission tier
+    const { count: completedSessions } = await supabase
+      .from("bookings")
+      .select("id", { count: "exact", head: true })
       .eq("mentor_id", mentorId)
       .eq("status", "completed");
 
-    const cumulativeEarnings = (cumulativeData || []).reduce(
-      (sum, s) => sum + (s.settlement_amount || 0), 0
-    );
-
-    const calculation = calculateSettlement(totalAmount, cumulativeEarnings);
+    const calculation = calculateSettlement(totalAmount, completedSessions ?? 0);
 
     if (calculation.settlementAmount < SETTLEMENT.MIN_AMOUNT) {
       return NextResponse.json({

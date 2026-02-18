@@ -1,8 +1,9 @@
 "use client";
 
-import { use, useEffect, useState, useMemo, useCallback } from "react";
+import { use, useEffect, useState, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/analytics/track";
 import {
   format,
   addMonths,
@@ -24,8 +25,8 @@ import { ko } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import type { Product, Mentor, MentorSchedule } from "@/lib/supabase/types";
-import { PLATFORM_FEE_RATE, PRODUCT_INFO, REFUND_POLICY } from "@/lib/constants";
+import type { Product, Mentor, MentorSchedule, ProductType } from "@/lib/supabase/types";
+import { PLATFORM_FEE_RATE, PRODUCT_INFO, REFUND_POLICY, PREDEFINED_MENTEE_QUESTIONS, VALIDATION } from "@/lib/constants";
 import { ProductIcon, LogoIcon } from "@/components/icons";
 import { MobileStepIndicator, StickyBottomCTA } from "@/components/mobile";
 
@@ -42,6 +43,8 @@ interface BookingFormData {
   menteeIntro: string;
   menteeGoal: string;
   files: File[];
+  selectedQuestions: string[];
+  customQuestions: string[];
 }
 
 // =============================================
@@ -584,7 +587,11 @@ function StepBookingInfo({
   const goalValid = formData.menteeGoal.trim().length >= 10;
   const canProceed = introValid && goalValid;
 
-  const showFileUpload = product.type === "document_review" || product.type === "mock_interview";
+  const showFileUpload = product.type === "mock_interview";
+
+  const predefinedQuestions = product.type !== "free_trial"
+    ? (PREDEFINED_MENTEE_QUESTIONS[product.type as Exclude<ProductType, "free_trial">] ?? [])
+    : [];
 
   return (
     <div className="max-w-lg mx-auto pb-28 md:pb-8">
@@ -653,14 +660,92 @@ function StepBookingInfo({
           </div>
         </div>
 
+        {/* Pre-Session Questions */}
+        <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-5">
+          <label className="block mb-2">
+            <span className="font-semibold text-sm md:text-base">멘토에게 질문하고 싶은 내용</span>
+            <span className="text-xs text-muted ml-2">(선택사항)</span>
+          </label>
+          <p className="text-xs text-muted mb-3">
+            궁금한 질문을 선택하거나 직접 추가해주세요. 멘토가 세션 전에 미리 확인해요.
+          </p>
+
+          {/* Predefined questions as checkboxes */}
+          {predefinedQuestions.length > 0 && (
+            <div className="space-y-2 mb-4">
+              {predefinedQuestions.map((q, i) => (
+                <label
+                  key={i}
+                  className="flex items-start gap-3 p-3 bg-secondary/50 rounded-xl cursor-pointer hover:bg-secondary transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.selectedQuestions.includes(q)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFormData({ ...formData, selectedQuestions: [...formData.selectedQuestions, q] });
+                      } else {
+                        setFormData({ ...formData, selectedQuestions: formData.selectedQuestions.filter(s => s !== q) });
+                      }
+                    }}
+                    className="mt-0.5 w-4 h-4 rounded border-card-border accent-primary cursor-pointer shrink-0"
+                  />
+                  <span className="text-sm text-foreground">{q}</span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {/* Custom questions */}
+          {formData.customQuestions.map((cq, i) => (
+            <div key={i} className="flex items-center gap-2 mb-2">
+              <input
+                type="text"
+                value={cq}
+                onChange={(e) => {
+                  const updated = [...formData.customQuestions];
+                  updated[i] = e.target.value;
+                  setFormData({ ...formData, customQuestions: updated });
+                }}
+                maxLength={VALIDATION.MAX_CUSTOM_QUESTION_LENGTH}
+                placeholder="직접 질문을 입력하세요"
+                className="flex-1 p-2.5 bg-secondary/50 border border-card-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({ ...formData, customQuestions: formData.customQuestions.filter((_, idx) => idx !== i) });
+                }}
+                className="p-2 text-muted hover:text-red-500 transition-colors cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ))}
+
+          {/* Add custom question button */}
+          {formData.customQuestions.length < VALIDATION.MAX_CUSTOM_QUESTIONS && (
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, customQuestions: [...formData.customQuestions, ""] })}
+              className="mt-2 flex items-center gap-2 text-sm text-primary hover:text-primary-dark cursor-pointer transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>질문 추가</span>
+            </button>
+          )}
+        </div>
+
         {/* File Attachment (UI only) */}
         {showFileUpload && (
           <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-5">
             <label className="block mb-2">
               <span className="font-semibold text-sm md:text-base">
-                {product.type === "document_review"
-                  ? "서류 첨부"
-                  : "면접 관련 자료"}
+                면접 관련 자료
               </span>
               <span className="text-xs text-muted ml-2">(선택사항)</span>
             </label>
@@ -1047,10 +1132,25 @@ export default function BookingPage({
     menteeIntro: "",
     menteeGoal: "",
     files: [],
+    selectedQuestions: [],
+    customQuestions: [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const didTrackPageView = useRef(false);
+
+  // Analytics: page view on mount
+  useEffect(() => {
+    if (!didTrackPageView.current) {
+      didTrackPageView.current = true;
+      trackEvent({
+        category: "page_view",
+        action: "booking_view",
+        metadata: { productId },
+      });
+    }
+  }, [productId]);
 
   // Load saved progress on mount
   useEffect(() => {
@@ -1059,7 +1159,11 @@ export default function BookingPage({
       setCurrentStep(saved.step);
       setSelectedDate(saved.selectedDate ? new Date(saved.selectedDate) : null);
       setSelectedTime(saved.selectedTime);
-      setFormData(saved.formData);
+      setFormData({
+        ...saved.formData,
+        selectedQuestions: saved.formData.selectedQuestions ?? [],
+        customQuestions: saved.formData.customQuestions ?? [],
+      });
     }
   }, [productId]);
 
@@ -1138,14 +1242,21 @@ export default function BookingPage({
 
         setMentor(mentorData);
 
-        // Fetch schedules
-        const { data: scheduleData } = await supabase
-          .from("mentor_schedules")
-          .select("*")
-          .eq("mentor_id", productData.mentor_id)
-          .eq("is_active", true);
+        // Fetch schedules (mentor_schedules table may not exist yet)
+        try {
+          const { data: scheduleData, error: scheduleError } = await supabase
+            .from("mentor_schedules")
+            .select("*")
+            .eq("mentor_id", productData.mentor_id)
+            .eq("is_active", true);
 
-        setSchedules(scheduleData || []);
+          if (!scheduleError && scheduleData) {
+            setSchedules(scheduleData);
+          }
+        } catch {
+          // mentor_schedules table does not exist — fall back to empty schedules
+          console.warn("[booking] mentor_schedules table not available, using empty schedule list");
+        }
       } catch {
         setError("데이터를 불러오는 중 오류가 발생했어요.");
       } finally {
@@ -1166,6 +1277,11 @@ export default function BookingPage({
     }
 
     setIsSubmitting(true);
+    trackEvent({
+      category: "booking",
+      action: "booking_submit",
+      metadata: { productId, mentorId: mentor.id },
+    });
 
     try {
       const supabase = createClient();
@@ -1183,6 +1299,12 @@ export default function BookingPage({
           scheduled_at: scheduledAt,
           mentee_intro: formData.menteeIntro.trim().replace(/[<>]/g, (c) => c === "<" ? "&lt;" : "&gt;"),
           mentee_goal: formData.menteeGoal.trim().replace(/[<>]/g, (c) => c === "<" ? "&lt;" : "&gt;"),
+          mentee_questions: (formData.selectedQuestions.length > 0 || formData.customQuestions.filter(q => q.trim()).length > 0)
+            ? {
+                predefined: formData.selectedQuestions,
+                custom: formData.customQuestions.filter(q => q.trim()),
+              }
+            : null,
           amount: product.price,
           platform_fee: platformFee,
           mentor_amount: mentorAmount,
@@ -1383,7 +1505,10 @@ export default function BookingPage({
           <StepProductConfirm
             product={product}
             mentor={mentor}
-            onNext={() => setCurrentStep(2)}
+            onNext={() => {
+              setCurrentStep(2);
+              trackEvent({ category: "form_step", action: "booking_step", label: "step_2", metadata: { step: 2, productId } });
+            }}
           />
         )}
 
@@ -1396,7 +1521,10 @@ export default function BookingPage({
             setSelectedDate={setSelectedDate}
             selectedTime={selectedTime}
             setSelectedTime={setSelectedTime}
-            onNext={() => setCurrentStep(3)}
+            onNext={() => {
+              setCurrentStep(3);
+              trackEvent({ category: "form_step", action: "booking_step", label: "step_3", metadata: { step: 3, productId } });
+            }}
             onBack={() => setCurrentStep(1)}
           />
         )}
@@ -1406,7 +1534,10 @@ export default function BookingPage({
             product={product}
             formData={formData}
             setFormData={setFormData}
-            onNext={() => setCurrentStep(4)}
+            onNext={() => {
+              setCurrentStep(4);
+              trackEvent({ category: "form_step", action: "booking_step", label: "step_4", metadata: { step: 4, productId } });
+            }}
             onBack={() => setCurrentStep(2)}
           />
         )}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import EarningsCalculator from "@/components/EarningsCalculator";
+import EmailContactButton from "@/components/EmailContactButton";
 import { SITE_CONFIG } from "@/lib/site-config";
 import { PRICE_LIMITS, RECOMMENDED_PRICES } from "@/lib/constants";
 
@@ -466,13 +467,11 @@ export default function MentorRecruitPage() {
 
             <div className="mt-10 text-sm text-muted">
               궁금한 점이 있으면{" "}
-              <a
-                href={`mailto:${SITE_CONFIG.contactEmail.support}`}
-                className="text-primary hover:underline"
-              >
-                {SITE_CONFIG.contactEmail.support}
-              </a>
-              으로 편하게 문의해주세요.
+              <EmailContactButton
+                email={SITE_CONFIG.contactEmail.support}
+                variant="link"
+              />
+              으로 편하게 문의해주세요. (클릭 시 주소 복사)
             </div>
           </div>
         </section>

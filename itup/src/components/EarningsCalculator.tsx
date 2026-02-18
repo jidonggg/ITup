@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { COMMISSION_TIERS } from "@/lib/constants";
 
-function getCommissionRate(totalEarnings: number): { rate: number; label: string } {
+function getCommissionRate(completedSessions: number): { rate: number; label: string } {
   for (const tier of COMMISSION_TIERS) {
-    if (totalEarnings >= tier.min && totalEarnings < tier.max) {
+    if (completedSessions >= tier.min && completedSessions < tier.max) {
       return { rate: tier.rate, label: tier.label };
     }
   }
@@ -14,11 +14,13 @@ function getCommissionRate(totalEarnings: number): { rate: number; label: string
 
 export default function EarningsCalculator() {
   const [sessionsPerWeek, setSessionsPerWeek] = useState(5);
-  const [avgPrice, setAvgPrice] = useState(50000);
+  const [avgPrice, setAvgPrice] = useState(40000);
 
   const monthlyGross = sessionsPerWeek * avgPrice * 4;
   const annualGross = monthlyGross * 12;
-  const { rate, label } = getCommissionRate(annualGross);
+  const monthlySessions = sessionsPerWeek * 4;
+  const annualSessions = monthlySessions * 12;
+  const { rate, label } = getCommissionRate(annualSessions);
   const monthlyNet = Math.round(monthlyGross * (1 - rate));
   const annualNet = Math.round(annualGross * (1 - rate));
 
@@ -80,7 +82,7 @@ export default function EarningsCalculator() {
             <p className="text-xs text-muted mb-1">적용 수수료율</p>
             <p className="text-sm font-semibold text-accent">{label}</p>
             <p className="text-xs text-muted mt-2">
-              누적 정산액이 많아질수록 수수료율이 낮아져요
+              완료 건수가 많아질수록 수수료율이 낮아져요
             </p>
           </div>
         </div>
@@ -143,8 +145,8 @@ export default function EarningsCalculator() {
               </p>
               <p className="text-xs text-muted">
                 {tier.max === Infinity
-                  ? `${(tier.min / 10000).toLocaleString()}만원+`
-                  : `~${(tier.max / 10000).toLocaleString()}만원`}
+                  ? `${tier.min}건+`
+                  : `${tier.min}~${tier.max}건`}
               </p>
             </div>
           ))}

@@ -103,18 +103,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 멘토 누적 수익 조회 (수수료율 결정용)
-      const { data: existingSettlements } = await supabase
-        .from("settlements")
-        .select("settlement_amount")
+      // 멘토 완료 건수 조회 (수수료율 결정용)
+      const { count: completedSessions } = await supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
         .eq("mentor_id", mentorId)
         .eq("status", "completed");
 
-      const cumulativeEarnings = (existingSettlements || []).reduce(
-        (sum, s) => sum + (s.settlement_amount || 0), 0
-      );
-
-      const calc = calculateSettlement(serverTotalAmount, cumulativeEarnings);
+      const calc = calculateSettlement(serverTotalAmount, completedSessions ?? 0);
 
       const { data: settlement, error } = await supabase
         .from("settlements")

@@ -12,6 +12,9 @@ import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 import FreeTrialBanner from "@/components/FreeTrialBanner";
+import SocialProofPopup from "@/components/SocialProofPopup";
+import SeasonalBanner from "@/components/SeasonalBanner";
+import NewsletterCaptureBar from "@/components/NewsletterCaptureBar";
 import dynamic from "next/dynamic";
 import type { MentorData } from "@/components/MentorDetailModal";
 
@@ -117,8 +120,10 @@ export default function HomeClient() {
   return (
     <>
       <Header onLoginClick={openLoginModal} onSignupClick={openSignupModal} />
+      <SeasonalBanner />
       <Hero />
       <FreeTrialBanner />
+      <NewsletterCaptureBar />
       <Stats />
       <Features />
       <Mentors onMentorClick={openMentorModal} />
@@ -129,6 +134,7 @@ export default function HomeClient() {
       <Testimonials />
       <CTA onConsultClick={() => openConsultModal()} />
       <Footer />
+      <SocialProofPopup />
       <ConsultModal
         isOpen={isConsultModalOpen}
         onClose={closeConsultModal}

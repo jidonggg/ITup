@@ -21,7 +21,7 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   // Internal modal state - used when no onLoginClick/onSignupClick props are provided
@@ -94,7 +94,7 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps = {}
     const links = [...baseNavLinks];
 
     if (user && profile) {
-      if (profile.role === "admin") {
+      if (isAdmin) {
         links.push({ href: "/admin", label: "관리자" });
       }
       if (profile.role === "mentor") {

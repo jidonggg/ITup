@@ -71,10 +71,9 @@ export async function POST(request: NextRequest) {
     // 2. Verify mentor exists, is approved, and is active
     const { data: mentor, error: mentorError } = await supabase
       .from("mentors")
-      .select("id, name, is_approved, is_active")
+      .select("id, name, is_approved")
       .eq("id", mentorId)
       .eq("is_approved", true)
-      .eq("is_active", true)
       .single();
 
     if (mentorError || !mentor) {

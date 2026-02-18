@@ -140,7 +140,7 @@ export default function ReviewModal({
                       className={`w-10 h-10 ${
                         star <= (hoveredRating || rating)
                           ? "text-yellow-400 fill-yellow-400"
-                          : "text-gray-600"
+                          : "text-muted"
                       }`}
                       viewBox="0 0 24 24"
                       stroke="currentColor"

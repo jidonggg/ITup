@@ -3,7 +3,7 @@
 import { useState, useRef, ReactNode, useSyncExternalStore } from "react";
 
 interface MentorDetailClientProps {
-  sectionType: "bio" | "products" | "reviews";
+  sectionType: "bio" | "products" | "reviews" | "schedule";
   title: string;
   icon?: ReactNode;
   badge?: number;

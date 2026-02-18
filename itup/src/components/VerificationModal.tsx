@@ -132,8 +132,9 @@ export default function VerificationModal({
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 p-2 text-muted hover:text-foreground transition-colors cursor-pointer"
+          className="absolute top-3 right-3 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted hover:text-foreground hover:bg-secondary/60 rounded-full transition-colors cursor-pointer"
           aria-label="닫기"
+          type="button"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ShareButtons from "@/components/share/ShareButtons";
+import SmartUpsell from "@/components/payment/SmartUpsell";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -26,11 +28,11 @@ function PaymentSuccessContent() {
     if (isProcessedRef.current) return;
     isProcessedRef.current = true;
 
-    let isMounted = true;
+    const abortController = new AbortController();
 
     const verifyPayment = async () => {
       if (!paymentKey || !orderId || !amount) {
-        if (isMounted) {
+        if (!abortController.signal.aborted) {
           setError("결제 정보가 올바르지 않아요.");
           setIsVerifying(false);
         }
@@ -59,10 +61,11 @@ function PaymentSuccessContent() {
             "Content-Type": "application/json",
             ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
           },
-          body: JSON.stringify({ paymentKey, orderId, amount }),
+          body: JSON.stringify({ paymentKey, orderId, amount: Number(amount) }),
+          signal: abortController.signal,
         });
 
-        if (!isMounted) return;
+        if (abortController.signal.aborted) return;
 
         const result = await response.json();
 
@@ -84,17 +87,17 @@ function PaymentSuccessContent() {
               .eq("id", consultationId)
               .single();
 
-            if (consultation?.mentor_id && isMounted) {
+            if (consultation?.mentor_id && !abortController.signal.aborted) {
               const { data: mentor } = await supabase
                 .from("mentors")
-                .select("name, contact_method")
+                .select("name")
                 .eq("id", consultation.mentor_id)
                 .single();
 
-              if (mentor?.contact_method && isMounted) {
+              if (mentor?.name && !abortController.signal.aborted) {
                 setMentorContact({
                   name: mentor.name,
-                  contactMethod: mentor.contact_method,
+                  contactMethod: "",
                 });
               }
             }
@@ -103,9 +106,10 @@ function PaymentSuccessContent() {
           }
         }
 
-        if (isMounted) setIsVerifying(false);
-      } catch {
-        if (isMounted) {
+        if (!abortController.signal.aborted) setIsVerifying(false);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (!abortController.signal.aborted) {
           setError("결제 검증 중 오류가 발생했어요.");
           setIsVerifying(false);
         }
@@ -115,9 +119,9 @@ function PaymentSuccessContent() {
     verifyPayment();
 
     return () => {
-      isMounted = false;
+      abortController.abort();
     };
-  }, [paymentKey, orderId, amount, consultationId]);
+  }, [paymentKey, orderId, amount, consultationId, discountCode]);
 
   if (isVerifying) {
     return (
@@ -164,12 +168,12 @@ function PaymentSuccessContent() {
           </div>
           <h1 className="text-2xl font-bold mb-2">결제가 완료되었어요!</h1>
           <p className="text-muted mb-6">
-            커피챗을 이용해 주셔서 감사해요.
+            서비스를 이용해 주셔서 감사해요.
             <br />
             곧 확인 이메일을 보내드릴게요.
           </p>
 
-          <div className="bg-white/60 backdrop-blur-sm border border-card-border/50 rounded-xl p-4 mb-6 text-left">
+          <div className="bg-card-bg/60 backdrop-blur-sm border border-card-border/50 rounded-xl p-4 mb-6 text-left">
             <h3 className="font-medium mb-3">결제 정보</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -213,23 +217,19 @@ function PaymentSuccessContent() {
             </Link>
           </div>
 
-          {/* Upsell CTA Section */}
-          <div className="mt-8 pt-8 border-t border-card-border space-y-4">
-            <Link
-              href="/mentors"
-              className="block bg-card-bg border border-card-border rounded-xl p-4 text-left transition-all hover:border-primary/30 hover:shadow-lg"
-            >
-              <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                <div>
-                  <p className="font-semibold text-foreground">다음 세션도 예약하기</p>
-                  <p className="text-sm text-muted">다른 멘토도 만나보세요</p>
-                </div>
-                <svg className="w-5 h-5 text-primary ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </Link>
+          {/* Share */}
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <span className="text-sm text-muted">공유하기</span>
+            <ShareButtons
+              url={typeof window !== "undefined" ? window.location.origin : "https://coffeechat.it.kr"}
+              title={`게임 업계 현직자 멘토링을 예약했어요!`}
+              description="커피챗으로 현직자에게 직접 커리어 상담을 받아보세요."
+            />
+          </div>
+
+          {/* Smart Upsell */}
+          <div className="mt-8 pt-8 border-t border-card-border">
+            <SmartUpsell currentProduct={searchParams.get("orderId") || undefined} />
           </div>
         </div>
       </div>

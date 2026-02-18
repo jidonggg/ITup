@@ -6,63 +6,68 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import type { Booking, Mentor } from "@/lib/supabase/types";
+import type { Booking, Mentor, StructuredRating } from "@/lib/supabase/types";
 import { VALIDATION } from "@/lib/constants";
 import { LogoIcon } from "@/components/icons";
 
 // =============================================
-// Star Rating Component
+// Rating Category Config
 // =============================================
 
-function StarRating({
-  rating,
-  hoveredRating,
+const RATING_CATEGORIES: { key: keyof StructuredRating; label: string; description: string }[] = [
+  { key: "expertise", label: "전문성", description: "멘토의 전문 지식과 경험이 도움이 되었나요?" },
+  { key: "kindness", label: "친절도", description: "멘토의 태도와 소통은 어떠셨나요?" },
+  { key: "punctuality", label: "시간 준수", description: "약속된 시간을 잘 지켰나요?" },
+  { key: "value_for_money", label: "가격 만족", description: "지불한 금액 대비 만족하시나요?" },
+];
+
+// =============================================
+// Item Star Rating Component (small, per-category)
+// =============================================
+
+function ItemStarRating({
+  value,
+  hoveredValue,
   onSelect,
   onHover,
   onLeave,
 }: {
-  rating: number;
-  hoveredRating: number;
+  value: number;
+  hoveredValue: number;
   onSelect: (star: number) => void;
   onHover: (star: number) => void;
   onLeave: () => void;
 }) {
-  const labels = ["별점을 선택해주세요", "별로예요", "그저 그래요", "보통이에요", "좋아요", "최고예요!"];
-
   return (
-    <div>
-      <label className="block text-sm font-medium mb-3">만족도</label>
-      <div className="flex gap-2 justify-center">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => onSelect(star)}
-            onMouseEnter={() => onHover(star)}
-            onMouseLeave={onLeave}
-            className="p-1 transition-transform hover:scale-110 cursor-pointer"
-            aria-label={`${star}점`}
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onSelect(star)}
+          onMouseEnter={() => onHover(star)}
+          onMouseLeave={onLeave}
+          className="p-0.5 transition-transform hover:scale-110 cursor-pointer"
+          aria-label={`${star}점`}
+        >
+          <svg
+            className={`w-6 h-6 ${
+              star <= (hoveredValue || value)
+                ? "text-yellow-400 fill-yellow-400"
+                : "text-muted"
+            }`}
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
           >
-            <svg
-              className={`w-10 h-10 ${
-                star <= (hoveredRating || rating)
-                  ? "text-yellow-400 fill-yellow-400"
-                  : "text-gray-600"
-              }`}
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
-              />
-            </svg>
-          </button>
-        ))}
-      </div>
-      <p className="text-center text-sm text-muted mt-2">{labels[rating]}</p>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+            />
+          </svg>
+        </button>
+      ))}
     </div>
   );
 }
@@ -87,11 +92,30 @@ function ReviewWriteContent() {
   const [alreadyReviewed, setAlreadyReviewed] = useState(false);
 
   // Form states
-  const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
+  const [structuredRatings, setStructuredRatings] = useState<Record<string, number>>({
+    expertise: 0,
+    kindness: 0,
+    punctuality: 0,
+    value_for_money: 0,
+  });
+  const [hoveredRatings, setHoveredRatings] = useState<Record<string, number>>({
+    expertise: 0,
+    kindness: 0,
+    punctuality: 0,
+    value_for_money: 0,
+  });
+  const [wouldRecommend, setWouldRecommend] = useState<boolean | null>(null);
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Computed: average rating from all 4 categories
+  const allRated = Object.values(structuredRatings).every((v) => v > 0);
+  const avgRating = allRated
+    ? Math.round(
+        (Object.values(structuredRatings).reduce((a, b) => a + b, 0) / 4) * 10
+      ) / 10
+    : 0;
 
   // =============================================
   // Validate params and fetch data
@@ -195,8 +219,8 @@ function ReviewWriteContent() {
   const handleSubmit = async () => {
     if (!user || !profile || !booking || !bookingId || !mentorId) return;
 
-    if (rating === 0) {
-      showToast("별점을 선택해주세요.", "error");
+    if (!allRated) {
+      showToast("모든 항목의 별점을 선택해주세요.", "error");
       return;
     }
 
@@ -214,16 +238,56 @@ function ReviewWriteContent() {
 
     try {
       const supabase = createClient();
+      const rating = avgRating;
 
-      // Insert review
-      const { error: reviewError } = await supabase.from("reviews").insert({
-        booking_id: bookingId,
-        mentor_id: mentorId,
-        user_id: user.id,
-        user_name: profile.name || user.email || "익명",
-        rating,
-        content,
-      });
+      // 구조화 평가 데이터
+      const structuredData: StructuredRating = {
+        expertise: structuredRatings.expertise,
+        kindness: structuredRatings.kindness,
+        punctuality: structuredRatings.punctuality,
+        value_for_money: structuredRatings.value_for_money,
+      };
+
+      // 먼저 structured_ratings, would_recommend 포함해서 시도
+      // DB에 해당 컬럼이 없으면 fallback으로 기본 필드만 insert
+      let reviewError;
+      try {
+        const result = await supabase.from("reviews").insert({
+          booking_id: bookingId,
+          mentor_id: mentorId,
+          user_id: user.id,
+          user_name: profile.name || user.email || "익명",
+          rating,
+          content,
+          structured_ratings: structuredData,
+          would_recommend: wouldRecommend,
+        });
+        reviewError = result.error;
+      } catch {
+        // structured 필드가 DB에 없는 경우 기본 필드만으로 재시도
+        const fallbackResult = await supabase.from("reviews").insert({
+          booking_id: bookingId,
+          mentor_id: mentorId,
+          user_id: user.id,
+          user_name: profile.name || user.email || "익명",
+          rating,
+          content,
+        });
+        reviewError = fallbackResult.error;
+      }
+
+      // structured 필드 관련 DB 에러 시 기본 필드만으로 재시도
+      if (reviewError && reviewError.code !== "23505") {
+        const fallbackResult = await supabase.from("reviews").insert({
+          booking_id: bookingId,
+          mentor_id: mentorId,
+          user_id: user.id,
+          user_name: profile.name || user.email || "익명",
+          rating,
+          content,
+        });
+        reviewError = fallbackResult.error;
+      }
 
       if (reviewError) {
         if (reviewError.code === "23505") {
@@ -507,14 +571,107 @@ function ReviewWriteContent() {
           <h3 className="font-semibold text-lg mb-6">리뷰 작성</h3>
 
           <div className="space-y-6">
-            {/* Star Rating */}
-            <StarRating
-              rating={rating}
-              hoveredRating={hoveredRating}
-              onSelect={setRating}
-              onHover={setHoveredRating}
-              onLeave={() => setHoveredRating(0)}
-            />
+            {/* Structured Star Ratings */}
+            <div>
+              <label className="block text-sm font-medium mb-4">
+                항목별 평가 <span className="text-red-500">*</span>
+              </label>
+              <div className="space-y-4">
+                {RATING_CATEGORIES.map((cat) => (
+                  <div
+                    key={cat.key}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-background rounded-xl border border-card-border"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{cat.label}</p>
+                      <p className="text-xs text-muted">{cat.description}</p>
+                    </div>
+                    <ItemStarRating
+                      value={structuredRatings[cat.key]}
+                      hoveredValue={hoveredRatings[cat.key]}
+                      onSelect={(star) =>
+                        setStructuredRatings((prev) => ({ ...prev, [cat.key]: star }))
+                      }
+                      onHover={(star) =>
+                        setHoveredRatings((prev) => ({ ...prev, [cat.key]: star }))
+                      }
+                      onLeave={() =>
+                        setHoveredRatings((prev) => ({ ...prev, [cat.key]: 0 }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Average Rating Display */}
+              {allRated && (
+                <div className="mt-4 flex items-center justify-center gap-2 p-3 bg-secondary rounded-xl">
+                  <span className="text-sm text-muted">종합 평점</span>
+                  <div className="flex items-center gap-1">
+                    <svg
+                      className="w-5 h-5 text-yellow-400 fill-yellow-400"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+                      />
+                    </svg>
+                    <span className="text-lg font-bold text-foreground">{avgRating}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Recommendation */}
+            <div>
+              <label className="block text-sm font-medium mb-3">
+                이 멘토를 다른 분에게 추천하시겠어요?
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setWouldRecommend(true)}
+                  className={`flex-1 py-3 rounded-xl font-medium text-sm cursor-pointer transition-all flex items-center justify-center gap-2 ${
+                    wouldRecommend === true
+                      ? "bg-primary/15 text-primary border-2 border-primary"
+                      : "bg-background border border-card-border text-muted hover:border-primary/30"
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                    />
+                  </svg>
+                  추천해요
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWouldRecommend(false)}
+                  className={`flex-1 py-3 rounded-xl font-medium text-sm cursor-pointer transition-all flex items-center justify-center gap-2 ${
+                    wouldRecommend === false
+                      ? "bg-red-500/10 text-red-500 border-2 border-red-500"
+                      : "bg-background border border-card-border text-muted hover:border-red-500/30"
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v2a3 3 0 003 3h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-6h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
+                    />
+                  </svg>
+                  아직은요
+                </button>
+              </div>
+            </div>
 
             {/* Review Content */}
             <div>
@@ -546,7 +703,7 @@ function ReviewWriteContent() {
             {/* Submit Button */}
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || rating === 0 || content.length < VALIDATION.MIN_REVIEW_LENGTH}
+              disabled={isSubmitting || !allRated || content.length < VALIDATION.MIN_REVIEW_LENGTH}
               className="w-full py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-semibold text-lg cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? (

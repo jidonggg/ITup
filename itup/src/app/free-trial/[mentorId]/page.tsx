@@ -80,17 +80,22 @@ export default function FreeTrialPage({
 
       setMentor(mentorData);
 
-      // Fetch schedules
-      const { data: scheduleData } = await supabase
-        .from("mentor_schedules")
-        .select("*")
-        .eq("mentor_id", mentorId)
-        .eq("is_active", true)
-        .order("day_of_week", { ascending: true })
-        .order("start_time", { ascending: true });
+      // Fetch schedules (mentor_schedules table may not exist yet)
+      try {
+        const { data: scheduleData, error: scheduleError } = await supabase
+          .from("mentor_schedules")
+          .select("*")
+          .eq("mentor_id", mentorId)
+          .eq("is_active", true)
+          .order("day_of_week", { ascending: true })
+          .order("start_time", { ascending: true });
 
-      if (scheduleData) {
-        setSchedules(scheduleData);
+        if (!scheduleError && scheduleData) {
+          setSchedules(scheduleData);
+        }
+      } catch {
+        // mentor_schedules table does not exist — fall back to empty schedules
+        console.warn("[free-trial] mentor_schedules table not available, using empty schedule list");
       }
 
       // Check eligibility
@@ -280,8 +285,8 @@ export default function FreeTrialPage({
                 </div>
                 <div>
                   <h2 className="text-xl font-bold">{mentor.name}</h2>
-                  <p className="text-muted">{mentor.company} {mentor.position && `· ${mentor.position}`}</p>
-                  {mentor.years && <p className="text-sm text-muted">경력 {mentor.years}년</p>}
+                  <p className="text-muted">{mentor.company} {mentor.role && `· ${mentor.role}`}</p>
+                  {mentor.experience && <p className="text-sm text-muted">경력 {mentor.experience}</p>}
                 </div>
               </div>
 

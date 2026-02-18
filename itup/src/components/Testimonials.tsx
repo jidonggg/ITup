@@ -19,7 +19,7 @@ function StarRating({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((star) => (
         <svg
           key={star}
-          className={`w-4 h-4 ${star <= rating ? "text-accent" : "text-card-border"}`}
+          className={`w-4 h-4 ${star <= rating ? "text-amber-500" : "text-card-border"}`}
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -88,28 +88,25 @@ export default function Testimonials() {
   return (
     <section
       ref={sectionRef}
-      className={`py-24 bg-background scroll-animate ${sectionVisible ? "visible" : ""}`}
+      className={`py-28 bg-background scroll-animate ${sectionVisible ? "visible" : ""}`}
     >
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-            </svg>
-            멘티 후기
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            실제 멘티들의 이야기
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-14">
+          <span className="inline-block px-4 py-1.5 bg-primary/8 text-primary text-xs font-semibold tracking-widest uppercase rounded-full mb-5 border border-primary/10">
+            Reviews
+          </span>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
+            먼저 경험한 사람들의 한마디
           </h2>
           <p className="text-muted text-lg max-w-xl mx-auto">
-            커피챗을 통해 성장한 멘티들의 생생한 후기를 확인해보세요.
+            &ldquo;진작 할 걸&rdquo; — 가장 많이 듣는 말입니다.
           </p>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-card-bg border border-card-border rounded-2xl p-6">
+              <div key={i} className="premium-card rounded-2xl p-6">
                 <div className="skeleton h-4 w-24 rounded mb-3" />
                 <div className="skeleton h-4 w-full rounded mb-2" />
                 <div className="skeleton h-4 w-3/4 rounded mb-4" />
@@ -118,19 +115,21 @@ export default function Testimonials() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {reviews.map((review) => (
               <div
                 key={review.id}
-                className="bg-card-bg border border-card-border rounded-2xl p-6 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+                className="premium-card rounded-2xl p-6"
               >
-                <StarRating rating={review.rating} />
-                <p className="mt-3 text-foreground leading-relaxed line-clamp-3">
+                {/* Quote mark */}
+                <div className="text-primary/15 text-4xl font-serif leading-none mb-2">&ldquo;</div>
+                <p className="text-foreground text-sm leading-relaxed line-clamp-3 mb-4">
                   {review.content}
                 </p>
-                <div className="mt-4 pt-4 border-t border-card-border flex items-center justify-between">
+                <StarRating rating={review.rating} />
+                <div className="mt-4 pt-4 border-t border-card-border/40 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">{review.user_name}</p>
+                    <p className="text-sm font-semibold">{review.user_name}</p>
                     {review.mentor_name && (
                       <p className="text-xs text-muted mt-0.5">{review.mentor_name} 멘토</p>
                     )}

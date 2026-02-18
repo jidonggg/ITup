@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { skillCategories } from "@/data/mentors";
-import { VALIDATION, JOB_TYPES, ENGINE_TYPES } from "@/lib/constants";
-import type { ConsultType, JobType, EngineType } from "@/lib/supabase/types";
+import { VALIDATION, PRICE_LIMITS, RECOMMENDED_PRICES, PRODUCT_INFO, MENTORING_STYLES, MAX_MENTORING_STYLES } from "@/lib/constants";
+import { ProductIcon } from "@/components/icons";
+import { getMentorTier, isProductAvailableForTier } from "@/lib/pricing/tiers";
+import type { ConsultType, InsertableProductType, Product } from "@/lib/supabase/types";
 
 const consultTypeOptions: { value: ConsultType; label: string }[] = [
   { value: "coffee", label: "1:1 상담" },
@@ -22,37 +24,65 @@ const experienceOptions = [
   "10년 이상",
 ];
 
+type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+
+const DAYS: { key: DayKey; label: string }[] = [
+  { key: "mon", label: "월" },
+  { key: "tue", label: "화" },
+  { key: "wed", label: "수" },
+  { key: "thu", label: "목" },
+  { key: "fri", label: "금" },
+  { key: "sat", label: "토" },
+  { key: "sun", label: "일" },
+];
+
+const TIME_SLOTS = Array.from({ length: 14 }, (_, i) => {
+  const hour = i + 9; // 09:00 ~ 22:00
+  return `${hour.toString().padStart(2, "0")}:00`;
+});
+
+type MentorProductType = InsertableProductType;
+
+interface ProductSetting {
+  enabled: boolean;
+  price: number | "";
+  existingId?: string; // existing product ID from DB
+}
+
 interface FormData {
   name: string;
   company: string;
   role: string;
-  position: string;
-  years: number | "";
-  jobType: JobType | "";
-  engine: EngineType | "";
   previousCompanies: string;
   experience: string;
   skills: string[];
   consultTypes: ConsultType[];
-  availableTimes: string;
+  availableTimes: Record<DayKey, string[]>;
   bio: string;
+  mentoringStyles: string[];
+  products: Record<MentorProductType, ProductSetting>;
 }
 
 const initialFormData: FormData = {
   name: "",
   company: "",
   role: "",
-  position: "",
-  years: "",
-  jobType: "",
-  engine: "",
   previousCompanies: "",
   experience: "",
   skills: [],
   consultTypes: [],
-  availableTimes: "",
+  availableTimes: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
   bio: "",
+  mentoringStyles: [],
+  products: {
+    coffee_chat: { enabled: false, price: "" },
+    mock_interview: { enabled: false, price: "" },
+  },
 };
+
+const PRODUCT_TYPES: MentorProductType[] = ["coffee_chat", "mock_interview"];
+
+const formatPrice = (value: number): string => value.toLocaleString("ko-KR");
 
 export default function MentorEditPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -89,26 +119,60 @@ export default function MentorEditPage() {
 
       setMentorId(data.id);
       setIsApproved(data.is_approved || false);
-      // available_times can be either Record<string, string[]> (from apply page)
-      // or string[] (legacy). Handle both formats for display.
-      const dayLabels: Record<string, string> = {
-        mon: "월", tue: "화", wed: "수", thu: "목",
-        fri: "금", sat: "토", sun: "일",
+      // available_times: parse from flat string array ["mon 09:00", "tue 14:00"]
+      // or from Record<DayKey, string[]> format
+      const labelToKey: Record<string, DayKey> = {
+        mon: "mon", tue: "tue", wed: "wed", thu: "thu",
+        fri: "fri", sat: "sat", sun: "sun",
+        "월": "mon", "화": "tue", "수": "wed", "목": "thu",
+        "금": "fri", "토": "sat", "일": "sun",
       };
-      let availableTimesStr = "";
+      const parsedTimes: Record<DayKey, string[]> = {
+        mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [],
+      };
       const rawTimes = data.available_times;
       if (rawTimes) {
         if (Array.isArray(rawTimes)) {
-          availableTimesStr = rawTimes.join(", ");
-        } else if (typeof rawTimes === "object") {
-          const parts: string[] = [];
-          for (const [day, slots] of Object.entries(rawTimes as Record<string, string[]>)) {
-            if (Array.isArray(slots) && slots.length > 0) {
-              const label = dayLabels[day] || day;
-              parts.push(`${label}: ${slots.join(", ")}`);
+          for (const entry of rawTimes as string[]) {
+            const parts = entry.split(" ");
+            if (parts.length >= 2) {
+              const dayKey = labelToKey[parts[0]];
+              if (dayKey) {
+                parsedTimes[dayKey].push(parts[1]);
+              }
             }
           }
-          availableTimesStr = parts.join(" / ");
+        } else if (typeof rawTimes === "object") {
+          for (const [day, slots] of Object.entries(rawTimes as Record<string, string[]>)) {
+            const dayKey = labelToKey[day];
+            if (dayKey && Array.isArray(slots)) {
+              parsedTimes[dayKey] = [...slots];
+            }
+          }
+        }
+      }
+
+      // Fetch products for this mentor
+      const productSettings: Record<MentorProductType, ProductSetting> = {
+        coffee_chat: { enabled: false, price: "" },
+        mock_interview: { enabled: false, price: "" },
+      };
+
+      const { data: productsData } = await supabase
+        .from("products")
+        .select("*")
+        .eq("mentor_id", data.id);
+
+      if (productsData) {
+        for (const p of productsData as Product[]) {
+          const pType = p.type as MentorProductType;
+          if (pType === "coffee_chat" || pType === "mock_interview") {
+            productSettings[pType] = {
+              enabled: p.is_active,
+              price: p.price,
+              existingId: p.id,
+            };
+          }
         }
       }
 
@@ -116,16 +180,14 @@ export default function MentorEditPage() {
         name: data.name || "",
         company: data.company || "",
         role: data.role || "",
-        position: data.position || "",
-        years: data.years ?? "",
-        jobType: (data.job_type as JobType) || "",
-        engine: (data.engine as EngineType) || "",
         previousCompanies: (data.previous_companies || []).join(", "),
         experience: data.experience || "",
         skills: data.skills || [],
         consultTypes: (data.consult_types || []) as ConsultType[],
-        availableTimes: availableTimesStr,
+        availableTimes: parsedTimes,
         bio: data.bio || "",
+        mentoringStyles: data.mentoring_styles || [],
+        products: productSettings,
       });
       setIsLoadingData(false);
     };
@@ -179,30 +241,12 @@ export default function MentorEditPage() {
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
 
-      // available_times: "월: 09:00, 10:00 / 화: 14:00" → Record<string, string[]>
-      const labelToDay: Record<string, string> = {
-        "월": "mon", "화": "tue", "수": "wed", "목": "thu",
-        "금": "fri", "토": "sat", "일": "sun",
-      };
-      let availableTimesData: Record<string, string[]> | string[] = [];
-      const timesStr = formData.availableTimes.trim();
-      if (timesStr && timesStr.includes(":") && timesStr.match(/^[월화수목금토일]/)) {
-        // Record format: "월: 09:00, 10:00 / 화: 14:00"
-        const parsed: Record<string, string[]> = {};
-        const dayParts = timesStr.split(" / ");
-        for (const part of dayParts) {
-          const colonIdx = part.indexOf(":");
-          if (colonIdx > 0) {
-            const dayLabel = part.substring(0, colonIdx).trim();
-            const dayKey = labelToDay[dayLabel] || dayLabel;
-            const slots = part.substring(colonIdx + 1).split(",").map(s => s.trim()).filter(s => s.length > 0);
-            if (slots.length > 0) parsed[dayKey] = slots;
-          }
+      // available_times: convert Record<DayKey, string[]> to flat string array
+      const availableTimesData: string[] = [];
+      for (const [day, slots] of Object.entries(formData.availableTimes)) {
+        for (const slot of slots) {
+          availableTimesData.push(`${day} ${slot}`);
         }
-        availableTimesData = parsed;
-      } else if (timesStr) {
-        // Legacy flat format
-        availableTimesData = timesStr.split(",").map(s => s.trim()).filter(s => s.length > 0);
       }
 
       const { error } = await supabase
@@ -211,23 +255,72 @@ export default function MentorEditPage() {
           name: formData.name,
           role: formData.role,
           company: formData.company,
-          position: formData.position || null,
-          years: formData.years === "" ? null : formData.years,
-          job_type: formData.jobType || null,
-          engine: formData.engine || null,
           previous_companies: previousCompaniesArray,
           experience: formData.experience,
           skills: formData.skills,
           bio: formData.bio || null,
           available_times: availableTimesData as string[],
           consult_types: formData.consultTypes,
+          mentoring_styles: formData.mentoringStyles,
         })
         .eq("id", mentorId);
 
       if (error) {
-        showToast("프로필 수정 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
-        setIsSubmitting(false);
-        return;
+        // mentoring_styles 컬럼이 아직 DB에 없을 수 있으므로 해당 필드 제외 후 재시도
+        if (error.message?.includes("mentoring_styles")) {
+          const { error: retryError } = await supabase
+            .from("mentors")
+            .update({
+              name: formData.name,
+              role: formData.role,
+              company: formData.company,
+              previous_companies: previousCompaniesArray,
+              experience: formData.experience,
+              skills: formData.skills,
+              bio: formData.bio || null,
+              available_times: availableTimesData as string[],
+              consult_types: formData.consultTypes,
+            })
+            .eq("id", mentorId);
+
+          if (retryError) {
+            showToast("프로필 수정 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
+            setIsSubmitting(false);
+            return;
+          }
+        } else {
+          showToast("프로필 수정 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Save products
+      for (const type of PRODUCT_TYPES) {
+        const setting = formData.products[type];
+        if (setting.existingId) {
+          // Update existing product
+          await supabase
+            .from("products")
+            .update({
+              price: setting.enabled ? (setting.price as number) : 0,
+              is_active: setting.enabled,
+            })
+            .eq("id", setting.existingId);
+        } else if (setting.enabled && setting.price !== "") {
+          // Create new product
+          await supabase
+            .from("products")
+            .insert({
+              mentor_id: mentorId,
+              type,
+              title: PRODUCT_INFO[type].name,
+              description: PRODUCT_INFO[type].description,
+              duration_minutes: PRODUCT_INFO[type].duration,
+              price: setting.price as number,
+              is_active: true,
+            });
+        }
       }
 
       setIsSuccess(true);
@@ -238,16 +331,52 @@ export default function MentorEditPage() {
     }
   };
 
+  const toggleProduct = (type: MentorProductType) => {
+    setFormData((prev) => ({
+      ...prev,
+      products: {
+        ...prev.products,
+        [type]: {
+          ...prev.products[type],
+          enabled: !prev.products[type].enabled,
+          price: !prev.products[type].enabled ? RECOMMENDED_PRICES[type] : prev.products[type].price,
+        },
+      },
+    }));
+  };
+
+  const handlePriceChange = (type: MentorProductType, value: string) => {
+    const numericValue = value.replace(/[^0-9]/g, "");
+    const num = numericValue === "" ? "" : parseInt(numericValue, 10);
+    setFormData((prev) => ({
+      ...prev,
+      products: {
+        ...prev.products,
+        [type]: { ...prev.products[type], price: num },
+      },
+    }));
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    if (name === "years") {
-      const num = value === "" ? "" : parseInt(value, 10);
-      setFormData((prev) => ({ ...prev, years: num }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      // 경력 변경 시 티어 제한에 걸리는 상품 자동 비활성화
+      if (name === "experience" && value) {
+        const newTier = getMentorTier(value);
+        for (const type of PRODUCT_TYPES) {
+          if (!isProductAvailableForTier(type, newTier) && next.products[type].enabled) {
+            next.products = {
+              ...next.products,
+              [type]: { ...next.products[type], enabled: false },
+            };
+          }
+        }
+      }
+      return next;
+    });
     if (errors[name as keyof FormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -276,6 +405,48 @@ export default function MentorEditPage() {
       setErrors((prev) => ({ ...prev, consultTypes: undefined }));
     }
   };
+
+  const handleMentoringStyleToggle = (styleValue: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      mentoringStyles: prev.mentoringStyles.includes(styleValue)
+        ? prev.mentoringStyles.filter((s) => s !== styleValue)
+        : prev.mentoringStyles.length < MAX_MENTORING_STYLES
+          ? [...prev.mentoringStyles, styleValue]
+          : prev.mentoringStyles,
+    }));
+  };
+
+  const toggleTimeSlot = (day: DayKey, time: string) => {
+    setFormData((prev) => {
+      const current = prev.availableTimes[day];
+      const updated = current.includes(time)
+        ? current.filter((t) => t !== time)
+        : [...current, time].sort();
+      return {
+        ...prev,
+        availableTimes: { ...prev.availableTimes, [day]: updated },
+      };
+    });
+  };
+
+  const toggleAllDay = (day: DayKey) => {
+    setFormData((prev) => {
+      const current = prev.availableTimes[day];
+      const allSelected = current.length === TIME_SLOTS.length;
+      return {
+        ...prev,
+        availableTimes: {
+          ...prev.availableTimes,
+          [day]: allSelected ? [] : [...TIME_SLOTS],
+        },
+      };
+    });
+  };
+
+  const selectedCount = Object.values(formData.availableTimes).reduce(
+    (sum, slots) => sum + slots.length, 0
+  );
 
   if (authLoading || isLoadingData) {
     return (
@@ -459,78 +630,6 @@ export default function MentorEditPage() {
                   {errors.role && <p className="mt-1 text-sm text-red-500">{errors.role}</p>}
                 </div>
 
-                {/* 직책/직급 (apply page field) */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">
-                    직책/직급 <span className="text-muted">(선택)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="position"
-                    value={formData.position}
-                    onChange={handleChange}
-                    placeholder="예: 시니어 클라이언트 프로그래머"
-                    className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
-                  />
-                </div>
-
-                {/* 경력 (년) */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">
-                    경력 (년) <span className="text-muted">(선택)</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="years"
-                    value={formData.years}
-                    onChange={handleChange}
-                    placeholder="예: 5"
-                    min={1}
-                    max={40}
-                    className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
-                  />
-                </div>
-
-                {/* 직군 */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">
-                    직군 <span className="text-muted">(선택)</span>
-                  </label>
-                  <select
-                    name="jobType"
-                    value={formData.jobType}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-colors cursor-pointer"
-                  >
-                    <option value="">선택해주세요</option>
-                    {JOB_TYPES.map((jt) => (
-                      <option key={jt.value} value={jt.value}>
-                        {jt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 주력 엔진 */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">
-                    주력 엔진 <span className="text-muted">(선택)</span>
-                  </label>
-                  <select
-                    name="engine"
-                    value={formData.engine}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-colors cursor-pointer"
-                  >
-                    <option value="">선택해주세요</option>
-                    {ENGINE_TYPES.map((et) => (
-                      <option key={et.value} value={et.value}>
-                        {et.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 {/* 이전 직장 */}
                 <div>
                   <label className="block text-sm font-medium mb-1.5">
@@ -626,19 +725,185 @@ export default function MentorEditPage() {
               </div>
             </div>
 
+            {/* 상품/가격 관리 */}
+            <div>
+              <h3 className="text-lg font-semibold mb-2">상품 및 가격</h3>
+              <p className="text-sm text-muted mb-4">
+                제공할 멘토링 서비스와 가격을 설정하세요.
+              </p>
+
+              <div className="space-y-4">
+                {PRODUCT_TYPES.map((type) => {
+                  const info = PRODUCT_INFO[type];
+                  const limits = PRICE_LIMITS[type];
+                  const recommended = RECOMMENDED_PRICES[type];
+                  const setting = formData.products[type];
+                  const currentTier = formData.experience ? getMentorTier(formData.experience) : "junior";
+                  const tierAvailable = isProductAvailableForTier(type, currentTier);
+
+                  return (
+                    <div
+                      key={type}
+                      className={`border rounded-xl p-5 transition-all duration-300 ${
+                        !tierAvailable
+                          ? "border-card-border bg-secondary/20 opacity-60"
+                          : setting.enabled
+                            ? "border-primary bg-primary/5"
+                            : "border-card-border bg-secondary/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <ProductIcon name={info.icon} className={`w-6 h-6 ${tierAvailable ? "text-primary" : "text-muted"}`} />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold">{info.name}</p>
+                              {!tierAvailable && (
+                                <span className="text-[10px] px-2 py-0.5 bg-secondary border border-card-border rounded-full text-muted font-medium">
+                                  시니어 이상
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted">
+                              {tierAvailable ? `${info.description} (${info.duration}분)` : "경력 5년 이상 멘토만 제공 가능"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => tierAvailable && toggleProduct(type)}
+                          disabled={!tierAvailable}
+                          className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${
+                            !tierAvailable ? "bg-secondary/50 cursor-not-allowed" : setting.enabled ? "bg-primary cursor-pointer" : "bg-secondary cursor-pointer"
+                          }`}
+                          role="switch"
+                          aria-checked={setting.enabled}
+                          aria-label={`${info.name} 활성화`}
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 ${
+                              setting.enabled && tierAvailable ? "translate-x-6" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {setting.enabled && (
+                        <div className="mt-4 space-y-2">
+                          <label className="block text-sm font-medium">
+                            가격 (원)
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={
+                                setting.price === ""
+                                  ? ""
+                                  : formatPrice(setting.price as number)
+                              }
+                              onChange={(e) => handlePriceChange(type, e.target.value)}
+                              placeholder={`${formatPrice(limits.min)} ~ ${formatPrice(limits.max)}`}
+                              className="w-full px-4 py-3 pr-10 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted text-sm">
+                              원
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-muted">
+                            <span>
+                              설정 범위: {formatPrice(limits.min)}원 ~{" "}
+                              {formatPrice(limits.max)}원
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  products: {
+                                    ...prev.products,
+                                    [type]: { ...prev.products[type], price: recommended },
+                                  },
+                                }));
+                              }}
+                              className="text-primary hover:underline cursor-pointer"
+                            >
+                              권장가 {formatPrice(recommended)}원 적용
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* 가능 시간 */}
             <div>
-              <label className="block text-sm font-medium mb-1.5">
-                멘토링 가능 시간 <span className="text-muted">(선택)</span>
-              </label>
-              <input
-                type="text"
-                name="availableTimes"
-                value={formData.availableTimes}
-                onChange={handleChange}
-                placeholder="쉼표로 구분 (예: 평일 저녁 7-10시, 주말 오후 2-6시)"
-                className="w-full px-4 py-3 bg-secondary border border-card-border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
-              />
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold">
+                  멘토링 가능 시간 <span className="text-muted font-normal text-sm">(선택)</span>
+                </h3>
+                {selectedCount > 0 && (
+                  <span className="text-xs text-primary font-medium bg-primary/10 px-2.5 py-1 rounded-full">
+                    {selectedCount}개 선택됨
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-muted mb-4">클릭하여 가능한 시간대를 선택해주세요.</p>
+
+              <div className="overflow-x-auto -mx-2 px-2">
+                <div className="inline-grid gap-1" style={{ gridTemplateColumns: `auto repeat(${DAYS.length}, 1fr)` }}>
+                  {/* Header row */}
+                  <div className="w-16" />
+                  {DAYS.map((day) => (
+                    <button
+                      key={day.key}
+                      type="button"
+                      onClick={() => toggleAllDay(day.key)}
+                      className={`w-11 h-8 text-xs font-semibold rounded-lg text-center cursor-pointer transition-colors ${
+                        formData.availableTimes[day.key].length === TIME_SLOTS.length
+                          ? "bg-primary text-white"
+                          : formData.availableTimes[day.key].length > 0
+                            ? "bg-primary/20 text-primary"
+                            : "bg-secondary text-muted hover:bg-secondary/80"
+                      }`}
+                      title={`${day.label}요일 전체 선택/해제`}
+                    >
+                      {day.label}
+                    </button>
+                  ))}
+
+                  {/* Time rows */}
+                  {TIME_SLOTS.map((time) => (
+                    <React.Fragment key={time}>
+                      <div className="w-16 text-xs text-muted flex items-center">
+                        {time}
+                      </div>
+                      {DAYS.map((day) => {
+                        const isSelected = formData.availableTimes[day.key].includes(time);
+                        return (
+                          <button
+                            key={`${day.key}-${time}`}
+                            type="button"
+                            onClick={() => toggleTimeSlot(day.key, time)}
+                            className={`w-11 h-8 rounded-lg text-xs cursor-pointer transition-all ${
+                              isSelected
+                                ? "bg-primary text-white shadow-sm"
+                                : "bg-secondary/60 hover:bg-primary/10 text-transparent"
+                            }`}
+                          >
+                            {isSelected ? "V" : "·"}
+                          </button>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* 자기소개 */}
@@ -668,6 +933,38 @@ export default function MentorEditPage() {
                 >
                   {formData.bio.length}/{VALIDATION.MAX_BIO_LENGTH}
                 </span>
+              </div>
+            </div>
+
+            {/* 상담 스타일 */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                상담 스타일 <span className="text-muted">(선택)</span>
+              </label>
+              <p className="text-xs text-muted mb-3">최대 {MAX_MENTORING_STYLES}개까지 선택 가능</p>
+              <div className="flex flex-wrap gap-2">
+                {MENTORING_STYLES.map((style) => {
+                  const isSelected = formData.mentoringStyles.includes(style.value);
+                  const isDisabled = !isSelected && formData.mentoringStyles.length >= MAX_MENTORING_STYLES;
+                  return (
+                    <button
+                      key={style.value}
+                      type="button"
+                      onClick={() => handleMentoringStyleToggle(style.value)}
+                      disabled={isDisabled}
+                      title={style.description}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-primary/10 text-primary border-primary/30"
+                          : isDisabled
+                            ? "bg-secondary/50 text-muted border-card-border opacity-50 cursor-not-allowed"
+                            : "bg-secondary/50 text-muted border-card-border hover:border-primary/30"
+                      }`}
+                    >
+                      {style.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

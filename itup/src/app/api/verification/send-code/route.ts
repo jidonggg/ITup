@@ -107,23 +107,33 @@ export async function POST(request: NextRequest) {
     // 인증 코드 생성
     const code = generateCode();
 
-    // 공유 저장소에 저장 (Supabase 또는 메모리)
-    await saveVerificationCode(email, code);
+    // 이메일 발송 (RESEND_API_KEY 필수)
+    const resendApiKey = process.env.RESEND_API_KEY?.trim();
+    if (!resendApiKey) {
+      console.error("[send-code] RESEND_API_KEY 환경변수가 설정되지 않았습니다.");
+      return NextResponse.json(
+        { error: "이메일 서비스가 설정되지 않았습니다." },
+        { status: 500 }
+      );
+    }
 
-    // 이메일 발송
-    if (process.env.RESEND_API_KEY) {
-      try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
-          from: getEmailFrom("noreply"),
+    try {
+      const resend = new Resend(resendApiKey);
+      const fromAddress = getEmailFrom("noreply");
+
+      // 저장과 발송을 동시에 실행 (속도 최적화)
+      const [, sendResult] = await Promise.all([
+        saveVerificationCode(email, code),
+        resend.emails.send({
+          from: fromAddress,
           to: email,
           subject: `[${SITE_CONFIG.name}] 멘토 인증 코드`,
           html: `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #A0714F;">커피챗 멘토 인증</h2>
+              <h2 style="color: #C87941;">커피챗 멘토 인증</h2>
               <p>안녕하세요, 커피챗 멘토 인증을 위한 코드입니다.</p>
               <div style="background: #F3F4F6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #A0714F;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #C87941;">
                   ${code}
                 </span>
               </div>
@@ -137,15 +147,24 @@ export async function POST(request: NextRequest) {
               </p>
             </div>
           `,
-        });
-      } catch (emailError) {
-        console.error("[send-code] 이메일 발송 실패:", emailError);
+        }),
+      ]);
+
+      if (sendResult.error) {
+        console.error("[send-code] Resend 발송 오류:", sendResult.error);
         await deleteVerificationCode(email);
         return NextResponse.json(
           { error: "인증 코드 이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요." },
           { status: 500 }
         );
       }
+    } catch (emailError) {
+      console.error("[send-code] 이메일 발송 실패:", emailError);
+      await deleteVerificationCode(email);
+      return NextResponse.json(
+        { error: "인증 코드 이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({

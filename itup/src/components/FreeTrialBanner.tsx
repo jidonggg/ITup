@@ -79,10 +79,10 @@ export default function FreeTrialBanner() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-foreground">
-                  15분 무료 멘토링 체험
+                  아직 고민 중이라면?
                 </h3>
                 <p className="text-sm text-muted">
-                  첫 멘토링이 고민되시나요? 무료로 먼저 체험해 보세요!
+                  15분이면 충분합니다. 무료로 먼저 경험해 보세요.
                 </p>
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function FreeTrialBanner() {
               href={mentorId ? `/free-trial/${mentorId}` : "/mentors"}
               className="shine-effect px-7 py-3 bg-gradient-to-r from-accent to-primary text-white font-semibold rounded-full hover:shadow-xl hover:shadow-accent/25 hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap"
             >
-              무료 체험 신청
+              무료로 시작하기
             </Link>
           </div>
         </div>

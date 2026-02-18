@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { trackEvent } from "@/lib/analytics/track";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { LogoIcon, ProductIcon } from "@/components/icons";
 import { Mentor, ConsultType, JobType, EngineType } from "@/lib/supabase/types";
@@ -100,6 +101,15 @@ function MentorsContent() {
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
+  }, []);
+
+  // Analytics: page view on mount
+  const didTrackPageView = useRef(false);
+  useEffect(() => {
+    if (!didTrackPageView.current) {
+      didTrackPageView.current = true;
+      trackEvent({ category: "page_view", action: "mentors_view" });
+    }
   }, []);
 
   // Mobile detection (responsive)
@@ -262,6 +272,27 @@ function MentorsContent() {
     setCurrentPage(1); // 필터 변경 시 첫 페이지로
   }, [mentors, searchQuery, sortBy, selectedCompany, selectedConsultType, selectedSkills, selectedJobType, selectedEngineType]);
 
+  // Analytics: track filter changes (skip initial render)
+  const filterMountRef = useRef(true);
+  useEffect(() => {
+    if (filterMountRef.current) {
+      filterMountRef.current = false;
+      return;
+    }
+    trackEvent({
+      category: "button_click",
+      action: "mentors_filter_change",
+      metadata: {
+        company: selectedCompany,
+        consultType: selectedConsultType,
+        jobType: selectedJobType,
+        engineType: selectedEngineType,
+        skillCount: selectedSkills.length,
+        sortBy,
+      },
+    });
+  }, [selectedCompany, selectedConsultType, selectedJobType, selectedEngineType, selectedSkills, sortBy]);
+
   // Pagination
   const totalPages = Math.ceil(filteredMentors.length / MENTORS_PER_PAGE);
   const paginatedMentors = filteredMentors.slice(
@@ -286,11 +317,18 @@ function MentorsContent() {
     setSearchInput("");
     setSearchQuery("");
     setSortBy("recommended");
+    trackEvent({ category: "button_click", action: "mentors_clear_filters" });
   };
 
   const openMentorModal = (mentor: MentorData & { id: string }) => {
     setSelectedMentor(mentor);
     setIsMentorModalOpen(true);
+    trackEvent({
+      category: "button_click",
+      action: "mentor_card_click",
+      label: mentor.name,
+      metadata: { mentorId: mentor.id, company: mentor.company },
+    });
   };
 
   const closeMentorModal = () => {

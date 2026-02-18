@@ -32,6 +32,7 @@ export default function MentorEarningsPage() {
   const [completedBookings, setCompletedBookings] = useState<Booking[]>([]);
   const [bookingProfiles, setBookingProfiles] = useState<Record<string, Profile>>({});
   const [bookingProducts, setBookingProducts] = useState<Record<string, Product>>({});
+  const [settledAmount, setSettledAmount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,6 +118,20 @@ export default function MentorEarningsPage() {
             }
           }
         }
+
+        // Fetch settled amount (completed settlements)
+        const { data: settlementsData } = await supabase
+          .from("settlements")
+          .select("settlement_amount")
+          .eq("mentor_id", mentorData.id)
+          .eq("status", "completed");
+
+        if (settlementsData && settlementsData.length > 0) {
+          const totalSettled = settlementsData.reduce(
+            (sum, s) => sum + (s.settlement_amount || 0), 0
+          );
+          setSettledAmount(totalSettled);
+        }
       } catch {
         setError("데이터를 불러오는 중 오류가 발생했어요.");
       } finally {
@@ -143,10 +158,8 @@ export default function MentorEarningsPage() {
       .filter((b) => new Date(b.scheduled_at) >= thisMonth)
       .reduce((sum, b) => sum + (b.mentor_amount || 0), 0);
 
-    // Pending settlement (completed but not yet settled)
-    // For simplicity, we consider all mentor_amount from completed bookings as potentially pending
-    // In a real system, this would check against the settlements table
-    const pendingSettlement = totalEarnings;
+    // Pending settlement = total earnings minus already-settled amount
+    const pendingSettlement = Math.max(0, totalEarnings - settledAmount);
 
     // Total completed sessions
     const completedSessions = completedBookings.length;
@@ -157,7 +170,7 @@ export default function MentorEarningsPage() {
       pendingSettlement,
       completedSessions,
     };
-  }, [completedBookings]);
+  }, [completedBookings, settledAmount]);
 
   // Calculate monthly earnings for the last 6 months
   const monthlyEarnings = useMemo((): MonthlyEarnings[] => {
@@ -459,10 +472,10 @@ export default function MentorEarningsPage() {
             <h2 className="text-lg font-bold">최근 완료 세션</h2>
             {transactions.length > 0 && (
               <Link
-                href="/mentor/dashboard"
+                href="/mentor/settlement"
                 className="text-sm text-primary hover:underline"
               >
-                전체 보기 →
+                정산 내역 →
               </Link>
             )}
           </div>

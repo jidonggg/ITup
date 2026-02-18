@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { trackEvent } from "@/lib/analytics/track";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { JOB_TYPES, ENGINE_TYPES, PRODUCT_INFO } from "@/lib/constants";
 import { ProductIcon, LogoIcon } from "@/components/icons";
@@ -13,7 +14,6 @@ type Step = 1 | 2 | 3;
 
 const productTypes: { value: ProductType; label: string; icon: string; description: string }[] = [
   { value: "coffee_chat", label: PRODUCT_INFO.coffee_chat.name, icon: PRODUCT_INFO.coffee_chat.icon, description: PRODUCT_INFO.coffee_chat.description },
-  { value: "document_review", label: PRODUCT_INFO.document_review.name, icon: PRODUCT_INFO.document_review.icon, description: PRODUCT_INFO.document_review.description },
   { value: "mock_interview", label: PRODUCT_INFO.mock_interview.name, icon: PRODUCT_INFO.mock_interview.icon, description: PRODUCT_INFO.mock_interview.description },
 ];
 
@@ -26,9 +26,27 @@ export default function OnboardingPage() {
   const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
+  const didTrackPageView = useRef(false);
+
+  // Analytics: page view on mount
+  useEffect(() => {
+    if (!didTrackPageView.current) {
+      didTrackPageView.current = true;
+      trackEvent({ category: "page_view", action: "onboarding_view" });
+    }
+  }, []);
 
   const handleNext = () => {
-    if (step < 3) setStep((step + 1) as Step);
+    if (step < 3) {
+      const nextStep = (step + 1) as Step;
+      setStep(nextStep);
+      trackEvent({
+        category: "form_step",
+        action: "onboarding_step",
+        label: `step_${nextStep}`,
+        metadata: { step: nextStep },
+      });
+    }
   };
 
   const handleBack = () => {
@@ -37,6 +55,15 @@ export default function OnboardingPage() {
 
   const handleComplete = async () => {
     setIsSaving(true);
+    trackEvent({
+      category: "form_submit",
+      action: "onboarding_complete",
+      metadata: {
+        jobType: selectedJobType,
+        engine: selectedEngine,
+        product: selectedProduct,
+      },
+    });
 
     try {
       if (isSupabaseConfigured() && user) {

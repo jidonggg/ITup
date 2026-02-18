@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { trackEvent } from "@/lib/analytics/track";
 import { useToast } from "@/contexts/ToastContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import type { ProductType, JobType, EngineType } from "@/lib/supabase/types";
+import type { InsertableProductType, JobType, EngineType } from "@/lib/supabase/types";
 import { SITE_CONFIG } from "@/lib/site-config";
 import {
   PRICE_LIMITS,
@@ -34,9 +35,12 @@ interface StepOneData {
   verificationCode: string;
   isVerified: boolean;
   verifiedEmail: string | null;
+  // 경력 인증 서류 (건강보험자격득실확인서)
+  documentUrl: string | null;
 }
 
-type MentorProductType = Exclude<ProductType, "free_trial">;
+/** Only product types accepted by the DB products table check constraint */
+type MentorProductType = InsertableProductType;
 
 interface StepTwoData {
   // 이전 경력 (선택)
@@ -95,6 +99,7 @@ const initialStepOne: StepOneData = {
   verificationCode: "",
   isVerified: false,
   verifiedEmail: null,
+  documentUrl: null,
 };
 
 const initialStepTwo: StepTwoData = {
@@ -105,7 +110,6 @@ const initialStepTwo: StepTwoData = {
   profilePhoto: null,
   products: {
     coffee_chat: { enabled: false, price: "" },
-    document_review: { enabled: false, price: "" },
     mock_interview: { enabled: false, price: "" },
   },
 };
@@ -148,6 +152,15 @@ export default function MentorApplyPage() {
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
+
+  // Document upload states
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+  const [documentFileName, setDocumentFileName] = useState<string | null>(null);
+
+  // Analytics: page view on mount
+  useEffect(() => {
+    trackEvent({ category: "page_view", action: "mentor_apply_view" });
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -193,6 +206,7 @@ export default function MentorApplyPage() {
       return;
     }
     setIsSendingCode(true);
+    trackEvent({ category: "button_click", action: "mentor_apply_send_code" });
     clearError("companyEmail");
     clearError("verification");
 
@@ -227,6 +241,7 @@ export default function MentorApplyPage() {
       return;
     }
     setIsVerifying(true);
+    trackEvent({ category: "button_click", action: "mentor_apply_verify_code" });
     clearError("verificationCode");
     clearError("verification");
 
@@ -260,6 +275,68 @@ export default function MentorApplyPage() {
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  // 건강보험자격득실확인서 업로드
+  const DOCUMENT_MAX_SIZE = 10 * 1024 * 1024; // 10MB
+  const DOCUMENT_ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 파일 타입 검증
+    if (!DOCUMENT_ALLOWED_TYPES.includes(file.type)) {
+      showToast("PDF, JPG, PNG 형식의 파일만 업로드 가능합니다.", "error");
+      e.target.value = "";
+      return;
+    }
+
+    // 파일 크기 검증
+    if (file.size > DOCUMENT_MAX_SIZE) {
+      showToast("파일 크기는 10MB 이하여야 합니다.", "error");
+      e.target.value = "";
+      return;
+    }
+
+    setIsUploadingDocument(true);
+    clearError("document");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/verification/upload-document", {
+        method: "POST",
+        headers: {
+          ...(session?.access_token && { Authorization: `Bearer ${session.access_token}` }),
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrors((prev) => ({ ...prev, document: data.error || "파일 업로드에 실패했습니다." }));
+        e.target.value = "";
+        return;
+      }
+
+      setStepOne((prev) => ({ ...prev, documentUrl: data.storagePath }));
+      setDocumentFileName(file.name);
+      showToast("경력 인증 서류가 업로드되었습니다.", "success");
+    } catch {
+      setErrors((prev) => ({ ...prev, document: "파일 업로드 중 오류가 발생했습니다." }));
+      e.target.value = "";
+    } finally {
+      setIsUploadingDocument(false);
+    }
+  };
+
+  const handleRemoveDocument = () => {
+    setStepOne((prev) => ({ ...prev, documentUrl: null }));
+    setDocumentFileName(null);
+    clearError("document");
   };
 
   const validateStepOne = (): boolean => {
@@ -448,8 +525,15 @@ export default function MentorApplyPage() {
     }
 
     if (valid) {
-      setCurrentStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
+      const nextStep = Math.min(currentStep + 1, TOTAL_STEPS);
+      setCurrentStep(nextStep);
       setErrors({});
+      trackEvent({
+        category: "form_step",
+        action: "mentor_apply_step",
+        label: `step_${nextStep}`,
+        metadata: { step: nextStep },
+      });
     }
   };
 
@@ -473,7 +557,20 @@ export default function MentorApplyPage() {
       return;
     }
 
+    // 제출 전 모든 스텝 재검증 (뒤로 갔다 수정 후 다시 돌아온 경우 대비)
+    if (!validateStepOne()) {
+      setCurrentStep(1);
+      showToast("기본정보를 다시 확인해주세요.", "error");
+      return;
+    }
+    if (!validateStepTwo()) {
+      setCurrentStep(2);
+      showToast("프로필/상품 정보를 다시 확인해주세요.", "error");
+      return;
+    }
+
     setIsSubmitting(true);
+    trackEvent({ category: "form_submit", action: "mentor_apply_submit" });
 
     try {
       const supabase = createClient();
@@ -501,44 +598,40 @@ export default function MentorApplyPage() {
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
 
-      // Build available_times (exclude empty days)
-      const availableTimes: Record<string, string[]> = {};
+      // Build available_times as flat string array (DB expects JSON array)
+      const availableTimesArray: string[] = [];
       for (const [day, slots] of Object.entries(stepThree.availableTimes)) {
-        if (slots.length > 0) {
-          availableTimes[day] = slots;
+        for (const slot of slots) {
+          availableTimesArray.push(`${day} ${slot}`);
         }
       }
 
-      // Insert mentor
+      // Insert mentor (DB 실제 컬럼만 사용)
       const { data: mentorData, error: mentorError } = await supabase
         .from("mentors")
         .insert({
           user_id: user.id,
           name: stepOne.name.trim(),
           company: stepOne.company.trim(),
-          position: stepOne.position.trim(),
-          years: stepOne.years as number,
-          job_type: stepOne.jobType as JobType,
-          engine: stepOne.engine as EngineType,
           role: stepOne.position.trim(),
           experience: `${stepOne.years}년`,
           skills: [],
           bio: stepTwo.bio.trim() || null,
-          consult_types: [],
-          verified_email: stepOne.verifiedEmail,
+          consult_types: (Object.keys(stepTwo.products) as MentorProductType[])
+            .filter((t) => stepTwo.products[t].enabled)
+            .map((t) => t === "coffee_chat" ? "coffee" : "interview"),
           verified_company: stepOne.verifiedEmail
             ? stepOne.verifiedEmail.split("@")[1]
             : null,
           is_verified: stepOne.isVerified,
-          verification_method: stepOne.isVerified ? "email" as const : null,
+          verification_method: stepOne.isVerified
+            ? (stepOne.documentUrl ? "document" as const : "email" as const)
+            : null,
           verified_at: stepOne.isVerified ? new Date().toISOString() : null,
-          verification_status: stepOne.isVerified ? "verified" as const : "pending" as const,
           previous_companies: previousCompaniesArray.length > 0 ? previousCompaniesArray : null,
-          previous_companies_detail: [],
-          profile_image_url: null,
-          available_times: Object.keys(availableTimes).length > 0 ? availableTimes : null,
+          document_url: stepOne.documentUrl || null,
+          available_times: availableTimesArray.length > 0 ? availableTimesArray : null,
           price: null,
-          contact_method: null,
         })
         .select("id")
         .single();
@@ -761,12 +854,34 @@ export default function MentorApplyPage() {
 
   const renderStepOne = () => (
     <div className="space-y-6">
+      {/* Step 1 Tip Callout */}
+      <div className="flex gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+        <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <p className="font-semibold text-blue-700 text-sm">시작하기 전에</p>
+          <p className="text-sm text-foreground/80">회사 이메일 인증이 필요합니다. 인증된 멘토에게는 프로필에 <span className="font-semibold text-blue-700">인증 뱃지</span>가 부여됩니다.</p>
+        </div>
+      </div>
+
       {/* 기본 정보 섹션 */}
-      <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-        <h3 className="text-lg font-semibold">기본 정보</h3>
-        <p className="text-sm text-muted -mt-3">
-          멘토로 활동하기 위한 기본 정보를 입력해주세요.
-        </p>
+      <div className="bg-card-bg border border-card-border border-l-4 border-l-primary rounded-2xl p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">기본 정보</h3>
+            <p className="text-sm text-muted">
+              멘토로 활동하기 위한 기본 정보를 입력해주세요.
+            </p>
+          </div>
+        </div>
 
         {/* Name */}
         <div>
@@ -828,12 +943,15 @@ export default function MentorApplyPage() {
             value={stepOne.position}
             onChange={handleStepOneChange}
             placeholder="예: 시니어 클라이언트 프로그래머"
+            aria-required="true"
+            aria-invalid={!!errors.position}
+            aria-describedby={errors.position ? "position-error" : undefined}
             className={`w-full px-4 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors ${
               errors.position ? "border-red-500" : "border-card-border"
             }`}
           />
           {errors.position && (
-            <p className="mt-1 text-sm text-red-500">{errors.position}</p>
+            <p id="position-error" className="mt-1 text-sm text-red-500" role="alert">{errors.position}</p>
           )}
         </div>
 
@@ -915,11 +1033,20 @@ export default function MentorApplyPage() {
       </div>
 
       {/* 이메일 인증 섹션 */}
-      <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-        <h3 className="text-lg font-semibold">회사 이메일 인증</h3>
-        <p className="text-sm text-muted -mt-3">
-          현재 재직 중인 회사의 이메일로 인증해주세요. 인증된 멘토에게는 인증 뱃지가 부여됩니다.
-        </p>
+      <div className="bg-card-bg border border-card-border border-l-4 border-l-emerald-500 rounded-2xl p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">회사 이메일 인증</h3>
+            <p className="text-sm text-muted">
+              현재 재직 중인 회사의 이메일로 인증해주세요. 인증된 멘토에게는 인증 뱃지가 부여됩니다.
+            </p>
+          </div>
+        </div>
 
         {stepOne.isVerified ? (
           <div className="bg-green-50 border border-green-200 rounded-xl p-5">
@@ -1116,6 +1243,160 @@ export default function MentorApplyPage() {
           </>
         )}
       </div>
+
+      {/* 경력 인증 서류 업로드 섹션 */}
+      <div className="bg-card-bg border border-card-border border-l-4 border-l-amber-500 rounded-2xl p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">이전 경력 인증 <span className="text-sm font-normal text-muted">(선택)</span></h3>
+            <p className="text-sm text-muted">
+              건강보험자격득실확인서를 업로드하면 이전 경력을 인증할 수 있습니다.
+              관리자 검토 후 경력 인증 뱃지가 부여됩니다.
+            </p>
+          </div>
+        </div>
+
+        {stepOne.documentUrl ? (
+          /* 업로드 완료 상태 */
+          <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                  <svg
+                    className="w-5 h-5 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-semibold text-green-800">서류 업로드 완료</p>
+                  <p className="text-sm text-green-700 break-all">
+                    {documentFileName || "업로드된 파일"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveDocument}
+                className="text-sm text-red-500 hover:text-red-700 hover:underline cursor-pointer shrink-0 ml-3"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* 업로드 UI */
+          <>
+            <div className="relative">
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleDocumentUpload}
+                disabled={isUploadingDocument}
+                className="hidden"
+                id="career-document"
+              />
+              <label
+                htmlFor="career-document"
+                className={`flex flex-col items-center justify-center gap-3 w-full px-4 py-8 border-2 border-dashed rounded-xl transition-colors ${
+                  isUploadingDocument
+                    ? "border-primary/50 bg-primary/5 cursor-wait"
+                    : "border-card-border text-muted hover:border-primary hover:text-primary cursor-pointer"
+                }`}
+              >
+                {isUploadingDocument ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <svg
+                      className="w-8 h-8 animate-spin text-primary"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                    <span className="text-sm text-primary font-medium">
+                      업로드 중...
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium">
+                        건강보험자격득실확인서 업로드
+                      </p>
+                      <p className="text-xs text-muted mt-1">
+                        PDF, JPG, PNG (최대 10MB)
+                      </p>
+                    </div>
+                  </>
+                )}
+              </label>
+            </div>
+
+            {errors.document && (
+              <p className="text-sm text-red-500">{errors.document}</p>
+            )}
+
+            <div className="bg-secondary/50 rounded-xl p-4">
+              <p className="text-xs text-muted leading-relaxed">
+                <span className="font-semibold text-foreground">
+                  건강보험자격득실확인서란?
+                </span>
+                <br />
+                국민건강보험공단에서 발급하는 서류로, 이전 직장의 근무 기간과 회사명이 기재되어 있어 경력을 증명할 수 있습니다.
+                <br />
+                <a
+                  href="https://www.nhis.or.kr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline mt-1 inline-block"
+                >
+                  국민건강보험공단 바로가기
+                </a>
+              </p>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 
@@ -1126,18 +1407,39 @@ export default function MentorApplyPage() {
   const renderStepTwo = () => {
     const productTypes: MentorProductType[] = [
       "coffee_chat",
-      "document_review",
       "mock_interview",
     ];
 
     return (
       <div className="space-y-6">
+        {/* Step 2 Tip Callout */}
+        <div className="flex gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+            <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-semibold text-amber-700 text-sm">프로필 작성 팁</p>
+            <p className="text-sm text-foreground/80">구체적인 경력과 전문 분야를 작성하면 멘티 매칭률이 <span className="font-semibold text-amber-700">2배 이상</span> 높아집니다.</p>
+          </div>
+        </div>
+
         {/* 이전 경력 (선택) */}
-        <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-          <h3 className="text-lg font-semibold">이전 경력</h3>
-          <p className="text-sm text-muted -mt-3">
-            이전 회사 경력을 추가하면 멘티에게 더 풍부한 프로필을 보여줄 수 있어요.
-          </p>
+        <div className="bg-card-bg border border-card-border border-l-4 border-l-blue-500 rounded-2xl p-6 space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">이전 경력 <span className="text-sm font-normal text-muted">(선택)</span></h3>
+              <p className="text-sm text-muted">
+                이전 회사 경력을 추가하면 멘티에게 더 풍부한 프로필을 보여줄 수 있어요.
+              </p>
+            </div>
+          </div>
 
           {/* Yes/No selection */}
           {stepTwo.wantsPreviousCareer === null && (
@@ -1296,11 +1598,20 @@ export default function MentorApplyPage() {
         </div>
 
         {/* 프로필 작성 */}
-        <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-          <h3 className="text-lg font-semibold">프로필 작성</h3>
-          <p className="text-sm text-muted -mt-3">
-            멘티들에게 보여질 프로필을 작성해주세요.
-          </p>
+        <div className="bg-card-bg border border-card-border border-l-4 border-l-violet-500 rounded-2xl p-6 space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">프로필 작성</h3>
+              <p className="text-sm text-muted">
+                멘티들에게 보여질 프로필을 작성해주세요.
+              </p>
+            </div>
+          </div>
 
           {/* Bio */}
           <div>
@@ -1402,11 +1713,28 @@ export default function MentorApplyPage() {
         </div>
 
         {/* 상품 등록 */}
-        <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-          <h3 className="text-lg font-semibold">상품 등록</h3>
-          <p className="text-sm text-muted -mt-3">
-            제공하고 싶은 멘토링 서비스와 가격을 설정해주세요. 최소 1개 이상 등록해야 합니다.
-          </p>
+        <div className="bg-card-bg border border-card-border border-l-4 border-l-accent rounded-2xl p-6 space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">상품 등록</h3>
+              <p className="text-sm text-muted">
+                제공하고 싶은 멘토링 서비스와 가격을 설정해주세요. 최소 1개 이상 등록해야 합니다.
+              </p>
+            </div>
+          </div>
+
+          {/* Revenue Info Callout */}
+          <div className="flex gap-3 p-3 bg-accent/5 border border-accent/20 rounded-xl">
+            <svg className="w-4 h-4 text-accent shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+            <p className="text-xs text-foreground/70">멘토는 설정 가격의 <span className="font-bold text-accent">85%</span>를 수령합니다. 상담 건수가 늘수록 수수료가 낮아져요.</p>
+          </div>
 
           {errors.products && (
             <p className="text-sm text-red-500">{errors.products}</p>
@@ -1531,11 +1859,34 @@ export default function MentorApplyPage() {
   // ---------------------------------------------------------------------------
 
   const renderStepThree = () => (
-    <div className="bg-card-bg border border-card-border rounded-2xl p-6 space-y-5">
-      <h3 className="text-lg font-semibold">가능 시간 설정</h3>
-      <p className="text-sm text-muted -mt-3">
-        멘토링이 가능한 요일과 시간대를 선택해주세요. 최소 1개 이상의 시간대를 선택해야 합니다.
-      </p>
+    <div className="space-y-6">
+      {/* Step 3 Tip Callout */}
+      <div className="flex gap-3 p-4 bg-accent/10 border border-accent/20 rounded-xl">
+        <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center shrink-0 mt-0.5">
+          <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+        </div>
+        <div>
+          <p className="font-semibold text-accent text-sm">시간 설정 팁</p>
+          <p className="text-sm text-foreground/80"><span className="font-semibold text-accent">평일 저녁(19~22시)</span>과 <span className="font-semibold text-accent">주말 오전</span>이 멘티 수요가 가장 많습니다. 최소 주 3슬롯 이상 등록을 권장합니다.</p>
+        </div>
+      </div>
+
+    <div className="bg-card-bg border border-card-border border-l-4 border-l-primary rounded-2xl p-6 space-y-5">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold">가능 시간 설정</h3>
+          <p className="text-sm text-muted">
+            멘토링이 가능한 요일과 시간대를 선택해주세요. 최소 1개 이상의 시간대를 선택해야 합니다.
+          </p>
+        </div>
+      </div>
 
       {errors.availableTimes && (
         <p className="text-sm text-red-500">{errors.availableTimes}</p>
@@ -1615,6 +1966,7 @@ export default function MentorApplyPage() {
         </div>
       )}
     </div>
+    </div>
   );
 
   // ---------------------------------------------------------------------------
@@ -1668,10 +2020,44 @@ export default function MentorApplyPage() {
             </svg>
             {currentStep === 1 ? "홈으로" : "이전 단계"}
           </button>
-          <h1 className="text-3xl font-bold mb-2">멘토 지원</h1>
-          <p className="text-muted">
-            커피챗 멘토가 되어 게임 업계 주니어들의 성장을 도와주세요
-          </p>
+          {/* Gradient Hero Banner */}
+          <div className="relative rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 border border-primary/20 p-6 sm:p-8 overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs text-primary font-medium mb-3">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                {TOTAL_STEPS}단계 신청 프로세스
+              </div>
+              <h1 className="text-3xl font-bold mb-2">멘토 지원</h1>
+              <p className="text-muted">
+                커피챗 멘토가 되어 게임 업계 주니어들의 성장을 도와주세요
+              </p>
+
+              {/* Benefit Pills */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  수익 85% 수령
+                </span>
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/10 text-accent text-xs rounded-full font-medium">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  자유로운 일정
+                </span>
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-500/10 text-emerald-600 text-xs rounded-full font-medium">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                  인증 뱃지
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Progress bar */}

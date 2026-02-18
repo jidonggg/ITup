@@ -186,7 +186,7 @@ export default function SettlementPage() {
     }
   };
 
-  const { rate, label: tierLabel } = getCommissionRate(completedAmount);
+  const { rate, label: tierLabel } = getCommissionRate(mentor?.sessions ?? 0);
 
   if (!isInitialized || isLoading) {
     return (
@@ -294,8 +294,8 @@ export default function SettlementPage() {
                 <p className="text-xl font-bold">{(tier.rate * 100).toFixed(0)}%</p>
                 <p className="text-xs text-muted mt-1">
                   {tier.max === Infinity
-                    ? `${(tier.min / 10000).toLocaleString()}만원+`
-                    : `${(tier.min / 10000).toLocaleString()}~${(tier.max / 10000).toLocaleString()}만원`}
+                    ? `${tier.min}건+`
+                    : `${tier.min}~${tier.max}건`}
                 </p>
                 {rate === tier.rate && (
                   <span className="inline-block mt-2 px-2 py-0.5 bg-primary text-white text-xs rounded-full">
@@ -355,7 +355,7 @@ export default function SettlementPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">-</span>
-                  누적 정산액이 늘어나면 수수료율이 낮아집니다.
+                  완료 건수가 늘어나면 수수료율이 낮아집니다.
                 </li>
               </ul>
             </div>

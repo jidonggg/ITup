@@ -288,7 +288,12 @@ export async function POST(request: NextRequest) {
     if (supabase) {
       const userId = getUserIdFromOrder(orderId);
 
-      const productType = prefix.toLowerCase();
+      const prefixToProductType: Record<string, string> = {
+        COFFEE: "coffee_chat",
+        RESUME: "document_review",
+        INTERVIEW: "mock_interview",
+      };
+      const productType = prefixToProductType[prefix] || prefix.toLowerCase();
 
       // 수수료 계산 (런칭 초기 15%) - Toss 확인 금액 기준
       const confirmedAmount = tossResult.totalAmount;
