@@ -1050,9 +1050,12 @@ function BookingSuccess({
       </div>
 
       <h2 className="text-xl md:text-2xl font-bold mb-2">예약이 완료되었어요!</h2>
-      <p className="text-muted text-sm md:text-base mb-4 md:mb-6">
-        멘토님의 확인 후 결제가 진행돼요.
+      <p className="text-muted text-sm md:text-base mb-2">
+        멘토님이 확인 후 일정을 확정해드려요.
       </p>
+      <div className="inline-block px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-full mb-4 md:mb-6">
+        시범운영 기간 - 결제 없이 이용 가능
+      </div>
 
       {/* Booking Details */}
       <div className="bg-card-bg border border-card-border rounded-2xl p-4 md:p-6 mb-4 md:mb-6 text-left">
@@ -1361,29 +1364,26 @@ export default function BookingPage({
         return;
       }
 
-      // 3. 유료 상품 → Toss 결제 시작
-      if (!TOSS_CLIENT_KEY) {
-        showToast("결제 시스템이 설정되지 않았어요. 관리자에게 문의해주세요.", "error");
-        setIsSubmitting(false);
+      // 3. 유료 상품 → 시범운영: 결제 없이 예약 완료
+      // TODO: 정식 운영 시 Toss 결제 연동 복구
+      {
+        const bookingSession = await supabase.auth.getSession();
+        const bookingToken = bookingSession.data.session?.access_token;
+        fetch("/api/email/booking-notification", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(bookingToken ? { "Authorization": `Bearer ${bookingToken}` } : {}),
+          },
+          body: JSON.stringify({ type: "new_booking", bookingId: data.id }),
+        }).catch(() => {});
+
+        clearProgress(productId);
+        setBookingId(data.id);
+        setIsSuccess(true);
+        showToast("시범운영 기간이라 결제 없이 예약이 완료되었어요!", "success");
         return;
       }
-
-      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
-      const customerKey = user.id;
-      const prefix = DB_TYPE_PREFIX_MAP[product.type] || "BOOKING";
-      const tossOrderId = `${prefix}_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-
-      const widgets = tossPayments.widgets({ customerKey });
-      await widgets.setAmount({ currency: "KRW", value: product.price });
-
-      await widgets.requestPayment({
-        orderId: tossOrderId,
-        orderName: `${product.title} - ${mentor.name}`,
-        successUrl: `${window.location.origin}/payment/success?bookingId=${data.id}`,
-        failUrl: `${window.location.origin}/payment/fail`,
-        customerEmail: user.email || "",
-        customerName: profile?.name || "",
-      });
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "";

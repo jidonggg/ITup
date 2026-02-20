@@ -43,9 +43,12 @@ export default function Pricing({ onConsultClick, onProductClick }: PricingProps
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-5 tracking-tight">
             내 커리어에 <span className="text-primary">투자하세요</span>
           </h2>
-          <p className="text-muted text-lg max-w-2xl mx-auto">
+          <p className="text-muted text-lg max-w-2xl mx-auto mb-3">
             구독 없이, 딱 한 번만 결제. 부담 없이 시작하세요.
           </p>
+          <div className="inline-block px-4 py-2 bg-primary/10 border border-primary/20 text-primary text-sm font-medium rounded-full">
+            시범운영 기간 - 결제 없이 무료 이용 가능
+          </div>
         </div>
 
         {/* Tier Selector */}

@@ -340,47 +340,10 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       return;
     }
 
-    if (!TOSS_CLIENT_KEY) {
-      showToast("결제 시스템이 설정되지 않았어요. 관리자에게 문의해주세요.", "error");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
-      const customerKey = user.id;
-      const uid = user.id;
-      const prefix = PRODUCT_PREFIX_MAP[selectedProduct];
-      const orderId = `${prefix}_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-
-      // 위젯 인스턴스 생성
-      const widgets = tossPayments.widgets({ customerKey });
-
-      // 결제 금액 설정 (할인 적용된 금액)
-      await widgets.setAmount({
-        currency: "KRW",
-        value: finalPrice,
-      });
-
-      // 결제 요청
-      await widgets.requestPayment({
-        orderId,
-        orderName: `${currentProduct.name} - ${mentorName || "멘토"}`,
-        successUrl: `${window.location.origin}/payment/success?consultationId=${consultationId || "local"}${discountResult ? `&discountCode=${encodeURIComponent(discountCode.trim())}` : ""}`,
-        failUrl: `${window.location.origin}/payment/fail`,
-        customerEmail: user?.email || formData.email,
-        customerName: profile?.name || formData.name,
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "";
-      if (errorMessage.includes("PAY_PROCESS_CANCELED")) {
-        // 사용자가 결제를 취소한 경우 - 에러 표시하지 않음
-      } else {
-        console.error("Payment error:", errorMessage || error);
-        showToast("결제 처리 중 오류가 발생했어요. 다시 시도해주세요.", "error");
-      }
-      setIsLoading(false);
-    }
+    // 시범운영: 결제 없이 완료 처리
+    // TODO: 정식 운영 시 Toss 결제 연동 복구
+    showToast("시범운영 기간이라 결제 없이 신청이 완료되었어요!", "success");
+    handleClose();
   };
 
   const handleApplyDiscount = async () => {
