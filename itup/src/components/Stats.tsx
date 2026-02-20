@@ -64,20 +64,20 @@ export default function Stats() {
         }`}
       >
         {/* Highlights - Bolder numbers */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-10">
           {highlights.map((item) => (
             <div key={item.label} className="text-center">
               <div className="text-3xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 {item.value}
               </div>
-              <div className="text-muted text-sm mt-1.5">{item.label}</div>
+              <div className="text-muted text-xs sm:text-sm mt-1.5">{item.label}</div>
             </div>
           ))}
         </div>
 
         {/* Value Props */}
-        <div className="premium-card rounded-3xl p-8 md:p-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+        <div className="premium-card rounded-3xl p-5 sm:p-8 md:p-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 md:gap-12">
             {values.map((item) => (
               <div key={item.title} className="text-center group">
                 <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/8 to-accent/8 flex items-center justify-center group-hover:scale-105 group-hover:shadow-md group-hover:shadow-primary/10 transition-all duration-300">

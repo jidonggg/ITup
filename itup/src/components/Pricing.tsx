@@ -54,7 +54,7 @@ export default function Pricing({ onConsultClick, onProductClick }: PricingProps
             <button
               key={tier.id}
               onClick={() => setSelectedTier(tier.id)}
-              className={`px-5 py-2 text-sm font-medium rounded-full transition-all duration-300 cursor-pointer ${
+              className={`px-3 sm:px-5 py-2 text-xs sm:text-sm font-medium rounded-full transition-all duration-300 cursor-pointer ${
                 selectedTier === tier.id
                   ? "bg-card-bg text-foreground shadow-sm"
                   : "text-muted hover:text-foreground"

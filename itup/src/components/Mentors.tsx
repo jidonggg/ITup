@@ -198,17 +198,17 @@ function MentorCard({ mentor, index, onClick }: MentorCardProps) {
           <p className="text-muted text-sm mb-3">{mentor.role}</p>
 
           {/* Tags */}
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            <span className="px-2.5 py-1 bg-primary/8 text-primary text-xs font-medium rounded-full">
+          <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-4">
+            <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-primary/8 text-primary text-[11px] sm:text-xs font-medium rounded-full">
               {mentor.experience} 경력
             </span>
             {mentor.skills.slice(0, 3).map((skill) => (
-              <span key={skill} className="px-2.5 py-1 bg-gradient-to-r from-primary/6 to-accent/6 text-foreground/70 text-xs font-medium rounded-full border border-primary/8">
+              <span key={skill} className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-gradient-to-r from-primary/6 to-accent/6 text-foreground/70 text-[11px] sm:text-xs font-medium rounded-full border border-primary/8">
                 {skill}
               </span>
             ))}
             {mentor.skills.length > 3 && (
-              <span className="px-2.5 py-1 bg-secondary/80 text-muted text-xs rounded-full">
+              <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-secondary/80 text-muted text-[11px] sm:text-xs rounded-full">
                 +{mentor.skills.length - 3}
               </span>
             )}

@@ -493,7 +493,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(160,113,79,0.25)] animate-[modalIn_0.3s_ease-out]">
+      <div className="relative w-full max-w-[calc(100%-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto bg-card-bg border border-card-border rounded-2xl shadow-[0_25px_80px_-12px_rgba(160,113,79,0.25)] animate-[modalIn_0.3s_ease-out]">
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -506,7 +506,7 @@ export default function ConsultModal({ isOpen, onClose, mentorId, mentorName, me
           </svg>
         </button>
 
-        <div className="p-6 md:p-8">
+        <div className="p-4 sm:p-6 md:p-8">
           {step === "payment" ? (
             /* 결제 화면 */
             <div className="text-center py-4">
